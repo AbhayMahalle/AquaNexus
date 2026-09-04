@@ -14,11 +14,15 @@ const login = async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        role: {
+        userRoles: {
           include: {
-            rolePermissions: {
+            role: {
               include: {
-                permission: true
+                rolePermissions: {
+                  include: {
+                    permission: true
+                  }
+                }
               }
             }
           }
@@ -31,19 +35,23 @@ const login = async (req, res) => {
       return sendError(res, 'Invalid credentials', 401);
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return sendError(res, 'Invalid credentials', 401);
     }
 
+    const role = user.userRoles[0]?.role;
+    if (!role) {
+      return sendError(res, 'User role not configured', 403);
+    }
+
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role.name },
+      { id: user.id, email: user.email, role: role.name },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    const { passwordHash: _, ...userWithoutPassword } = user;
 
     return sendSuccess(res, {
       token,
@@ -57,8 +65,7 @@ const login = async (req, res) => {
 
 const me = async (req, res) => {
   try {
-    // req.user is attached by auth middleware
-    const { password: _, ...userWithoutPassword } = req.user;
+    const { passwordHash: _, ...userWithoutPassword } = req.user;
     return sendSuccess(res, { user: userWithoutPassword }, 'User retrieved successfully');
   } catch (error) {
     console.error('Me error:', error);
@@ -68,8 +75,6 @@ const me = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    // With JWT, logout is mostly handled client-side by deleting the token.
-    // We can just return success here.
     return sendSuccess(res, null, 'Logged out successfully');
   } catch (error) {
     console.error('Logout error:', error);

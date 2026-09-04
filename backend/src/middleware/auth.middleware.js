@@ -16,11 +16,15 @@ const requireAuth = async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       include: {
-        role: {
+        userRoles: {
           include: {
-            rolePermissions: {
+            role: {
               include: {
-                permission: true
+                rolePermissions: {
+                  include: {
+                    permission: true
+                  }
+                }
               }
             }
           }
@@ -33,8 +37,8 @@ const requireAuth = async (req, res, next) => {
       return sendError(res, 'User not found', 401);
     }
 
-    // Attach user to request object
     req.user = user;
+    req.user.role = user.userRoles[0]?.role;
     next();
   } catch (error) {
     console.error('Auth error:', error);

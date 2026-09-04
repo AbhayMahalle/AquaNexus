@@ -7,6 +7,13 @@ const { sendError } = require('./utils/apiResponse');
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const managerAssignmentRoutes = require('./routes/managerAssignment.routes');
+const employeeRoutes = require('./routes/employee.routes');
+const attendanceRoutes = require('./routes/attendance.routes');
+const leaveRoutes = require('./routes/leave.routes');
+const overtimeRoutes = require('./routes/overtime.routes');
+const productRoutes = require('./routes/product.routes');
+const productionRoutes = require('./routes/production.routes');
+const inventoryRoutes = require('./routes/inventory.routes');
 
 const app = express();
 
@@ -23,6 +30,13 @@ app.get('/api', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api', adminRoutes); // Includes /api/users, /api/roles, /api/permissions
 app.use('/api/manager-assignments', managerAssignmentRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/leave', leaveRoutes);
+app.use('/api/overtime', overtimeRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/production', productionRoutes);
+app.use('/api', inventoryRoutes); // Includes /api/inventory, /api/stock-transactions, /api/goods-received
 
 // 404 handler
 app.use((req, res) => {

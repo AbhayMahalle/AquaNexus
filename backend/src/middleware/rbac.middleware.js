@@ -21,7 +21,7 @@ const requirePermission = (requiredPermission) => {
     }
 
     // Check if user has the permission directly or via role
-    const permissions = req.user.role.rolePermissions.map(rp => rp.permission.name);
+    const permissions = req.user.role.rolePermissions.map(rp => rp.permission.code);
 
     if (!permissions.includes(requiredPermission)) {
       return sendError(res, `Forbidden: Requires ${requiredPermission} permission`, 403);
