@@ -1,18 +1,26 @@
-const prisma = require('../src/config/db');
-const bcrypt = require('bcryptjs');
+require("dotenv").config({
+  path: process.env.DOTENV_CONFIG_PATH || ".env",
+});
+const { PrismaClient } = require("@prisma/client");
+const { PrismaPg } = require("@prisma/adapter-pg");
+const { Pool } = require("pg");
+const bcrypt = require("bcryptjs");
 
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 async function main() {
-  console.log('🌊 AquaNexus — Seeding database...\n');
+  console.log("🌊 AquaNexus — Seeding database...\n");
 
   // ============================================================
   // 1. ROLES
   // ============================================================
   const roleData = [
-    { name: 'ADMIN', description: 'Full system access' },
-    { name: 'MANAGER', description: 'Operational management' },
-    { name: 'STORE_MANAGER', description: 'Store and inventory management' },
-    { name: 'ACCOUNTANT', description: 'Finance and accounting' },
-    { name: 'DISTRIBUTOR', description: 'Distributor portal access' },
+    { name: "ADMIN", description: "Full system access" },
+    { name: "MANAGER", description: "Operational management" },
+    { name: "STORE_MANAGER", description: "Store and inventory management" },
+    { name: "ACCOUNTANT", description: "Finance and accounting" },
+    { name: "DISTRIBUTOR", description: "Distributor portal access" },
   ];
 
   const roles = {};
@@ -23,55 +31,55 @@ async function main() {
       create: r,
     });
   }
-  console.log(`✅ Roles: ${Object.keys(roles).join(', ')}`);
+  console.log(`✅ Roles: ${Object.keys(roles).join(", ")}`);
 
   // ============================================================
   // 2. PERMISSIONS
   // ============================================================
   const permissionData = [
     // Employee
-    { code: 'employee.view', name: 'View Employees' },
-    { code: 'employee.create', name: 'Create Employees' },
-    { code: 'employee.update', name: 'Update Employees' },
-    { code: 'employee.delete', name: 'Delete Employees' },
+    { code: "employee.view", name: "View Employees" },
+    { code: "employee.create", name: "Create Employees" },
+    { code: "employee.update", name: "Update Employees" },
+    { code: "employee.delete", name: "Delete Employees" },
     // Attendance
-    { code: 'attendance.view', name: 'View Attendance' },
-    { code: 'attendance.create', name: 'Create Attendance' },
-    { code: 'attendance.update', name: 'Update Attendance' },
+    { code: "attendance.view", name: "View Attendance" },
+    { code: "attendance.create", name: "Create Attendance" },
+    { code: "attendance.update", name: "Update Attendance" },
     // Production
-    { code: 'production.view', name: 'View Production' },
-    { code: 'production.create', name: 'Create Production' },
-    { code: 'production.update', name: 'Update Production' },
+    { code: "production.view", name: "View Production" },
+    { code: "production.create", name: "Create Production" },
+    { code: "production.update", name: "Update Production" },
     // Inventory
-    { code: 'inventory.view', name: 'View Inventory' },
-    { code: 'inventory.manage', name: 'Manage Inventory' },
+    { code: "inventory.view", name: "View Inventory" },
+    { code: "inventory.manage", name: "Manage Inventory" },
     // Order
-    { code: 'order.view', name: 'View Orders' },
-    { code: 'order.create', name: 'Create Orders' },
-    { code: 'order.update', name: 'Update Orders' },
+    { code: "order.view", name: "View Orders" },
+    { code: "order.create", name: "Create Orders" },
+    { code: "order.update", name: "Update Orders" },
     // Dispatch
-    { code: 'dispatch.view', name: 'View Dispatches' },
-    { code: 'dispatch.create', name: 'Create Dispatches' },
+    { code: "dispatch.view", name: "View Dispatches" },
+    { code: "dispatch.create", name: "Create Dispatches" },
     // Invoice
-    { code: 'invoice.view', name: 'View Invoices' },
-    { code: 'invoice.create', name: 'Create Invoices' },
+    { code: "invoice.view", name: "View Invoices" },
+    { code: "invoice.create", name: "Create Invoices" },
     // Payment
-    { code: 'payment.view', name: 'View Payments' },
-    { code: 'payment.manage', name: 'Manage Payments' },
+    { code: "payment.view", name: "View Payments" },
+    { code: "payment.manage", name: "Manage Payments" },
     // Payroll
-    { code: 'payroll.view', name: 'View Payroll' },
-    { code: 'payroll.manage', name: 'Manage Payroll' },
+    { code: "payroll.view", name: "View Payroll" },
+    { code: "payroll.manage", name: "Manage Payroll" },
     // Reports
-    { code: 'report.view', name: 'View Reports' },
+    { code: "report.view", name: "View Reports" },
     // Sales
-    { code: 'sales.view', name: 'View Sales' },
-    { code: 'sales.create', name: 'Create Sales' },
+    { code: "sales.view", name: "View Sales" },
+    { code: "sales.create", name: "Create Sales" },
     // Returns
-    { code: 'return.view', name: 'View Returns' },
-    { code: 'return.create', name: 'Create Returns' },
+    { code: "return.view", name: "View Returns" },
+    { code: "return.create", name: "Create Returns" },
     // Expense
-    { code: 'expense.view', name: 'View Expenses' },
-    { code: 'expense.manage', name: 'Manage Expenses' },
+    { code: "expense.view", name: "View Expenses" },
+    { code: "expense.manage", name: "Manage Expenses" },
   ];
 
   const permissions = {};
@@ -101,13 +109,23 @@ async function main() {
 
   // Manager gets operational permissions
   const managerPerms = [
-    'employee.view', 'employee.create', 'employee.update',
-    'attendance.view', 'attendance.create', 'attendance.update',
-    'production.view', 'production.create', 'production.update',
-    'inventory.view', 'inventory.manage',
-    'order.view', 'order.create', 'order.update',
-    'dispatch.view', 'dispatch.create',
-    'report.view',
+    "employee.view",
+    "employee.create",
+    "employee.update",
+    "attendance.view",
+    "attendance.create",
+    "attendance.update",
+    "production.view",
+    "production.create",
+    "production.update",
+    "inventory.view",
+    "inventory.manage",
+    "order.view",
+    "order.create",
+    "order.update",
+    "dispatch.view",
+    "dispatch.create",
+    "report.view",
   ];
   for (const code of managerPerms) {
     const pid = permissions[code].id;
@@ -122,11 +140,13 @@ async function main() {
 
   // Store Manager gets store-related permissions
   const storeManagerPerms = [
-    'inventory.view', 'inventory.manage',
-    'production.view',
-    'dispatch.view', 'dispatch.create',
-    'order.view',
-    'report.view',
+    "inventory.view",
+    "inventory.manage",
+    "production.view",
+    "dispatch.view",
+    "dispatch.create",
+    "order.view",
+    "report.view",
   ];
   for (const code of storeManagerPerms) {
     const pid = permissions[code].id;
@@ -144,11 +164,15 @@ async function main() {
 
   // Accountant gets finance permissions
   const accountantPerms = [
-    'invoice.view', 'invoice.create',
-    'payment.view', 'payment.manage',
-    'payroll.view', 'payroll.manage',
-    'expense.view', 'expense.manage',
-    'report.view',
+    "invoice.view",
+    "invoice.create",
+    "payment.view",
+    "payment.manage",
+    "payroll.view",
+    "payroll.manage",
+    "expense.view",
+    "expense.manage",
+    "report.view",
   ];
   for (const code of accountantPerms) {
     const pid = permissions[code].id;
@@ -166,11 +190,14 @@ async function main() {
 
   // Distributor gets distributor-facing permissions
   const distributorPerms = [
-    'order.view', 'order.create',
-    'sales.view', 'sales.create',
-    'return.view', 'return.create',
-    'invoice.view',
-    'payment.view',
+    "order.view",
+    "order.create",
+    "sales.view",
+    "sales.create",
+    "return.view",
+    "return.create",
+    "invoice.view",
+    "payment.view",
   ];
   for (const code of distributorPerms) {
     const pid = permissions[code].id;
@@ -185,48 +212,48 @@ async function main() {
       create: { roleId: roles.DISTRIBUTOR.id, permissionId: pid },
     });
   }
-  console.log('✅ Role-Permission mappings assigned');
+  console.log("✅ Role-Permission mappings assigned");
 
   // ============================================================
   // 4. USERS
   // ============================================================
-  const passwordHash = await bcrypt.hash('Password@123', 10);
+  const passwordHash = await bcrypt.hash("Password@123", 10);
 
   const usersData = [
     {
-      username: 'admin',
-      email: 'admin@aquanexus.com',
-      firstName: 'Abhay',
-      lastName: 'Mahalle',
-      roleName: 'ADMIN',
+      username: "admin",
+      email: "admin@aquanexus.com",
+      firstName: "Abhay",
+      lastName: "Mahalle",
+      roleName: "ADMIN",
     },
     {
-      username: 'manager',
-      email: 'manager@aquanexus.com',
-      firstName: 'Krishna',
-      lastName: 'Sharma',
-      roleName: 'MANAGER',
+      username: "manager",
+      email: "manager@aquanexus.com",
+      firstName: "Krishna",
+      lastName: "Sharma",
+      roleName: "MANAGER",
     },
     {
-      username: 'storemanager',
-      email: 'store@aquanexus.com',
-      firstName: 'Heramb',
-      lastName: 'Patil',
-      roleName: 'STORE_MANAGER',
+      username: "storemanager",
+      email: "store@aquanexus.com",
+      firstName: "Heramb",
+      lastName: "Patil",
+      roleName: "STORE_MANAGER",
     },
     {
-      username: 'accountant',
-      email: 'accountant@aquanexus.com',
-      firstName: 'Priya',
-      lastName: 'Desai',
-      roleName: 'ACCOUNTANT',
+      username: "accountant",
+      email: "accountant@aquanexus.com",
+      firstName: "Priya",
+      lastName: "Desai",
+      roleName: "ACCOUNTANT",
     },
     {
-      username: 'distributor1',
-      email: 'distributor@aquanexus.com',
-      firstName: 'Rahul',
-      lastName: 'Verma',
-      roleName: 'DISTRIBUTOR',
+      username: "distributor1",
+      email: "distributor@aquanexus.com",
+      firstName: "Rahul",
+      lastName: "Verma",
+      roleName: "DISTRIBUTOR",
     },
   ];
 
@@ -254,13 +281,13 @@ async function main() {
       create: { userId: user.id, roleId: roles[u.roleName].id },
     });
   }
-  console.log(`✅ Users: ${usersData.map((u) => u.username).join(', ')}`);
+  console.log(`✅ Users: ${usersData.map((u) => u.username).join(", ")}`);
 
   // ============================================================
   // 5. MANAGER ASSIGNMENTS
   // ============================================================
   const managerUser = users.MANAGER;
-  const managerAreas = ['PRODUCTION', 'STORE', 'DISTRIBUTION'];
+  const managerAreas = ["PRODUCTION", "STORE", "DISTRIBUTION"];
   for (const area of managerAreas) {
     await prisma.managerAssignment.upsert({
       where: {
@@ -274,23 +301,39 @@ async function main() {
   // Store manager gets STORE area assignment
   await prisma.managerAssignment.upsert({
     where: {
-      userId_area: { userId: users.STORE_MANAGER.id, area: 'STORE' },
+      userId_area: { userId: users.STORE_MANAGER.id, area: "STORE" },
     },
     update: {},
-    create: { userId: users.STORE_MANAGER.id, area: 'STORE' },
+    create: { userId: users.STORE_MANAGER.id, area: "STORE" },
   });
-  console.log('✅ Manager assignments created');
+  console.log("✅ Manager assignments created");
 
   // ============================================================
   // 6. DEPARTMENTS
   // ============================================================
   const deptData = [
-    { name: 'Production', code: 'PROD', description: 'Production department' },
-    { name: 'Store', code: 'STORE', description: 'Store and inventory department' },
-    { name: 'Distribution', code: 'DIST', description: 'Distribution department' },
-    { name: 'Finance', code: 'FIN', description: 'Finance and accounting department' },
-    { name: 'HR', code: 'HR', description: 'Human resources department' },
-    { name: 'Administration', code: 'ADMIN', description: 'Administration department' },
+    { name: "Production", code: "PROD", description: "Production department" },
+    {
+      name: "Store",
+      code: "STORE",
+      description: "Store and inventory department",
+    },
+    {
+      name: "Distribution",
+      code: "DIST",
+      description: "Distribution department",
+    },
+    {
+      name: "Finance",
+      code: "FIN",
+      description: "Finance and accounting department",
+    },
+    { name: "HR", code: "HR", description: "Human resources department" },
+    {
+      name: "Administration",
+      code: "ADMIN",
+      description: "Administration department",
+    },
   ];
 
   const departments = {};
@@ -301,66 +344,66 @@ async function main() {
       create: d,
     });
   }
-  console.log(`✅ Departments: ${deptData.map((d) => d.name).join(', ')}`);
+  console.log(`✅ Departments: ${deptData.map((d) => d.name).join(", ")}`);
 
   // ============================================================
   // 7. EMPLOYEES
   // ============================================================
   const employeesData = [
     {
-      employeeCode: 'EMP001',
-      firstName: 'Ramesh',
-      lastName: 'Kumar',
-      email: 'ramesh@aquanexus.com',
-      phone: '9876543210',
-      departmentCode: 'PROD',
-      designation: 'Production Supervisor',
-      joiningDate: new Date('2024-01-15'),
-      employmentType: 'PERMANENT',
+      employeeCode: "EMP001",
+      firstName: "Ramesh",
+      lastName: "Kumar",
+      email: "ramesh@aquanexus.com",
+      phone: "9876543210",
+      departmentCode: "PROD",
+      designation: "Production Supervisor",
+      joiningDate: new Date("2024-01-15"),
+      employmentType: "PERMANENT",
     },
     {
-      employeeCode: 'EMP002',
-      firstName: 'Suresh',
-      lastName: 'Patel',
-      email: 'suresh@aquanexus.com',
-      phone: '9876543211',
-      departmentCode: 'PROD',
-      designation: 'Machine Operator',
-      joiningDate: new Date('2024-03-01'),
-      employmentType: 'PERMANENT',
+      employeeCode: "EMP002",
+      firstName: "Suresh",
+      lastName: "Patel",
+      email: "suresh@aquanexus.com",
+      phone: "9876543211",
+      departmentCode: "PROD",
+      designation: "Machine Operator",
+      joiningDate: new Date("2024-03-01"),
+      employmentType: "PERMANENT",
     },
     {
-      employeeCode: 'EMP003',
-      firstName: 'Amit',
-      lastName: 'Singh',
-      email: 'amit@aquanexus.com',
-      phone: '9876543212',
-      departmentCode: 'STORE',
-      designation: 'Store Keeper',
-      joiningDate: new Date('2024-02-10'),
-      employmentType: 'PERMANENT',
+      employeeCode: "EMP003",
+      firstName: "Amit",
+      lastName: "Singh",
+      email: "amit@aquanexus.com",
+      phone: "9876543212",
+      departmentCode: "STORE",
+      designation: "Store Keeper",
+      joiningDate: new Date("2024-02-10"),
+      employmentType: "PERMANENT",
     },
     {
-      employeeCode: 'EMP004',
-      firstName: 'Deepa',
-      lastName: 'Joshi',
-      email: 'deepa@aquanexus.com',
-      phone: '9876543213',
-      departmentCode: 'DIST',
-      designation: 'Delivery Coordinator',
-      joiningDate: new Date('2024-04-01'),
-      employmentType: 'CONTRACT',
+      employeeCode: "EMP004",
+      firstName: "Deepa",
+      lastName: "Joshi",
+      email: "deepa@aquanexus.com",
+      phone: "9876543213",
+      departmentCode: "DIST",
+      designation: "Delivery Coordinator",
+      joiningDate: new Date("2024-04-01"),
+      employmentType: "CONTRACT",
     },
     {
-      employeeCode: 'EMP005',
-      firstName: 'Vijay',
-      lastName: 'Rao',
-      email: 'vijay@aquanexus.com',
-      phone: '9876543214',
-      departmentCode: 'FIN',
-      designation: 'Accountant',
-      joiningDate: new Date('2024-05-15'),
-      employmentType: 'PERMANENT',
+      employeeCode: "EMP005",
+      firstName: "Vijay",
+      lastName: "Rao",
+      email: "vijay@aquanexus.com",
+      phone: "9876543214",
+      departmentCode: "FIN",
+      designation: "Accountant",
+      joiningDate: new Date("2024-05-15"),
+      employmentType: "PERMANENT",
     },
   ];
 
@@ -389,33 +432,33 @@ async function main() {
   // ============================================================
   const productsData = [
     {
-      sku: 'WB-20L',
-      name: '20 Litre Water Bottle',
-      description: 'Standard 20 litre packaged drinking water bottle',
-      category: 'Bottled Water',
-      unit: 'Bottle',
-      sellingPrice: 40.00,
-      costPrice: 25.00,
+      sku: "WB-20L",
+      name: "20 Litre Water Bottle",
+      description: "Standard 20 litre packaged drinking water bottle",
+      category: "Bottled Water",
+      unit: "Bottle",
+      sellingPrice: 40.0,
+      costPrice: 25.0,
       minimumStock: 100,
     },
     {
-      sku: 'WB-1L',
-      name: '1 Litre Water Bottle',
-      description: '1 litre packaged drinking water bottle',
-      category: 'Bottled Water',
-      unit: 'Bottle',
-      sellingPrice: 20.00,
-      costPrice: 10.00,
+      sku: "WB-1L",
+      name: "1 Litre Water Bottle",
+      description: "1 litre packaged drinking water bottle",
+      category: "Bottled Water",
+      unit: "Bottle",
+      sellingPrice: 20.0,
+      costPrice: 10.0,
       minimumStock: 500,
     },
     {
-      sku: 'WP-500ML',
-      name: '500ml Water Pouch',
-      description: '500ml water pouch',
-      category: 'Water Pouch',
-      unit: 'Pouch',
-      sellingPrice: 5.00,
-      costPrice: 2.50,
+      sku: "WP-500ML",
+      name: "500ml Water Pouch",
+      description: "500ml water pouch",
+      category: "Water Pouch",
+      unit: "Pouch",
+      sellingPrice: 5.0,
+      costPrice: 2.5,
       minimumStock: 1000,
     },
   ];
@@ -445,81 +488,81 @@ async function main() {
       },
     });
   }
-  console.log('✅ Inventory initialized for all products');
+  console.log("✅ Inventory initialized for all products");
 
   // ============================================================
   // 10. PRODUCTION
   // ============================================================
   const production1 = await prisma.production.upsert({
-    where: { productionNumber: 'PRD-2024-001' },
+    where: { productionNumber: "PRD-2024-001" },
     update: {},
     create: {
-      productionNumber: 'PRD-2024-001',
-      productId: products['WB-20L'].id,
+      productionNumber: "PRD-2024-001",
+      productId: products["WB-20L"].id,
       quantity: 200,
-      productionDate: new Date('2024-06-01'),
-      status: 'COMPLETED',
-      batchNumber: 'BATCH-001',
-      remarks: 'First production batch',
+      productionDate: new Date("2024-06-01"),
+      status: "COMPLETED",
+      batchNumber: "BATCH-001",
+      remarks: "First production batch",
       createdBy: users.MANAGER.id,
     },
   });
 
   const production2 = await prisma.production.upsert({
-    where: { productionNumber: 'PRD-2024-002' },
+    where: { productionNumber: "PRD-2024-002" },
     update: {},
     create: {
-      productionNumber: 'PRD-2024-002',
-      productId: products['WB-1L'].id,
+      productionNumber: "PRD-2024-002",
+      productId: products["WB-1L"].id,
       quantity: 500,
-      productionDate: new Date('2024-06-05'),
-      status: 'COMPLETED',
-      batchNumber: 'BATCH-002',
+      productionDate: new Date("2024-06-05"),
+      status: "COMPLETED",
+      batchNumber: "BATCH-002",
       createdBy: users.MANAGER.id,
     },
   });
-  console.log('✅ Production records created');
+  console.log("✅ Production records created");
 
   // ============================================================
   // 11. GOODS RECEIVED
   // ============================================================
   // GRN for production 1
   await prisma.goodsReceived.upsert({
-    where: { grnNumber: 'GRN-2024-001' },
+    where: { grnNumber: "GRN-2024-001" },
     update: {},
     create: {
-      grnNumber: 'GRN-2024-001',
-      productId: products['WB-20L'].id,
+      grnNumber: "GRN-2024-001",
+      productId: products["WB-20L"].id,
       productionId: production1.id,
       quantity: 200,
-      receivedDate: new Date('2024-06-02'),
+      receivedDate: new Date("2024-06-02"),
       receivedBy: users.STORE_MANAGER.id,
-      remarks: 'Full batch received',
+      remarks: "Full batch received",
     },
   });
-  console.log('✅ Goods received records created');
+  console.log("✅ Goods received records created");
 
   // ============================================================
   // 12. STOCK TRANSACTIONS
   // ============================================================
   await prisma.stockTransaction.create({
     data: {
-      productId: products['WB-20L'].id,
-      transactionType: 'PRODUCTION_RECEIPT',
+      productId: products["WB-20L"].id,
+      transactionType: "PRODUCTION_RECEIPT",
       quantity: 200,
-      referenceType: 'GoodsReceived',
-      remarks: 'GRN-2024-001 receipt',
+      referenceType: "GoodsReceived",
+      remarks: "GRN-2024-001 receipt",
       createdBy: users.STORE_MANAGER.id,
     },
   });
-  console.log('✅ Stock transactions created');
+  console.log("✅ Stock transactions created");
 
   // ============================================================
   // 13. SALES AREAS
   // ============================================================
   const areasData = [
-    { name: 'North Zone', code: 'NZ', description: 'Northern sales region' },
-    { name: 'South Zone', code: 'SZ', description: 'Southern sales region' },
+    { name: "North Zone", code: "NZ", description: "Northern sales region" },
+    { name: "South Zone", code: "SZ", description: "Southern sales region" },
   ];
 
   const salesAreas = {};
@@ -530,29 +573,29 @@ async function main() {
       create: a,
     });
   }
-  console.log('✅ Sales areas created');
+  console.log("✅ Sales areas created");
 
   // ============================================================
   // 14. DISTRIBUTORS
   // ============================================================
   const distData = [
     {
-      distributorCode: 'DIST001',
-      name: 'AquaFlow Distributors',
-      email: 'aquaflow@example.com',
-      phone: '9001234567',
-      address: '123 Water Lane, Mumbai',
-      salesAreaCode: 'NZ',
-      creditLimit: 50000.00,
+      distributorCode: "DIST001",
+      name: "AquaFlow Distributors",
+      email: "aquaflow@example.com",
+      phone: "9001234567",
+      address: "123 Water Lane, Mumbai",
+      salesAreaCode: "NZ",
+      creditLimit: 50000.0,
     },
     {
-      distributorCode: 'DIST002',
-      name: 'HydroSupply Co.',
-      email: 'hydrosupply@example.com',
-      phone: '9007654321',
-      address: '456 River Road, Pune',
-      salesAreaCode: 'SZ',
-      creditLimit: 75000.00,
+      distributorCode: "DIST002",
+      name: "HydroSupply Co.",
+      email: "hydrosupply@example.com",
+      phone: "9007654321",
+      address: "456 River Road, Pune",
+      salesAreaCode: "SZ",
+      creditLimit: 75000.0,
     },
   ];
 
@@ -572,23 +615,23 @@ async function main() {
       },
     });
   }
-  console.log('✅ Distributors created');
+  console.log("✅ Distributors created");
 
   // Link distributor user to first distributor
   await prisma.userDistributor.upsert({
     where: {
       userId_distributorId: {
         userId: users.DISTRIBUTOR.id,
-        distributorId: distributors['DIST001'].id,
+        distributorId: distributors["DIST001"].id,
       },
     },
     update: {},
     create: {
       userId: users.DISTRIBUTOR.id,
-      distributorId: distributors['DIST001'].id,
+      distributorId: distributors["DIST001"].id,
     },
   });
-  console.log('✅ User-Distributor link created');
+  console.log("✅ User-Distributor link created");
 
   // ============================================================
   // 15. DISTRIBUTOR STOCK
@@ -597,236 +640,278 @@ async function main() {
     await prisma.distributorStock.upsert({
       where: {
         distributorId_productId: {
-          distributorId: distributors['DIST001'].id,
+          distributorId: distributors["DIST001"].id,
           productId: products[sku].id,
         },
       },
       update: {},
       create: {
-        distributorId: distributors['DIST001'].id,
+        distributorId: distributors["DIST001"].id,
         productId: products[sku].id,
         quantity: 50,
       },
     });
   }
-  console.log('✅ Distributor stock initialized');
+  console.log("✅ Distributor stock initialized");
 
   // ============================================================
   // 16. ORDERS
   // ============================================================
   const order1 = await prisma.order.upsert({
-    where: { orderNumber: 'ORD-2024-001' },
+    where: { orderNumber: "ORD-2024-001" },
     update: {},
     create: {
-      orderNumber: 'ORD-2024-001',
-      distributorId: distributors['DIST001'].id,
-      orderDate: new Date('2024-06-10'),
-      status: 'DELIVERED',
-      subtotal: 4000.00,
-      discount: 200.00,
-      tax: 684.00,
-      totalAmount: 4484.00,
-      notes: 'First order',
+      orderNumber: "ORD-2024-001",
+      distributorId: distributors["DIST001"].id,
+      orderDate: new Date("2024-06-10"),
+      status: "DELIVERED",
+      subtotal: 4000.0,
+      discount: 200.0,
+      tax: 684.0,
+      totalAmount: 4484.0,
+      notes: "First order",
       createdBy: users.DISTRIBUTOR.id,
     },
   });
 
   // Order items
-  await prisma.orderItem.create({
-    data: {
+  await prisma.orderItem.upsert({
+    where: {
+      orderId_productId: {
+        orderId: order1.id,
+        productId: products["WB-20L"].id,
+      },
+    },
+    update: {},
+    create: {
       orderId: order1.id,
-      productId: products['WB-20L'].id,
+      productId: products["WB-20L"].id,
       quantity: 100,
-      unitPrice: 40.00,
-      discount: 200.00,
-      tax: 684.00,
-      total: 4484.00,
+      unitPrice: 40.0,
+      discount: 200.0,
+      tax: 684.0,
+      total: 4484.0,
     },
   });
-  console.log('✅ Orders and order items created');
+  console.log("✅ Orders and order items created");
 
   // ============================================================
   // 17. DISPATCHES
   // ============================================================
   const dispatch1 = await prisma.dispatch.upsert({
-    where: { dispatchNumber: 'DSP-2024-001' },
+    where: { dispatchNumber: "DSP-2024-001" },
     update: {},
     create: {
-      dispatchNumber: 'DSP-2024-001',
+      dispatchNumber: "DSP-2024-001",
       orderId: order1.id,
-      distributorId: distributors['DIST001'].id,
-      dispatchDate: new Date('2024-06-11'),
-      status: 'DELIVERED',
+      distributorId: distributors["DIST001"].id,
+      dispatchDate: new Date("2024-06-11"),
+      status: "DELIVERED",
       createdBy: users.STORE_MANAGER.id,
-      remarks: 'Dispatched via truck',
+      remarks: "Dispatched via truck",
     },
   });
 
-  await prisma.dispatchItem.create({
-    data: {
+  await prisma.dispatchItem.upsert({
+    where: {
+      dispatchId_productId: {
+        dispatchId: dispatch1.id,
+        productId: products["WB-20L"].id,
+      },
+    },
+    update: {},
+    create: {
       dispatchId: dispatch1.id,
-      productId: products['WB-20L'].id,
+      productId: products["WB-20L"].id,
       quantity: 100,
     },
   });
-  console.log('✅ Dispatches and dispatch items created');
+  console.log("✅ Dispatches and dispatch items created");
 
   // ============================================================
   // 18. SALES
   // ============================================================
   const sale1 = await prisma.sale.upsert({
-    where: { saleNumber: 'SAL-2024-001' },
+    where: { saleNumber: "SAL-2024-001" },
     update: {},
     create: {
-      saleNumber: 'SAL-2024-001',
-      distributorId: distributors['DIST001'].id,
-      saleDate: new Date('2024-06-15'),
-      customerReference: 'CUST-101',
-      subtotal: 2000.00,
-      discount: 100.00,
-      tax: 342.00,
-      totalAmount: 2242.00,
-      status: 'COMPLETED',
+      saleNumber: "SAL-2024-001",
+      distributorId: distributors["DIST001"].id,
+      saleDate: new Date("2024-06-15"),
+      customerReference: "CUST-101",
+      subtotal: 2000.0,
+      discount: 100.0,
+      tax: 342.0,
+      totalAmount: 2242.0,
+      status: "COMPLETED",
+      createdBy: users.DISTRIBUTOR.id,
     },
   });
 
-  await prisma.saleItem.create({
-    data: {
+  await prisma.saleItem.upsert({
+    where: {
+      saleId_productId: {
+        saleId: sale1.id,
+        productId: products["WB-20L"].id,
+      },
+    },
+    update: {},
+    create: {
       saleId: sale1.id,
-      productId: products['WB-20L'].id,
+      productId: products["WB-20L"].id,
       quantity: 50,
-      unitPrice: 40.00,
-      discount: 100.00,
-      tax: 342.00,
-      total: 2242.00,
+      unitPrice: 40.0,
+      discount: 100.0,
+      tax: 342.0,
+      total: 2242.0,
     },
   });
-  console.log('✅ Sales and sale items created');
+  console.log("✅ Sales and sale items created");
 
   // ============================================================
   // 19. RETURNS
   // ============================================================
   const return1 = await prisma.return.upsert({
-    where: { returnNumber: 'RET-2024-001' },
+    where: { returnNumber: "RET-2024-001" },
     update: {},
     create: {
-      returnNumber: 'RET-2024-001',
-      distributorId: distributors['DIST001'].id,
+      returnNumber: "RET-2024-001",
+      distributorId: distributors["DIST001"].id,
       saleId: sale1.id,
-      returnDate: new Date('2024-06-20'),
-      reason: 'Damaged in transit',
-      status: 'RECEIVED',
+      returnDate: new Date("2024-06-20"),
+      reason: "Damaged in transit",
+      status: "RECEIVED",
       createdBy: users.DISTRIBUTOR.id,
     },
   });
 
-  await prisma.returnItem.create({
-    data: {
+  await prisma.returnItem.upsert({
+    where: {
+      returnId_productId: {
+        returnId: return1.id,
+        productId: products["WB-20L"].id,
+      },
+    },
+    update: {},
+    create: {
       returnId: return1.id,
-      productId: products['WB-20L'].id,
+      productId: products["WB-20L"].id,
       quantity: 5,
-      condition: 'DAMAGED',
-      remarks: 'Bottles cracked during transit',
+      condition: "DAMAGED",
+      remarks: "Bottles cracked during transit",
     },
   });
-  console.log('✅ Returns and return items created');
+  console.log("✅ Returns and return items created");
 
   // ============================================================
   // 20. SUPPLIERS
   // ============================================================
   const supplier1 = await prisma.supplier.upsert({
-    where: { supplierCode: 'SUP001' },
+    where: { supplierCode: "SUP001" },
     update: {},
     create: {
-      supplierCode: 'SUP001',
-      name: 'PackageMart Pvt Ltd',
-      email: 'info@packagemart.com',
-      phone: '9112233445',
-      address: '789 Industrial Area, Delhi',
+      supplierCode: "SUP001",
+      name: "PackageMart Pvt Ltd",
+      email: "info@packagemart.com",
+      phone: "9112233445",
+      address: "789 Industrial Area, Delhi",
     },
   });
-  console.log('✅ Suppliers created');
+  console.log("✅ Suppliers created");
 
   // ============================================================
   // 21. INVOICES
   // ============================================================
   const invoice1 = await prisma.invoice.upsert({
-    where: { invoiceNumber: 'INV-2024-001' },
+    where: { invoiceNumber: "INV-2024-001" },
     update: {},
     create: {
-      invoiceNumber: 'INV-2024-001',
-      distributorId: distributors['DIST001'].id,
+      invoiceNumber: "INV-2024-001",
+      distributorId: distributors["DIST001"].id,
       orderId: order1.id,
-      invoiceDate: new Date('2024-06-12'),
-      dueDate: new Date('2024-07-12'),
-      subtotal: 4000.00,
-      discount: 200.00,
-      tax: 684.00,
-      totalAmount: 4484.00,
-      status: 'PARTIALLY_PAID',
+      invoiceDate: new Date("2024-06-12"),
+      dueDate: new Date("2024-07-12"),
+      subtotal: 4000.0,
+      discount: 200.0,
+      tax: 684.0,
+      totalAmount: 4484.0,
+      status: "PARTIALLY_PAID",
     },
   });
-  console.log('✅ Invoices created');
+  console.log("✅ Invoices created");
 
   // ============================================================
   // 22. PAYMENTS
   // ============================================================
   await prisma.payment.upsert({
-    where: { paymentNumber: 'PAY-2024-001' },
+    where: { paymentNumber: "PAY-2024-001" },
     update: {},
     create: {
-      paymentNumber: 'PAY-2024-001',
+      paymentNumber: "PAY-2024-001",
       invoiceId: invoice1.id,
-      amount: 2000.00,
-      paymentDate: new Date('2024-06-20'),
-      paymentMethod: 'BANK_TRANSFER',
-      referenceNumber: 'TXN-987654',
-      status: 'COMPLETED',
-      remarks: 'Partial payment',
+      amount: 2000.0,
+      paymentDate: new Date("2024-06-20"),
+      paymentMethod: "BANK_TRANSFER",
+      referenceNumber: "TXN-987654",
+      status: "COMPLETED",
+      remarks: "Partial payment",
       createdBy: users.ACCOUNTANT.id,
     },
   });
-  console.log('✅ Payments created');
+  console.log("✅ Payments created");
 
   // ============================================================
   // 23. EXPENSES
   // ============================================================
   await prisma.expense.upsert({
-    where: { expenseNumber: 'EXP-2024-001' },
+    where: { expenseNumber: "EXP-2024-001" },
     update: {},
     create: {
-      expenseNumber: 'EXP-2024-001',
-      category: 'Packaging Materials',
-      amount: 15000.00,
-      expenseDate: new Date('2024-06-05'),
-      description: 'Monthly packaging material purchase',
+      expenseNumber: "EXP-2024-001",
+      category: "Packaging Materials",
+      amount: 15000.0,
+      expenseDate: new Date("2024-06-05"),
+      description: "Monthly packaging material purchase",
       supplierId: supplier1.id,
-      status: 'PAID',
+      status: "PAID",
       createdBy: users.ACCOUNTANT.id,
       approvedBy: users.ADMIN.id,
-      approvedAt: new Date('2024-06-04'),
+      approvedAt: new Date("2024-06-04"),
     },
   });
-  console.log('✅ Expenses created');
+  console.log("✅ Expenses created");
 
   // ============================================================
   // 24. PAYROLL
   // ============================================================
-  await prisma.payroll.create({
-    data: {
-      employeeId: employees['EMP001'].id,
-      payPeriodStart: new Date('2024-06-01'),
-      payPeriodEnd: new Date('2024-06-30'),
-      basicSalary: 25000.00,
-      overtimeAmount: 3000.00,
-      deductions: 2000.00,
-      netSalary: 26000.00, // 25000 + 3000 - 2000
-      status: 'PAID',
-      processedBy: users.ACCOUNTANT.id,
-      processedAt: new Date('2024-07-05'),
+  const payrollData = {
+    employeeId: employees["EMP001"].id,
+    payPeriodStart: new Date("2024-06-01"),
+    payPeriodEnd: new Date("2024-06-30"),
+    basicSalary: 25000.0,
+    overtimeAmount: 3000.0,
+    deductions: 2000.0,
+    netSalary: 26000.0, // 25000 + 3000 - 2000
+    status: "PAID",
+    processedBy: users.ACCOUNTANT.id,
+    processedAt: new Date("2024-07-05"),
+  };
+  const existingPayroll = await prisma.payroll.findFirst({
+    where: {
+      employeeId: payrollData.employeeId,
+      payPeriodStart: payrollData.payPeriodStart,
+      payPeriodEnd: payrollData.payPeriodEnd,
     },
   });
-  console.log('✅ Payroll records created');
+  if (existingPayroll) {
+    await prisma.payroll.update({
+      where: { id: existingPayroll.id },
+      data: payrollData,
+    });
+  } else {
+    await prisma.payroll.create({ data: payrollData });
+  }
+  console.log("✅ Payroll records created");
 
   // ============================================================
   // 25. ATTENDANCE (sample)
@@ -834,20 +919,20 @@ async function main() {
   await prisma.attendance.upsert({
     where: {
       employeeId_attendanceDate: {
-        employeeId: employees['EMP001'].id,
-        attendanceDate: new Date('2024-06-03'),
+        employeeId: employees["EMP001"].id,
+        attendanceDate: new Date("2024-06-03"),
       },
     },
     update: {},
     create: {
-      employeeId: employees['EMP001'].id,
-      attendanceDate: new Date('2024-06-03'),
-      status: 'PRESENT',
-      checkIn: new Date('2024-06-03T09:00:00Z'),
-      checkOut: new Date('2024-06-03T18:00:00Z'),
+      employeeId: employees["EMP001"].id,
+      attendanceDate: new Date("2024-06-03"),
+      status: "PRESENT",
+      checkIn: new Date("2024-06-03T09:00:00Z"),
+      checkOut: new Date("2024-06-03T18:00:00Z"),
     },
   });
-  console.log('✅ Attendance records created');
+  console.log("✅ Attendance records created");
 
   // ============================================================
   // 26. NOTIFICATIONS (sample)
@@ -855,12 +940,12 @@ async function main() {
   await prisma.notification.create({
     data: {
       userId: users.ADMIN.id,
-      title: 'System Initialized',
-      message: 'AquaNexus database has been seeded successfully.',
-      type: 'SUCCESS',
+      title: "System Initialized",
+      message: "AquaNexus database has been seeded successfully.",
+      type: "SUCCESS",
     },
   });
-  console.log('✅ Notifications created');
+  console.log("✅ Notifications created");
 
   // ============================================================
   // 27. AUDIT LOG (sample)
@@ -868,22 +953,22 @@ async function main() {
   await prisma.auditLog.create({
     data: {
       userId: users.ADMIN.id,
-      action: 'SEED',
-      entityType: 'SYSTEM',
-      entityId: 'database',
-      newValues: { event: 'Database seeded' },
-      ipAddress: '127.0.0.1',
+      action: "SEED",
+      entityType: "SYSTEM",
+      entityId: "database",
+      newValues: { event: "Database seeded" },
+      ipAddress: "127.0.0.1",
     },
   });
-  console.log('✅ Audit log records created');
+  console.log("✅ Audit log records created");
 
-  console.log('\n🎉 AquaNexus database seeding completed successfully!');
-  console.log('   Default login: admin@aquanexus.com / Password@123');
+  console.log("\n🎉 AquaNexus database seeding completed successfully!");
+  console.log("   Default login: admin@aquanexus.com / Password@123");
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error("❌ Seed failed:", e);
     process.exit(1);
   })
   .finally(async () => {
