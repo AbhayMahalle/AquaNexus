@@ -3,17 +3,21 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
 import LoginPage from '@/pages/Login';
-import AdminDashboardPage from '@/pages/AdminDashboard';
-import UserManagementPage from '@/pages/UserManagement';
-import RolesPage from '@/pages/Roles';
-import PermissionMatrixPage from '@/pages/PermissionMatrix';
-import ManagerDashboardPage from '@/pages/ManagerDashboard';
-import AttendancePage from '@/pages/Attendance';
-import ProductionPage from '@/pages/Production';
-import StoreInventoryPage from '@/pages/Inventory';
-import DistributionPage from '@/pages/Distribution';
-import ReportsPage from '@/pages/Reports';
 import FoundationTestPage from '@/pages/FoundationTest';
+
+import {
+  StoreDashboardPage,
+  InventoryListPage,
+  InventoryDetailPage,
+  StockInPage,
+  StockOutPage,
+  GoodsReceivedPage,
+  DispatchPage,
+  ReturnsPage,
+  DamagedGoodsPage,
+  LowStockAlertsPage,
+  StoreReportsPage,
+} from '@/pages/store';
 
 function RootRedirect() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -24,11 +28,11 @@ function RootRedirect() {
     return <Navigate to="/login" replace />;
   }
 
-  if (user?.role === 'manager') {
-    return <Navigate to="/manager/dashboard" replace />;
+  if (user?.role === 'store_manager') {
+    return <Navigate to="/store/dashboard" replace />;
   }
 
-  return <Navigate to="/admin/dashboard" replace />;
+  return <Navigate to="/store/dashboard" replace />;
 }
 
 export default function App() {
@@ -37,19 +41,18 @@ export default function App() {
       <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Admin Shell Routes */}
-      <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-      <Route path="/admin/users" element={<UserManagementPage />} />
-      <Route path="/admin/roles" element={<RolesPage />} />
-      <Route path="/admin/permissions" element={<PermissionMatrixPage />} />
-
-      {/* Manager Shell Routes */}
-      <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
-      <Route path="/manager/attendance" element={<AttendancePage />} />
-      <Route path="/manager/production" element={<ProductionPage />} />
-      <Route path="/manager/inventory" element={<StoreInventoryPage />} />
-      <Route path="/manager/distribution" element={<DistributionPage />} />
-      <Route path="/manager/reports" element={<ReportsPage />} />
+      {/* RAM Store & Inventory Module Routes */}
+      <Route path="/store/dashboard" element={<StoreDashboardPage />} />
+      <Route path="/store/inventory" element={<InventoryListPage />} />
+      <Route path="/store/inventory/:id" element={<InventoryDetailPage />} />
+      <Route path="/store/stock-in" element={<StockInPage />} />
+      <Route path="/store/stock-out" element={<StockOutPage />} />
+      <Route path="/store/goods-received" element={<GoodsReceivedPage />} />
+      <Route path="/store/dispatch" element={<DispatchPage />} />
+      <Route path="/store/returns" element={<ReturnsPage />} />
+      <Route path="/store/damaged" element={<DamagedGoodsPage />} />
+      <Route path="/store/low-stock" element={<LowStockAlertsPage />} />
+      <Route path="/store/reports" element={<StoreReportsPage />} />
 
       {/* Shared Foundation Test Route */}
       <Route path="/foundation-test" element={<FoundationTestPage />} />

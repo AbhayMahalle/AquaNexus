@@ -75,7 +75,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         )}
       >
         <div className="flex items-center justify-between h-16 px-5 border-b border-[#1597D4]/20 bg-[#0C3C68]/40">
-          <Link to="/admin/dashboard" className="flex items-center gap-3 group">
+          <Link to="/store/dashboard" className="flex items-center gap-3 group">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-[#1597D4] to-[#22B8CF] text-white shadow-md group-hover:scale-105 transition-transform">
               <Droplets className="w-5 h-5 fill-white/20" />
             </div>

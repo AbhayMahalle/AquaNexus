@@ -37,13 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await loginApi(credentials);
       setUser(response.user);
       
-      if (response.user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (response.user.role === 'manager') {
-        navigate('/manager/dashboard');
-      } else {
-        navigate('/admin/dashboard');
-      }
+      navigate('/store/dashboard');
     } finally {
       setIsLoading(false);
     }

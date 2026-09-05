@@ -37,7 +37,7 @@ export function PageHeader({
     <div className={cn("mb-6 space-y-3 pb-4 border-b border-[#E2E8F0]", className)}>
       {breadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1.5 text-xs text-[#64748B]">
-          <Link to="/admin/dashboard" className="hover:text-[#0F4C81] transition-colors flex items-center gap-1">
+          <Link to="/store/dashboard" className="hover:text-[#0F4C81] transition-colors flex items-center gap-1">
             <Home className="w-3.5 h-3.5" />
             <span>Home</span>
           </Link>

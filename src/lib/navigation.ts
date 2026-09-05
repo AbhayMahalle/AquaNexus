@@ -6,16 +6,11 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
     sectionTitle: 'MAIN',
     items: [
       {
-        title: 'Admin Dashboard',
-        href: '/admin/dashboard',
+        title: 'Store Dashboard',
+        href: '/store/dashboard',
         iconName: 'LayoutDashboard',
-        roles: ['admin'],
-      },
-      {
-        title: 'Manager Dashboard',
-        href: '/manager/dashboard',
-        iconName: 'Activity',
-        roles: ['manager', 'admin'],
+        roles: ['admin', 'manager', 'store_manager'],
+        assignments: ['store'],
       },
       {
         title: 'Foundation Showcase',
@@ -28,73 +23,79 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
     ]
   },
   {
-    sectionTitle: 'ADMIN & SYSTEM',
+    sectionTitle: 'STORE & INVENTORY',
     items: [
       {
-        title: 'User Management',
-        href: '/admin/users',
-        iconName: 'Users',
-        roles: ['admin'],
+        title: 'Store Dashboard',
+        href: '/store/dashboard',
+        iconName: 'LayoutDashboard',
+        roles: ['admin', 'manager', 'store_manager'],
+        assignments: ['store'],
       },
       {
-        title: 'Roles & Security',
-        href: '/admin/roles',
-        iconName: 'ShieldCheck',
-        roles: ['admin'],
-      },
-      {
-        title: 'Permission Matrix',
-        href: '/admin/permissions',
-        iconName: 'Lock',
-        roles: ['admin'],
-      }
-    ]
-  },
-  {
-    sectionTitle: 'OPERATIONS',
-    items: [
-      {
-        title: 'Attendance & HR',
-        href: '/manager/attendance',
-        iconName: 'CalendarCheck',
-        roles: ['admin', 'manager'],
-        assignments: ['hr', 'production'],
-      },
-      {
-        title: 'Production Line',
-        href: '/manager/production',
-        iconName: 'Factory',
-        roles: ['admin', 'manager', 'operator'],
-        assignments: ['production'],
-      },
-      {
-        title: 'Store & Inventory',
-        href: '/manager/inventory',
+        title: 'Inventory Catalog',
+        href: '/store/inventory',
         iconName: 'Package',
         roles: ['admin', 'manager', 'store_manager'],
         assignments: ['store', 'production'],
-        badge: 'RAM Module',
+        badge: '11 Routes',
         badgeVariant: 'secondary',
       },
       {
-        title: 'Distribution & Dispatch',
-        href: '/manager/distribution',
+        title: 'Stock Inward',
+        href: '/store/stock-in',
+        iconName: 'Package',
+        roles: ['admin', 'store_manager'],
+        assignments: ['store'],
+      },
+      {
+        title: 'Stock Outward',
+        href: '/store/stock-out',
+        iconName: 'Package',
+        roles: ['admin', 'store_manager'],
+        assignments: ['store'],
+      },
+      {
+        title: 'Goods Received (GRN)',
+        href: '/store/goods-received',
+        iconName: 'Package',
+        roles: ['admin', 'store_manager'],
+        assignments: ['store'],
+      },
+      {
+        title: 'Store Dispatch',
+        href: '/store/dispatch',
         iconName: 'Truck',
-        roles: ['admin', 'manager', 'distributor'],
-        assignments: ['distribution'],
+        roles: ['admin', 'store_manager'],
+        assignments: ['store'],
       },
       {
-        title: 'Financial & Sales',
-        href: '/admin/dashboard',
-        iconName: 'Receipt',
-        roles: ['admin', 'accountant'],
-        assignments: ['finance'],
+        title: 'Returns & Empty Jars',
+        href: '/store/returns',
+        iconName: 'Package',
+        roles: ['admin', 'store_manager'],
+        assignments: ['store'],
       },
       {
-        title: 'Reports & Analytics',
-        href: '/manager/reports',
+        title: 'Damaged & Scrap',
+        href: '/store/damaged',
+        iconName: 'Package',
+        roles: ['admin', 'store_manager'],
+        assignments: ['store'],
+      },
+      {
+        title: 'Low Stock Alerts',
+        href: '/store/low-stock',
+        iconName: 'Package',
+        roles: ['admin', 'manager', 'store_manager'],
+        assignments: ['store'],
+      },
+      {
+        title: 'Store Reports',
+        href: '/store/reports',
         iconName: 'BarChart3',
         roles: ['admin', 'manager', 'accountant', 'store_manager'],
+        assignments: ['store'],
       }
     ]
   }

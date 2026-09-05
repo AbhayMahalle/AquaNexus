@@ -19,7 +19,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
       if (!isAuthenticated) {
         navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`);
       } else if (allowedRoles && user && !allowedRoles.includes(user.role) && user.role !== 'admin') {
-        navigate('/admin/dashboard');
+        navigate('/store/dashboard');
       }
     }
   }, [isAuthenticated, isLoading, user, allowedRoles, navigate, location.pathname]);
