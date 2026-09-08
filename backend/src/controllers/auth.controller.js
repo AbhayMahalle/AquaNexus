@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/db");
 const { sendSuccess, sendError } = require("../utils/apiResponse");
+const { createAuditLog } = require("../services/audit.service");
 
 const login = async (req, res) => {
   try {
@@ -43,6 +44,10 @@ const login = async (req, res) => {
       return sendError(res, "Invalid credentials", 401);
     }
 
+    if (user.status !== "ACTIVE") {
+      return sendError(res, "User account is inactive or suspended", 403);
+    }
+
     const primaryRole = user.userRoles[0]?.role || null;
     if (!primaryRole) {
       return sendError(res, "User role not configured", 403);
@@ -56,6 +61,14 @@ const login = async (req, res) => {
 
     const { passwordHash: _, ...userWithoutPassword } = user;
     userWithoutPassword.role = primaryRole;
+
+    await createAuditLog({
+      userId: user.id,
+      action: "LOGIN",
+      entityType: "USER",
+      entityId: user.id,
+      ipAddress: req.ip,
+    });
 
     return sendSuccess(
       res,

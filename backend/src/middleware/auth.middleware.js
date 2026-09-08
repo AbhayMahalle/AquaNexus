@@ -40,6 +40,10 @@ const requireAuth = async (req, res, next) => {
       return sendError(res, "User not found", 401);
     }
 
+    if (user.status !== "ACTIVE") {
+      return sendError(res, "User account is inactive or suspended", 403);
+    }
+
     const primaryRole = user.userRoles[0]?.role || null;
 
     // Preserve req.user.role for the existing RBAC middleware while using
