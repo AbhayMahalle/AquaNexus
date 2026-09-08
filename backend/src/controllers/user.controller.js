@@ -33,6 +33,25 @@ const getUsers = async (req, res) => {
   }
 };
 
+const getUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: userInclude,
+    });
+
+    if (!user) {
+      return sendError(res, "User not found", 404);
+    }
+
+    return sendSuccess(res, { user: formatUser(user) }, "User retrieved successfully");
+  } catch (error) {
+    console.error("getUser error:", error);
+    return sendError(res, "Failed to retrieve user", 500);
+  }
+};
+
 const createUser = async (req, res) => {
   try {
     const { username, email, password, firstName, lastName, phone, roleId } =
@@ -85,9 +104,9 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, firstName, lastName, phone, roleId, password } =
+    const { username, email, firstName, lastName, phone, roleId, password, status } =
       req.body;
-    const data = { username, email, firstName, lastName, phone };
+    const data = { username, email, firstName, lastName, phone, status };
     Object.keys(data).forEach(
       (key) => data[key] === undefined && delete data[key],
     );
@@ -139,6 +158,7 @@ const updateUser = async (req, res) => {
 
 module.exports = {
   getUsers,
+  getUser,
   createUser,
   updateUser,
 };
