@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth.middleware');
 const { requirePermission } = require('../middleware/rbac.middleware');
+const { requireManagerArea } = require('../middleware/managerAccess.middleware');
 const {
   getProductions,
   getProductionById,
@@ -9,9 +10,12 @@ const {
   updateProductionStatus
 } = require('../controllers/production.controller');
 
-router.get('/', requireAuth, requirePermission('production.view'), getProductions);
-router.get('/:id', requireAuth, requirePermission('production.view'), getProductionById);
-router.post('/', requireAuth, requirePermission('production.create'), createProduction);
-router.patch('/:id', requireAuth, requirePermission('production.update'), updateProductionStatus);
+router.use(requireAuth);
+router.use(requireManagerArea('PRODUCTION'));
+
+router.get('/', requirePermission('production.view'), getProductions);
+router.get('/:id', requirePermission('production.view'), getProductionById);
+router.post('/', requirePermission('production.create'), createProduction);
+router.patch('/:id', requirePermission('production.update'), updateProductionStatus);
 
 module.exports = router;
