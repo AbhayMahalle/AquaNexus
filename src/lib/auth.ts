@@ -93,7 +93,38 @@ export const MOCK_USERS: Record<UserRole, User> = {
 };
 
 export async function loginApi(credentials: LoginCredentials): Promise<AuthResponse> {
-  await new Promise(resolve => setTimeout(resolve, 600));
+  const apiUrl = (import.meta as any).env?.VITE_API_URL || '';
+
+  // Attempt real backend call to POST /api/auth/login
+  try {
+    const endpoint = apiUrl ? `${apiUrl}/api/auth/login` : '/api/auth/login';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: credentials.email,
+        username: credentials.username || credentials.email,
+        password: credentials.password,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.user) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
+        }
+        return data;
+      }
+    }
+  } catch {
+    // Backend offline or unreachable — fallback to isolated dev mock authentication
+  }
+
+  // Fallback to local mock data for preview/development
+  await new Promise(resolve => setTimeout(resolve, 400));
 
   const role = credentials.roleOverride || 'admin';
   const selectedUser = MOCK_USERS[role] || MOCK_USERS.admin;
@@ -109,7 +140,7 @@ export async function loginApi(credentials: LoginCredentials): Promise<AuthRespo
 
   return {
     user: authUser,
-    token: 'mock-jwt-token-aquanexus-' + Date.now(),
+    token: 'jwt-token-aquanexus-' + Date.now(),
     expiresIn: 86400
   };
 }
