@@ -10,16 +10,16 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { formatCurrency, formatNumber } from '@/lib/utils';
-import { 
-  Factory, 
-  Package, 
-  TrendingUp, 
-  Users, 
-  AlertTriangle, 
-  Plus, 
-  Download, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Factory,
+  Package,
+  TrendingUp,
+  Users,
+  AlertTriangle,
+  Plus,
+  Download,
+  CheckCircle2,
+  Clock,
   ArrowUpRight,
   ShieldCheck
 } from 'lucide-react';
@@ -46,14 +46,14 @@ export default function AdminDashboardPage() {
   const [newBatchNo, setNewBatchNo] = useState('BATCH-2026-092');
 
   const productionColumns: Column<ProductionBatch>[] = [
-    { key: 'batchNo', header: 'Batch No', render: (r) => <span className="font-bold text-[#0F4C81]">{r.batchNo}</span> },
-    { key: 'item', header: 'Product Item' },
+    { key: 'batchNo', header: 'Batch No', render: (r) => <span className="font-mono font-bold text-[#F97316] text-xs">{r.batchNo}</span> },
+    { key: 'item', header: 'Product Item', render: (r) => <span className="font-medium text-[#222222]">{r.item}</span> },
     { key: 'quantity', header: 'Quantity', render: (r) => `${formatNumber(r.quantity)} ${r.unit}` },
-    { key: 'operator', header: 'Line Operator' },
-    { key: 'time', header: 'Timestamp' },
-    { 
-      key: 'status', 
-      header: 'Status', 
+    { key: 'operator', header: 'Line Operator', render: (r) => <span className="text-[#666666]">{r.operator}</span> },
+    { key: 'time', header: 'Timestamp', render: (r) => <span className="text-[#666666]">{r.time}</span> },
+    {
+      key: 'status',
+      header: 'Status',
       render: (r) => {
         const variants: Record<string, 'success' | 'warning' | 'info'> = {
           completed: 'success',
@@ -61,7 +61,7 @@ export default function AdminDashboardPage() {
           scheduled: 'info',
         };
         return <Badge variant={variants[r.status]}>{r.status.replace('_', ' ').toUpperCase()}</Badge>;
-      } 
+      }
     },
   ];
 
@@ -81,37 +81,38 @@ export default function AdminDashboardPage() {
             {
               label: 'Export ERP Report',
               icon: <Download className="w-4 h-4" />,
-              onClick: () => alert('Generating Phase 1 ERP Report...'),
+              onClick: () => alert('Generating ERP Summary Report...'),
             }
           ]}
         />
 
+        {/* Top KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card variant="interactive" className="border-l-4 border-l-[#0F4C81]">
+          <Card variant="interactive" className="border-l-4 border-l-[#F97316]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Today's Production</p>
-                <h3 className="text-2xl font-extrabold text-[#172033] mt-1">48,500 <span className="text-sm font-medium text-[#64748B]">Liters</span></h3>
+                <p className="text-xs font-bold text-[#666666] uppercase tracking-wider">Today's Production</p>
+                <h3 className="text-2xl font-extrabold text-[#222222] mt-1">48,500 <span className="text-xs font-medium text-[#666666]">Liters</span></h3>
                 <p className="text-xs text-[#16A34A] font-semibold mt-1 flex items-center gap-1">
                   <ArrowUpRight className="w-3.5 h-3.5" /> +12.4% vs yesterday
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-[#0F4C81]/10 text-[#0F4C81]">
+              <div className="p-3 rounded-xl bg-[#FFF7ED] text-[#F97316]">
                 <Factory className="w-6 h-6" />
               </div>
             </div>
           </Card>
 
-          <Card variant="interactive" className="border-l-4 border-l-[#1597D4]">
+          <Card variant="interactive" className="border-l-4 border-l-[#666666]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Store Stock (RAM)</p>
-                <h3 className="text-2xl font-extrabold text-[#172033] mt-1">14,250 <span className="text-sm font-medium text-[#64748B]">Jars</span></h3>
+                <p className="text-xs font-bold text-[#666666] uppercase tracking-wider">Finished Stock</p>
+                <h3 className="text-2xl font-extrabold text-[#222222] mt-1">14,250 <span className="text-xs font-medium text-[#666666]">Jars</span></h3>
                 <p className="text-xs text-[#16A34A] font-semibold mt-1 flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Stock level optimal
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-[#1597D4]/10 text-[#1597D4]">
+              <div className="p-3 rounded-xl bg-[#F5F5F5] text-[#666666]">
                 <Package className="w-6 h-6" />
               </div>
             </div>
@@ -120,26 +121,26 @@ export default function AdminDashboardPage() {
           <Card variant="interactive" className="border-l-4 border-l-[#16A34A]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Daily Sales Revenue</p>
-                <h3 className="text-2xl font-extrabold text-[#172033] mt-1">{formatCurrency(184500)}</h3>
+                <p className="text-xs font-bold text-[#666666] uppercase tracking-wider">Daily Sales Revenue</p>
+                <h3 className="text-2xl font-extrabold text-[#222222] mt-1">{formatCurrency(184500)}</h3>
                 <p className="text-xs text-[#16A34A] font-semibold mt-1 flex items-center gap-1">
                   <ArrowUpRight className="w-3.5 h-3.5" /> +8.5% this week
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-[#16A34A]/10 text-[#16A34A]">
+              <div className="p-3 rounded-xl bg-[#F0FDF4] text-[#16A34A]">
                 <TrendingUp className="w-6 h-6" />
               </div>
             </div>
           </Card>
 
-          <Card variant="interactive" className="border-l-4 border-l-[#22B8CF]">
+          <Card variant="interactive" className="border-l-4 border-l-[#F59E0B]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Active Staff (Niranjan)</p>
-                <h3 className="text-2xl font-extrabold text-[#172033] mt-1">42 / 45</h3>
-                <p className="text-xs text-[#64748B] font-medium mt-1">Shift 1 active</p>
+                <p className="text-xs font-bold text-[#666666] uppercase tracking-wider">Active Staff</p>
+                <h3 className="text-2xl font-extrabold text-[#222222] mt-1">42 / 45</h3>
+                <p className="text-xs text-[#666666] font-medium mt-1">Shift 1 active</p>
               </div>
-              <div className="p-3 rounded-xl bg-[#22B8CF]/10 text-[#22B8CF]">
+              <div className="p-3 rounded-xl bg-[#FFFBEB] text-[#D97706]">
                 <Users className="w-6 h-6" />
               </div>
             </div>
@@ -165,28 +166,28 @@ export default function AdminDashboardPage() {
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl border border-[#E2E8F0] bg-white shadow-xs">
+              <div className="p-4 rounded-xl border border-[#E5E5E5] bg-white shadow-xs">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-[#172033]">RAM Ready</span>
-                  <Badge variant="success">Shared UI Unblocked</Badge>
+                  <span className="text-xs font-bold text-[#222222]">Raw Water Reserve</span>
+                  <Badge variant="success">92% Capacity</Badge>
                 </div>
-                <p className="text-xs text-[#64748B]">Store & Inventory components imported from <code>@/components/ui</code></p>
+                <p className="text-xs text-[#666666]">Inflow steady at 120 LPM from Borewell #1 & #2</p>
               </div>
 
-              <div className="p-4 rounded-xl border border-[#E2E8F0] bg-white shadow-xs">
+              <div className="p-4 rounded-xl border border-[#E5E5E5] bg-white shadow-xs">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-[#172033]">NIRANJAN Ready</span>
-                  <Badge variant="success">HR & Ops Ready</Badge>
+                  <span className="text-xs font-bold text-[#222222]">UV & RO Filtration</span>
+                  <Badge variant="success">Purity 38 PPM</Badge>
                 </div>
-                <p className="text-xs text-[#64748B]">Employee & Attendance module shells configured</p>
+                <p className="text-xs text-[#666666]">Conductivity and pH within certified standards</p>
               </div>
 
-              <div className="p-4 rounded-xl border border-[#E2E8F0] bg-white shadow-xs">
+              <div className="p-4 rounded-xl border border-[#E5E5E5] bg-white shadow-xs">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-[#172033]">YASH Ready</span>
-                  <Badge variant="success">Finance Ready</Badge>
+                  <span className="text-xs font-bold text-[#222222]">Dispatch Queue</span>
+                  <Badge variant="primary">6 Pending</Badge>
                 </div>
-                <p className="text-xs text-[#64748B]">Distributor & Accountant layout routes linked</p>
+                <p className="text-xs text-[#666666]">Agency vehicle loading at Bay 1 & Bay 2</p>
               </div>
             </div>
           </div>
@@ -200,27 +201,27 @@ export default function AdminDashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="p-3 rounded-lg bg-[#FFFBEB] border border-[#F59E0B]/30 flex items-start gap-3">
+                <div className="p-3 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] flex items-start gap-3">
                   <span className="w-2 h-2 rounded-full bg-[#F59E0B] mt-1.5 shrink-0" />
                   <div>
                     <p className="text-xs font-bold text-[#D97706]">RO Membrane Filter Cleaning</p>
-                    <p className="text-[11px] text-[#64748B] mt-0.5">Scheduled for Line 2 at 06:00 PM</p>
+                    <p className="text-[11px] text-[#666666] mt-0.5">Scheduled for Line 2 at 06:00 PM</p>
                   </div>
                 </div>
 
-                <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#DC2626]/20 flex items-start gap-3">
+                <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] flex items-start gap-3">
                   <span className="w-2 h-2 rounded-full bg-[#DC2626] mt-1.5 shrink-0" />
                   <div>
                     <p className="text-xs font-bold text-[#DC2626]">Raw Water Tank 3 Level Low</p>
-                    <p className="text-[11px] text-[#64748B] mt-0.5">Capacity at 18%. Borewell pump activated.</p>
+                    <p className="text-[11px] text-[#666666] mt-0.5">Capacity at 18%. Borewell pump activated.</p>
                   </div>
                 </div>
 
-                <div className="p-3 rounded-lg bg-[#F0FDF4] border border-[#16A34A]/20 flex items-start gap-3">
+                <div className="p-3 rounded-lg bg-[#F0FDF4] border border-[#86EFAC] flex items-start gap-3">
                   <span className="w-2 h-2 rounded-full bg-[#16A34A] mt-1.5 shrink-0" />
                   <div>
                     <p className="text-xs font-bold text-[#16A34A]">Quality Lab Clearance Passed</p>
-                    <p className="text-[11px] text-[#64748B] mt-0.5">Batch BATCH-089 purity TDS: 42 ppm</p>
+                    <p className="text-[11px] text-[#666666] mt-0.5">Batch BATCH-089 purity TDS: 42 ppm</p>
                   </div>
                 </div>
               </CardContent>
@@ -229,15 +230,15 @@ export default function AdminDashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-[#0F4C81]" />
-                  <span>System Architecture</span>
+                  <ShieldCheck className="w-5 h-5 text-[#F97316]" />
+                  <span>Plant Security & Compliance</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="text-xs text-[#64748B] space-y-2">
-                <p>• Lead Developer: <strong>MRUDULA</strong></p>
-                <p>• Frontend Core: <strong>React.js + Vite + Tailwind</strong></p>
-                <p>• Design Palette: <strong>Aqua ERP Tokens</strong></p>
-                <p>• Shared UI: <strong>13 Reusable UI Components</strong></p>
+              <CardContent className="text-xs text-[#666666] space-y-2">
+                <p>• ISO 22000 Water Safety: <strong className="text-[#16A34A]">Compliant</strong></p>
+                <p>• BIS License Certification: <strong className="text-[#222222]">Active (CM/L-1234)</strong></p>
+                <p>• Daily Water Testing Log: <strong className="text-[#16A34A]">Verified</strong></p>
+                <p>• Plant Health & Safety: <strong className="text-[#222222]">100% Passed</strong></p>
               </CardContent>
             </Card>
           </div>

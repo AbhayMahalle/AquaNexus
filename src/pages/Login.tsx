@@ -44,26 +44,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-[#0F4C81] via-[#0C3C68] to-[#1597D4] p-4 sm:p-6">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white shadow-xl mb-3">
-          <Droplets className="w-9 h-9 text-[#22B8CF]" />
+    <div className="min-h-screen flex flex-col justify-center items-center bg-[#F8F8F8] p-4 sm:p-6">
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#FFF7ED] border border-[#FED7AA] text-[#F97316] shadow-xs mb-3">
+          <Droplets className="w-8 h-8 text-[#F97316] fill-[#F97316]/20" />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Aqua<span className="text-[#22B8CF]">Nexus</span> ERP
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#222222] tracking-tight">
+          Aqua<span className="text-[#F97316]">Nexus</span> ERP
         </h1>
-        <p className="text-sm text-white/80 mt-1 font-medium">
-          Water Plant Operations & Enterprise Management (React.js)
+        <p className="text-xs sm:text-sm text-[#666666] mt-1 font-medium">
+          Water Plant Operations & Enterprise Management
         </p>
       </div>
 
-      <Card className="w-full max-w-md bg-white/95 backdrop-blur-md shadow-2xl border-white/40">
-        <CardHeader className="border-b border-[#E2E8F0] pb-4">
-          <CardTitle className="text-xl font-bold text-[#172033] flex items-center gap-2">
+      <Card className="w-full max-w-md bg-white shadow-card border-[#E5E5E5] rounded-2xl">
+        <CardHeader className="border-b border-[#E5E5E5] pb-4">
+          <CardTitle className="text-lg sm:text-xl font-bold text-[#222222] flex items-center gap-2">
             <span>Sign In to Account</span>
           </CardTitle>
-          <CardDescription className="text-xs text-[#64748B]">
-            Enter your credentials or select a persona for Phase 1 testing
+          <CardDescription className="text-xs text-[#666666]">
+            Enter your employee credentials to access plant systems
           </CardDescription>
         </CardHeader>
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
             />
 
             <Select
-              label="Phase 1 Quick Role Selector (Dev Demo)"
+              label="Select User Role (Demo Persona)"
               value={roleOverride}
               onChange={(e) => {
                 const r = e.target.value as UserRole;
@@ -105,14 +105,14 @@ export default function LoginPage() {
                 setEmail(`${r}@aquanexus.com`);
               }}
               options={[
-                { label: '👑 Admin (Mrudula - System Lead)', value: 'admin' },
+                { label: '👑 Admin (System Lead)', value: 'admin' },
                 { label: '👔 Operations Manager', value: 'manager' },
-                { label: '📦 Store Manager (Ram)', value: 'store_manager' },
-                { label: '💼 Chief Accountant (Yash)', value: 'accountant' },
-                { label: '🚚 Distributor (Niranjan)', value: 'distributor' },
+                { label: '📦 Store & Inventory Manager', value: 'store_manager' },
+                { label: '💼 Chief Accountant', value: 'accountant' },
+                { label: '🚚 Distributor Agency', value: 'distributor' },
                 { label: '⚙️ Line Operator', value: 'operator' },
               ]}
-              helperText="Determines user permissions & navigation in demo mode"
+              helperText="Auto-populates credentials and role-specific permissions"
             />
           </CardContent>
 
@@ -128,17 +128,17 @@ export default function LoginPage() {
             </Button>
 
             <div className="w-full text-center pt-2">
-              <span className="text-[11px] text-[#64748B] flex items-center justify-center gap-1">
+              <span className="text-[11px] text-[#666666] flex items-center justify-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-                Contract Ready Endpoint: <code className="bg-[#F5F8FB] px-1 py-0.5 rounded text-[#0F4C81]">POST /api/auth/login</code>
+                AquaNexus Enterprise Security • Verified SSL
               </span>
             </div>
           </CardFooter>
         </form>
       </Card>
 
-      <p className="text-xs text-white/60 mt-6 text-center">
-        Water Plant ERP Foundation Phase 1 • Lead: Mrudula
+      <p className="text-xs text-[#999999] mt-6 text-center">
+        AquaNexus Water Plant ERP • Enterprise Platform
       </p>
     </div>
   );

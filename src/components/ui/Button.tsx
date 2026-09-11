@@ -24,15 +24,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   type = 'button',
   ...props
 }, ref) => {
-  const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none rounded-lg";
+  const baseStyles = "inline-flex items-center justify-center font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none rounded-lg";
   
   const variants = {
-    primary: "bg-[#0F4C81] hover:bg-[#0C3C68] text-white shadow-sm focus:ring-[#0F4C81] active:bg-[#0A3052]",
-    secondary: "bg-[#1597D4] hover:bg-[#117EB2] text-white shadow-sm focus:ring-[#1597D4] active:bg-[#0F6F9D]",
-    accent: "bg-[#22B8CF] hover:bg-[#1BA0B5] text-white shadow-sm focus:ring-[#22B8CF]",
-    outline: "border border-[#E2E8F0] bg-white text-[#172033] hover:bg-[#F5F8FB] hover:border-[#CBD5E1] focus:ring-[#0F4C81]",
-    danger: "bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-sm focus:ring-[#DC2626]",
-    ghost: "text-[#64748B] hover:text-[#172033] hover:bg-[#F5F8FB] focus:ring-[#0F4C81]",
+    primary: "bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xs focus:ring-[#F97316] active:bg-[#C2410C]",
+    secondary: "bg-[#F5F5F5] hover:bg-[#EBEBEB] text-[#222222] border border-[#E5E5E5] focus:ring-[#666666] active:bg-[#E0E0E0]",
+    accent: "bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xs focus:ring-[#F97316]",
+    outline: "border border-[#E5E5E5] bg-white text-[#222222] hover:bg-[#F5F5F5] hover:border-[#D4D4D4] focus:ring-[#F97316]",
+    danger: "bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-xs focus:ring-[#DC2626]",
+    ghost: "text-[#666666] hover:text-[#222222] hover:bg-[#F5F5F5] focus:ring-[#E5E5E5]",
   };
 
   const sizes = {

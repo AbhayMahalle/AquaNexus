@@ -3,7 +3,7 @@ import { NavSection } from '@/types/navigation';
 
 export const ALL_NAV_SECTIONS: NavSection[] = [
   {
-    sectionTitle: 'MAIN',
+    sectionTitle: 'OVERVIEW',
     items: [
       {
         title: 'Admin Dashboard',
@@ -16,14 +16,6 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
         href: '/manager/dashboard',
         iconName: 'Activity',
         roles: ['manager', 'admin'],
-      },
-      {
-        title: 'Foundation Showcase',
-        href: '/foundation-test',
-        iconName: 'Layers',
-        roles: ['admin', 'manager', 'store_manager', 'accountant', 'distributor', 'operator'],
-        badge: 'UI Test',
-        badgeVariant: 'primary',
       }
     ]
   },
@@ -73,8 +65,6 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
         iconName: 'Package',
         roles: ['admin', 'manager', 'store_manager'],
         assignments: ['store', 'production'],
-        badge: 'RAM Module',
-        badgeVariant: 'secondary',
       },
       {
         title: 'Distribution & Dispatch',

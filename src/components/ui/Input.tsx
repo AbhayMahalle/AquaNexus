@@ -29,7 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
       {label && (
         <label 
           htmlFor={inputId} 
-          className="block text-xs font-semibold text-[#172033] uppercase tracking-wider"
+          className="block text-xs font-semibold text-[#222222] uppercase tracking-wider"
         >
           {label}
           {required && <span className="text-[#DC2626] ml-1">*</span>}
@@ -37,7 +37,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
       )}
       <div className="relative flex items-center">
         {leftIcon && (
-          <div className="absolute left-3 text-[#64748B] pointer-events-none flex items-center">
+          <div className="absolute left-3 text-[#666666] pointer-events-none flex items-center">
             {leftIcon}
           </div>
         )}
@@ -46,18 +46,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           id={inputId}
           disabled={disabled}
           className={cn(
-            "w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-[#172033] placeholder-[#94A3B8] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:bg-[#F8FAFC] disabled:text-[#94A3B8] disabled:cursor-not-allowed",
+            "w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-[#222222] placeholder-[#999999] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:bg-[#F5F5F5] disabled:text-[#999999] disabled:cursor-not-allowed",
             leftIcon ? "pl-10" : "pl-3.5",
             rightIcon ? "pr-10" : "pr-3.5",
             error 
               ? "border-[#DC2626] focus:border-[#DC2626] focus:ring-[#DC2626]/20" 
-              : "border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#0F4C81] focus:ring-[#0F4C81]/20",
+              : "border-[#E5E5E5] hover:border-[#D4D4D4] focus:border-[#F97316] focus:ring-[#F97316]/20",
             className
           )}
           {...props}
         />
         {rightIcon && (
-          <div className="absolute right-3 text-[#64748B] flex items-center">
+          <div className="absolute right-3 text-[#666666] flex items-center">
             {rightIcon}
           </div>
         )}
@@ -65,7 +65,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
       {error ? (
         <p className="text-xs text-[#DC2626] font-medium">{error}</p>
       ) : helperText ? (
-        <p className="text-xs text-[#64748B]">{helperText}</p>
+        <p className="text-xs text-[#666666]">{helperText}</p>
       ) : null}
     </div>
   );

@@ -5,15 +5,17 @@
 @tailwind utilities;
 
 :root {
-  --primary: #0F4C81;
-  --secondary: #1597D4;
-  --accent: #22B8CF;
-  --background: #F5F8FB;
+  --primary: #F97316;
+  --primary-hover: #EA580C;
+  --primary-light: #FFF7ED;
+  --secondary: #666666;
+  --accent: #F97316;
+  --background: #F8F8F8;
   --surface: #FFFFFF;
-  --foreground: #172033;
-  --foreground-secondary: #64748B;
-  --muted: #94A3B8;
-  --border: #E2E8F0;
+  --foreground: #222222;
+  --foreground-secondary: #666666;
+  --muted: #999999;
+  --border: #E5E5E5;
   --success: #16A34A;
   --warning: #F59E0B;
   --danger: #DC2626;
@@ -22,6 +24,17 @@
 
 * {
   box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -41,14 +54,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: #F5F5F5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #D4D4D4;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #999999;
 }

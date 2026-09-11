@@ -51,17 +51,17 @@ const INITIAL_ROLES: RoleConfig[] = [
     permissions: ['production.view', 'production.manage', 'inventory.view', 'inventory.manage', 'reports.view', 'attendance.view', 'attendance.manage'],
   },
   {
-    title: 'Store Manager (RAM)', code: 'store_manager', users: 3, badge: 'success',
+    title: 'Store Manager', code: 'store_manager', users: 3, badge: 'success',
     desc: 'Stock entry, raw material tracking, purchase requisitions',
     permissions: ['inventory.view', 'inventory.manage', 'reports.view'],
   },
   {
-    title: 'Chief Accountant (YASH)', code: 'accountant', users: 4, badge: 'info',
+    title: 'Chief Accountant', code: 'accountant', users: 4, badge: 'info',
     desc: 'Billing, sales ledgers, distributor payments, financial reports',
     permissions: ['finance.view', 'finance.manage', 'sales.view', 'reports.view'],
   },
   {
-    title: 'Distributor (NIRANJAN)', code: 'distributor', users: 18, badge: 'warning',
+    title: 'Distributor Agency', code: 'distributor', users: 18, badge: 'warning',
     desc: 'Agency ordering, jar deliveries, collection updates',
     permissions: ['sales.view', 'sales.manage', 'reports.view'],
   },
@@ -133,7 +133,7 @@ export default function RolesPage() {
     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
       {Object.entries(permissionGroups).map(([group, perms]) => (
         <div key={group}>
-          <h4 className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-2">{group}</h4>
+          <h4 className="text-xs font-bold text-[#666666] uppercase tracking-wider mb-2">{group}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {perms.map((perm) => {
               const isEnabled = selectedPerms.includes(perm.key);
@@ -144,11 +144,11 @@ export default function RolesPage() {
                   onClick={() => togglePermission(perm.key, selectedPerms, setter)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
                     isEnabled
-                      ? 'bg-[#0F4C81]/10 border-[#0F4C81]/30 text-[#0F4C81]'
-                      : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#CBD5E1]'
+                      ? 'bg-[#FFF7ED] border-[#FED7AA] text-[#EA580C]'
+                      : 'bg-white border-[#E5E5E5] text-[#666666] hover:border-[#D4D4D4]'
                   } ${isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
-                  {isEnabled ? <Check className="w-3.5 h-3.5 text-[#16A34A]" /> : <XIcon className="w-3.5 h-3.5 text-[#CBD5E1]" />}
+                  {isEnabled ? <Check className="w-3.5 h-3.5 text-[#16A34A]" /> : <XIcon className="w-3.5 h-3.5 text-[#D4D4D4]" />}
                   <span>{perm.label}</span>
                 </button>
               );
@@ -178,27 +178,27 @@ export default function RolesPage() {
             <Card key={role.code} variant="interactive">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <Badge variant={role.badge}>{role.title}</Badge>
-                <span className="text-xs font-semibold text-[#64748B] flex items-center gap-1">
+                <span className="text-xs font-semibold text-[#666666] flex items-center gap-1">
                   <Users className="w-3.5 h-3.5" />
                   {role.users} Active
                 </span>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-xs text-[#64748B] leading-relaxed">{role.desc}</p>
+                <p className="text-xs text-[#666666] leading-relaxed">{role.desc}</p>
                 <div className="flex flex-wrap gap-1">
                   {role.permissions.slice(0, 4).map(p => (
-                    <span key={p} className="px-2 py-0.5 text-[10px] font-mono bg-[#F5F8FB] text-[#0F4C81] rounded-md border border-[#E2E8F0]">
+                    <span key={p} className="px-2 py-0.5 text-[10px] font-mono bg-[#F8F8F8] text-[#222222] rounded-md border border-[#E5E5E5]">
                       {p}
                     </span>
                   ))}
                   {role.permissions.length > 4 && (
-                    <span className="px-2 py-0.5 text-[10px] font-semibold text-[#64748B] bg-[#F8FAFC] rounded-md border border-[#E2E8F0]">
+                    <span className="px-2 py-0.5 text-[10px] font-semibold text-[#666666] bg-[#F8F8F8] rounded-md border border-[#E5E5E5]">
                       +{role.permissions.length - 4} more
                     </span>
                   )}
                 </div>
-                <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
-                  <span className="text-[11px] font-mono text-[#0F4C81] font-bold">ROLE_{role.code.toUpperCase()}</span>
+                <div className="flex items-center justify-between pt-3 border-t border-[#E5E5E5]">
+                  <span className="text-[11px] font-mono text-[#F97316] font-bold">ROLE_{role.code.toUpperCase()}</span>
                   <Button variant="ghost" size="sm" leftIcon={<Edit className="w-3.5 h-3.5" />} onClick={() => openEditRights(role)}>
                     Edit Rights
                   </Button>
@@ -246,8 +246,8 @@ export default function RolesPage() {
           <div className="space-y-4">
             <Input label="Role Name" placeholder="e.g. Shift Supervisor" required value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} />
             <Input label="Description" placeholder="Brief description of this role's responsibilities" value={newRoleDesc} onChange={(e) => setNewRoleDesc(e.target.value)} />
-            <div className="border-t border-[#E2E8F0] pt-4">
-              <h4 className="text-xs font-bold text-[#172033] mb-3">Assign Permissions</h4>
+            <div className="border-t border-[#E5E5E5] pt-4">
+              <h4 className="text-xs font-bold text-[#222222] mb-3">Assign Permissions</h4>
               {renderPermissionGrid(newRolePerms, setNewRolePerms)}
             </div>
           </div>

@@ -34,35 +34,35 @@ export function PageHeader({
   className
 }: PageHeaderProps) {
   return (
-    <div className={cn("mb-6 space-y-3 pb-4 border-b border-[#E2E8F0]", className)}>
+    <div className={cn("mb-5 sm:mb-6 space-y-2.5 pb-4 border-b border-[#E5E5E5]", className)}>
       {breadcrumbs.length > 0 && (
-        <nav className="flex items-center gap-1.5 text-xs text-[#64748B]">
-          <Link to="/admin/dashboard" className="hover:text-[#0F4C81] transition-colors flex items-center gap-1">
+        <nav className="flex items-center gap-1.5 text-xs text-[#666666] flex-wrap">
+          <Link to="/admin/dashboard" className="hover:text-[#F97316] transition-colors flex items-center gap-1">
             <Home className="w-3.5 h-3.5" />
             <span>Home</span>
           </Link>
           {breadcrumbs.map((b, idx) => (
             <React.Fragment key={idx}>
-              <ChevronRight className="w-3.5 h-3.5 text-[#94A3B8]" />
+              <ChevronRight className="w-3.5 h-3.5 text-[#999999]" />
               {b.href ? (
-                <Link to={b.href} className="hover:text-[#0F4C81] transition-colors">
+                <Link to={b.href} className="hover:text-[#F97316] transition-colors">
                   {b.label}
                 </Link>
               ) : (
-                <span className="font-semibold text-[#172033]">{b.label}</span>
+                <span className="font-semibold text-[#222222]">{b.label}</span>
               )}
             </React.Fragment>
           ))}
         </nav>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172033] leading-snug">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#222222] leading-snug">
             {title}
           </h1>
           {description && (
-            <p className="mt-1 text-sm text-[#64748B] leading-relaxed">
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-[#666666] leading-relaxed">
               {description}
             </p>
           )}

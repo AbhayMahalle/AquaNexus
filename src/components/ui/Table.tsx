@@ -43,16 +43,16 @@ export function Table<T extends Record<string, any>>({
   };
 
   return (
-    <div className={cn("w-full overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white shadow-sm", className)}>
-      <table className="w-full text-left border-collapse">
+    <div className={cn("w-full overflow-x-auto rounded-xl border border-[#E5E5E5] bg-white shadow-xs", className)}>
+      <table className="w-full text-left border-collapse min-w-full">
         <thead>
-          <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+          <tr className="bg-[#F8F8F8] border-b border-[#E5E5E5]">
             {columns.map((col) => (
               <th
                 key={col.key}
                 style={{ width: col.width }}
                 className={cn(
-                  "px-4 py-3 text-xs font-bold uppercase tracking-wider text-[#64748B]",
+                  "px-4 py-3 text-xs font-bold uppercase tracking-wider text-[#666666] whitespace-nowrap align-middle",
                   getAlignmentClass(col.align),
                   col.className
                 )}
@@ -62,12 +62,12 @@ export function Table<T extends Record<string, any>>({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#E2E8F0] text-sm">
+        <tbody className="divide-y divide-[#E5E5E5] text-sm">
           {loading ? (
             Array.from({ length: 4 }).map((_, rIdx) => (
               <tr key={`skel-row-${rIdx}`} className="animate-pulse">
                 {columns.map((col) => (
-                  <td key={`skel-cell-${col.key}`} className="px-4 py-3.5">
+                  <td key={`skel-cell-${col.key}`} className="px-4 py-3.5 align-middle">
                     <Skeleton className="h-4 w-3/4 rounded" />
                   </td>
                 ))}
@@ -75,9 +75,9 @@ export function Table<T extends Record<string, any>>({
             ))
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="py-10 text-center">
+              <td colSpan={columns.length} className="py-10 text-center align-middle">
                 <EmptyState
-                  icon={<Inbox className="w-8 h-8 text-[#94A3B8]" />}
+                  icon={<Inbox className="w-8 h-8 text-[#999999]" />}
                   title={emptyText}
                   description={emptyDescription}
                 />
@@ -91,7 +91,7 @@ export function Table<T extends Record<string, any>>({
                   key={key}
                   onClick={() => onRowClick && onRowClick(row, rIdx)}
                   className={cn(
-                    "transition-colors hover:bg-[#F8FAFC]",
+                    "transition-colors hover:bg-[#F8F8F8]",
                     onRowClick && "cursor-pointer"
                   )}
                 >
@@ -99,7 +99,7 @@ export function Table<T extends Record<string, any>>({
                     <td
                       key={`${key}-${col.key}`}
                       className={cn(
-                        "px-4 py-3.5 text-[#172033]",
+                        "px-4 py-3.5 text-[#222222] align-middle whitespace-nowrap",
                         getAlignmentClass(col.align),
                         col.className
                       )}
@@ -118,21 +118,21 @@ export function Table<T extends Record<string, any>>({
 }
 
 export function TableHeader({ children, className }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn("bg-[#F8FAFC] border-b border-[#E2E8F0]", className)}>{children}</thead>;
+  return <thead className={cn("bg-[#F8F8F8] border-b border-[#E5E5E5]", className)}>{children}</thead>;
 }
 
 export function TableBody({ children, className }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn("divide-y divide-[#E2E8F0]", className)}>{children}</tbody>;
+  return <tbody className={cn("divide-y divide-[#E5E5E5]", className)}>{children}</tbody>;
 }
 
 export function TableRow({ children, className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn("transition-colors hover:bg-[#F8FAFC]", className)} {...props}>{children}</tr>;
+  return <tr className={cn("transition-colors hover:bg-[#F8F8F8]", className)} {...props}>{children}</tr>;
 }
 
 export function TableHead({ children, className }: React.ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("px-4 py-3 text-xs font-bold uppercase tracking-wider text-[#64748B] text-left", className)}>{children}</th>;
+  return <th className={cn("px-4 py-3 text-xs font-bold uppercase tracking-wider text-[#666666] text-left whitespace-nowrap align-middle", className)}>{children}</th>;
 }
 
 export function TableCell({ children, className }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-3.5 text-sm text-[#172033]", className)}>{children}</td>;
+  return <td className={cn("px-4 py-3.5 text-sm text-[#222222] align-middle whitespace-nowrap", className)}>{children}</td>;
 }

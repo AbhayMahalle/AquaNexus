@@ -212,15 +212,15 @@ export default function UserManagementPage() {
   };
 
   const columns: Column<UserRecord>[] = [
-    { key: 'name', header: 'Employee / User Name', render: (u) => <span className="font-bold text-[#172033]">{u.name}</span> },
-    { key: 'email', header: 'Email Address', render: (u) => <span className="text-[#64748B] flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" />{u.email}</span> },
+    { key: 'name', header: 'Employee', render: (u) => <span className="font-bold text-[#222222]">{u.name}</span> },
+    { key: 'email', header: 'Email Address', render: (u) => <span className="text-[#666666] flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-[#999999] shrink-0" />{u.email}</span> },
     {
       key: 'role',
-      header: 'Role',
+      header: 'System Role',
       render: (u) => <Badge variant={ROLE_VARIANTS[u.role]}>{u.role.replace('_', ' ').toUpperCase()}</Badge>
     },
-    { key: 'roleTitle', header: 'Title / Department' },
-    { key: 'plant', header: 'Plant Location' },
+    { key: 'roleTitle', header: 'Position / Department' },
+    { key: 'plant', header: 'Operating Unit' },
     {
       key: 'status',
       header: 'Status',
@@ -236,13 +236,13 @@ export default function UserManagementPage() {
       align: 'right',
       render: (u) => (
         <div className="flex items-center justify-end gap-1">
-          <button onClick={() => openView(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F4C81] hover:bg-[#F5F8FB] transition-colors" title="View Details">
+          <button onClick={() => openView(u)} className="p-1.5 rounded-lg text-[#666666] hover:text-[#222222] hover:bg-[#F5F5F5] transition-colors" title="View Details">
             <Eye className="w-4 h-4" />
           </button>
-          <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#1597D4] hover:bg-[#F5F8FB] transition-colors" title="Edit User">
+          <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-[#666666] hover:text-[#F97316] hover:bg-[#FFF7ED] transition-colors" title="Edit User">
             <Edit className="w-4 h-4" />
           </button>
-          <button onClick={() => openDelete(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors" title="Delete User">
+          <button onClick={() => openDelete(u)} className="p-1.5 rounded-lg text-[#666666] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors" title="Delete User">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -285,7 +285,7 @@ export default function UserManagementPage() {
         <Card className="mb-6">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Shield className="w-5 h-5 text-[#0F4C81]" />
+              <Shield className="w-5 h-5 text-[#F97316]" />
               <span>Registered System Users ({filteredUsers.length})</span>
             </CardTitle>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -294,10 +294,10 @@ export default function UserManagementPage() {
                   placeholder="Search user, role, email..."
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
-                  leftIcon={<Search className="w-4 h-4 text-[#94A3B8]" />}
+                  leftIcon={<Search className="w-4 h-4 text-[#999999]" />}
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap sm:flex-nowrap gap-2">
                 <Select
                   value={roleFilter}
                   onChange={handleRoleFilter}
@@ -389,24 +389,24 @@ export default function UserManagementPage() {
           description="Complete user profile information"
         >
           {selectedUser && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-                <div className="flex items-center justify-center w-14 h-14 rounded-full bg-[#0F4C81] text-white text-xl font-bold">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3.5 p-4 rounded-xl bg-[#F8F8F8] border border-[#E5E5E5]">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#F97316] text-white text-lg font-bold">
                   {selectedUser.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="text-base font-bold text-[#172033]">{selectedUser.name}</p>
-                  <p className="text-xs text-[#64748B]">{selectedUser.roleTitle}</p>
+                  <p className="text-base font-bold text-[#222222]">{selectedUser.name}</p>
+                  <p className="text-xs text-[#666666]">{selectedUser.roleTitle}</p>
                   <Badge variant={ROLE_VARIANTS[selectedUser.role]} size="sm" className="mt-1">{selectedUser.role.replace('_', ' ').toUpperCase()}</Badge>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-xs text-[#64748B] font-semibold">Email</p><p className="text-[#172033]">{selectedUser.email}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Phone</p><p className="text-[#172033]">{selectedUser.phone || '—'}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Plant</p><p className="text-[#172033]">{selectedUser.plant}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Status</p><Badge variant={selectedUser.status === 'active' ? 'success' : 'neutral'}>{selectedUser.status.toUpperCase()}</Badge></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Joined</p><p className="text-[#172033]">{selectedUser.joinDate || '—'}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">User ID</p><p className="text-[#172033] font-mono text-xs">{selectedUser.id}</p></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div><p className="text-xs text-[#666666] font-semibold">Email</p><p className="text-[#222222]">{selectedUser.email}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Phone</p><p className="text-[#222222]">{selectedUser.phone || '—'}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Plant</p><p className="text-[#222222]">{selectedUser.plant}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Status</p><Badge variant={selectedUser.status === 'active' ? 'success' : 'neutral'}>{selectedUser.status.toUpperCase()}</Badge></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Joined</p><p className="text-[#222222]">{selectedUser.joinDate || '—'}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">User ID</p><p className="text-[#222222] font-mono text-xs">{selectedUser.id}</p></div>
               </div>
             </div>
           )}

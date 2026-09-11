@@ -14,13 +14,13 @@ export function Skeleton({
     text: "h-4 w-full rounded",
     circle: "h-10 w-10 rounded-full shrink-0",
     rectangle: "h-12 w-full rounded-lg",
-    card: "h-32 w-full rounded-xl border border-[#E2E8F0]",
+    card: "h-32 w-full rounded-xl border border-[#E5E5E5]",
   };
 
   return (
     <div
       className={cn(
-        "animate-pulse bg-[#E2E8F0]/70",
+        "animate-pulse bg-[#E5E5E5]/60",
         variants[variant],
         className
       )}

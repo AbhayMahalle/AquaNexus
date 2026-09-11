@@ -51,16 +51,16 @@ export default function FoundationTestPage() {
 
   const columns: Column<TestRow>[] = [
     { key: 'id', header: '#', width: '50px' },
-    { key: 'component', header: 'Component Name', render: (r) => <span className="font-bold text-[#0F4C81]">{r.component}</span> },
+    { key: 'component', header: 'Component Name', render: (r) => <span className="font-bold text-[#F97316]">{r.component}</span> },
     { key: 'testStatus', header: 'Verification Status', render: (r) => <Badge variant="success" icon={<CheckCircle2 className="w-3 h-3" />}>{r.testStatus}</Badge> },
-    { key: 'importPath', header: 'Shared Import Path', render: (r) => <code className="bg-[#F5F8FB] px-2 py-1 rounded text-xs text-[#0F4C81] font-mono border border-[#E2E8F0]">{r.importPath}</code> },
+    { key: 'importPath', header: 'Shared Import Path', render: (r) => <code className="bg-[#F8F8F8] px-2 py-1 rounded text-xs text-[#F97316] font-mono border border-[#E5E5E5]">{r.importPath}</code> },
   ];
 
   return (
     <DashboardLayout>
       <PageHeader
-        title="React.js Migration — Shared Foundation Showcase"
-        description="Comprehensive interactive test for all 13 shared UI components, 4 layout components, design tokens, and role-aware navigation in React.js"
+        title="Enterprise UI Foundation Showcase"
+        description="Comprehensive verification for all shared UI components, layout components, design tokens, and role-aware navigation"
         breadcrumbs={[{ label: 'System' }, { label: 'Foundation Showcase' }]}
         primaryAction={{
           label: 'Test Modal Component',
@@ -69,17 +69,17 @@ export default function FoundationTestPage() {
         }}
       />
 
-      <Card variant="interactive" className="mb-6 bg-gradient-to-r from-[#F0F7FF] via-[#E8F5FC] to-white border-[#1597D4]/30">
+      <Card variant="interactive" className="mb-6 bg-white border-[#E5E5E5]">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-2">
           <div>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#16A34A] text-white text-xs font-bold mb-2">
-              <CheckCircle2 className="w-4 h-4" /> NEXT.JS → REACT.JS MIGRATION COMPLETE
+              <CheckCircle2 className="w-4 h-4" /> ENTERPRISE WHITE + GREY + ORANGE THEME ACTIVE
             </span>
-            <h3 className="text-lg font-extrabold text-[#0F4C81]">
-              React.js + Vite Shared Frontend Foundation Active
+            <h3 className="text-lg font-extrabold text-[#222222]">
+              Shared Frontend Foundation & Design Tokens
             </h3>
-            <p className="text-xs text-[#64748B] mt-1 max-w-2xl">
-              Other frontend developers (RAM, NIRANJAN, YASH) can continue working in React.js by importing components from <code>@/components/ui</code> and wrapping pages in <code>DashboardLayout</code>.
+            <p className="text-xs text-[#666666] mt-1 max-w-2xl">
+              All UI components use the centralized White + Grey + Orange design system tokens from <code>@/components/ui</code> and <code>DashboardLayout</code>.
             </p>
           </div>
           <Button variant="primary" onClick={() => setIsModalOpen(true)}>
@@ -92,7 +92,7 @@ export default function FoundationTestPage() {
         <Card>
           <CardHeader>
             <CardTitle>1 & 2. Button & Badge Reusable Variants</CardTitle>
-            <CardDescription>Primary #0F4C81, Secondary #1597D4, Accent #22B8CF design system palette</CardDescription>
+            <CardDescription>Primary #F97316, Secondary #F5F5F5, Neutral #E5E5E5 enterprise design palette</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
@@ -106,7 +106,7 @@ export default function FoundationTestPage() {
               <Button variant="outline" disabled>Disabled State</Button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-[#E2E8F0]">
+            <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-[#E5E5E5]">
               <Badge variant="primary">Primary Badge</Badge>
               <Badge variant="secondary">Secondary Badge</Badge>
               <Badge variant="success" icon={<CheckCircle2 className="w-3 h-3" />}>Success Badge</Badge>

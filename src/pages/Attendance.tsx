@@ -107,11 +107,11 @@ export default function AttendancePage() {
   };
 
   const columns: Column<AttendanceRow>[] = [
-    { key: 'name', header: 'Staff Name', render: (r) => <span className="font-bold text-[#172033]">{r.name}</span> },
-    { key: 'role', header: 'Designation' },
-    { key: 'shift', header: 'Assigned Shift' },
-    { key: 'checkIn', header: 'Check In' },
-    { key: 'checkOut', header: 'Check Out' },
+    { key: 'name', header: 'Staff Name', render: (r) => <span className="font-bold text-[#222222]">{r.name}</span> },
+    { key: 'role', header: 'Designation', render: (r) => <span className="text-[#666666]">{r.role}</span> },
+    { key: 'shift', header: 'Assigned Shift', render: (r) => <span className="text-[#666666]">{r.shift}</span> },
+    { key: 'checkIn', header: 'Check In', render: (r) => <span className="font-medium text-[#222222]">{r.checkIn}</span> },
+    { key: 'checkOut', header: 'Check Out', render: (r) => <span className="text-[#666666]">{r.checkOut}</span> },
     {
       key: 'status',
       header: 'Status',
@@ -146,23 +146,23 @@ export default function AttendancePage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-xs">
-            <p className="text-xs text-[#64748B] font-semibold">Total Staff</p>
-            <p className="text-xl font-bold text-[#172033]">{stats.total}</p>
+          <div className="p-3 rounded-xl bg-white border border-[#E5E5E5] shadow-xs">
+            <p className="text-xs text-[#666666] font-semibold">Total Staff</p>
+            <p className="text-xl font-bold text-[#222222]">{stats.total}</p>
           </div>
-          <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#16A34A]/20">
+          <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#86EFAC]/40">
             <p className="text-xs text-[#16A34A] font-semibold">Present</p>
             <p className="text-xl font-bold text-[#16A34A]">{stats.present}</p>
           </div>
-          <div className="p-3 rounded-xl bg-[#FFFBEB] border border-[#F59E0B]/20">
+          <div className="p-3 rounded-xl bg-[#FFFBEB] border border-[#FDE68A]/50">
             <p className="text-xs text-[#D97706] font-semibold">Late</p>
             <p className="text-xl font-bold text-[#D97706]">{stats.late}</p>
           </div>
-          <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#DC2626]/20">
+          <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA]/50">
             <p className="text-xs text-[#DC2626] font-semibold">Absent</p>
             <p className="text-xl font-bold text-[#DC2626]">{stats.absent}</p>
           </div>
-          <div className="p-3 rounded-xl bg-[#EFF6FF] border border-[#2563EB]/20">
+          <div className="p-3 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE]/50">
             <p className="text-xs text-[#2563EB] font-semibold">On Leave</p>
             <p className="text-xl font-bold text-[#2563EB]">{stats.leave}</p>
           </div>
@@ -171,11 +171,11 @@ export default function AttendancePage() {
         <Card>
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3">
             <CardTitle className="flex items-center gap-2">
-              <CalendarCheck className="w-5 h-5 text-[#0F4C81]" />
+              <CalendarCheck className="w-5 h-5 text-[#F97316]" />
               <span>Shift Attendance Register</span>
             </CardTitle>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Input placeholder="Search name or role..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} leftIcon={<Search className="w-4 h-4 text-[#94A3B8]" />} className="sm:!w-48" />
+              <Input placeholder="Search name or role..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} leftIcon={<Search className="w-4 h-4 text-[#999999]" />} className="sm:!w-48" />
               <Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
                 options={[{ label: 'All Status', value: '' }, { label: 'Present', value: 'present' }, { label: 'Late', value: 'late' }, { label: 'Absent', value: 'absent' }, { label: 'On Leave', value: 'leave' }]}
                 className="!w-32"

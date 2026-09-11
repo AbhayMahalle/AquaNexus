@@ -23,10 +23,10 @@ const MOCK_ORDERS: OrderRow[] = [
 
 export default function DistributionPage() {
   const columns: Column<OrderRow>[] = [
-    { key: 'orderNo', header: 'Dispatch Order', render: (r) => <span className="font-bold text-[#0F4C81]">{r.orderNo}</span> },
-    { key: 'agency', header: 'Distributor Agency' },
-    { key: 'route', header: 'Delivery Route' },
-    { key: 'qty', header: 'Quantity' },
+    { key: 'orderNo', header: 'Dispatch Order', render: (r) => <span className="font-mono font-bold text-[#F97316] text-xs">{r.orderNo}</span> },
+    { key: 'agency', header: 'Distributor Agency', render: (r) => <span className="font-bold text-[#222222]">{r.agency}</span> },
+    { key: 'route', header: 'Delivery Route', render: (r) => <span className="text-[#666666]">{r.route}</span> },
+    { key: 'qty', header: 'Quantity', render: (r) => <span className="font-medium text-[#222222]">{r.qty}</span> },
     { 
       key: 'status', 
       header: 'Status', 
@@ -52,7 +52,7 @@ export default function DistributionPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Truck className="w-5 h-5 text-[#22B8CF]" />
+              <Truck className="w-5 h-5 text-[#F97316]" />
               <span>Agency Dispatch Orders</span>
             </CardTitle>
           </CardHeader>

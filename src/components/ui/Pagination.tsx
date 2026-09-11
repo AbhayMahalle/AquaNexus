@@ -26,12 +26,12 @@ export function Pagination({
   const endItem = totalItems && itemsPerPage ? Math.min(currentPage * itemsPerPage, totalItems) : undefined;
 
   return (
-    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-4 py-3 border-t border-[#E2E8F0] px-2", className)}>
-      <div className="text-xs text-[#64748B]">
+    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-4 py-3 border-t border-[#E5E5E5] px-2", className)}>
+      <div className="text-xs text-[#666666]">
         {startItem && endItem && totalItems ? (
-          <span>Showing <strong className="text-[#172033] font-semibold">{startItem}</strong> to <strong className="text-[#172033] font-semibold">{endItem}</strong> of <strong className="text-[#172033] font-semibold">{totalItems}</strong> entries</span>
+          <span>Showing <strong className="text-[#222222] font-semibold">{startItem}</strong> to <strong className="text-[#222222] font-semibold">{endItem}</strong> of <strong className="text-[#222222] font-semibold">{totalItems}</strong> entries</span>
         ) : (
-          <span>Page <strong className="text-[#172033] font-semibold">{currentPage}</strong> of <strong className="text-[#172033] font-semibold">{totalPages}</strong></span>
+          <span>Page <strong className="text-[#222222] font-semibold">{currentPage}</strong> of <strong className="text-[#222222] font-semibold">{totalPages}</strong></span>
         )}
       </div>
 
@@ -62,8 +62,8 @@ export function Pagination({
                   className={cn(
                     "h-8 min-w-8 px-2 rounded-lg text-xs font-semibold transition-colors",
                     page === currentPage
-                      ? "bg-[#0F4C81] text-white shadow-xs"
-                      : "text-[#64748B] hover:bg-[#F5F8FB] hover:text-[#172033]"
+                      ? "bg-[#F97316] text-white shadow-xs"
+                      : "text-[#666666] hover:bg-[#F5F5F5] hover:text-[#222222]"
                   )}
                 >
                   {page}
@@ -74,7 +74,7 @@ export function Pagination({
               (page === 2 && currentPage > 3) ||
               (page === totalPages - 1 && currentPage < totalPages - 2)
             ) {
-              return <span key={page} className="text-[#94A3B8] text-xs px-1">...</span>;
+              return <span key={page} className="text-[#999999] text-xs px-1">...</span>;
             }
             return null;
           })}

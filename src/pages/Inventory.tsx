@@ -27,11 +27,11 @@ const MOCK_STOCK: ItemRow[] = [
 
 export default function StoreInventoryPage() {
   const columns: Column<ItemRow>[] = [
-    { key: 'sku', header: 'SKU Code', render: (r) => <span className="font-mono font-bold text-[#0F4C81] text-xs">{r.sku}</span> },
-    { key: 'name', header: 'Material / Item Name', render: (r) => <span className="font-bold text-[#172033]">{r.name}</span> },
-    { key: 'category', header: 'Category' },
-    { key: 'stock', header: 'In Stock', render: (r) => `${r.stock.toLocaleString()} ${r.unit}` },
-    { key: 'minLevel', header: 'Min Threshold' },
+    { key: 'sku', header: 'SKU Code', render: (r) => <span className="font-mono font-bold text-[#F97316] text-xs">{r.sku}</span> },
+    { key: 'name', header: 'Material / Item Name', render: (r) => <span className="font-bold text-[#222222]">{r.name}</span> },
+    { key: 'category', header: 'Category', render: (r) => <span className="text-[#666666]">{r.category}</span> },
+    { key: 'stock', header: 'In Stock', render: (r) => <span className="font-medium text-[#222222]">{r.stock.toLocaleString()} {r.unit}</span> },
+    { key: 'minLevel', header: 'Min Threshold', render: (r) => <span className="text-[#666666]">{r.minLevel.toLocaleString()} {r.unit}</span> },
     { 
       key: 'status', 
       header: 'Stock Status', 
@@ -50,22 +50,22 @@ export default function StoreInventoryPage() {
     <AuthGuard allowedRoles={['manager', 'admin', 'store_manager']}>
       <DashboardLayout>
         <PageHeader
-          title="Store & Inventory Shell (RAM)"
-          description="Shared UI foundation ready for RAM to implement detailed Store logic"
+          title="Store & Inventory Management"
+          description="Raw material inventory, preform stock levels, and finished product quantities"
           breadcrumbs={[{ label: 'Store' }, { label: 'Inventory' }]}
           primaryAction={{
             label: 'Stock Requisition',
             icon: <Plus className="w-4 h-4" />,
-            onClick: () => alert('Stock Entry Modal...'),
+            onClick: () => alert('Stock Requisition modal opened'),
           }}
         />
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-[#1597D4]" />
+              <Package className="w-5 h-5 text-[#F97316]" />
               <span>Plant Raw Materials & Finished Goods</span>
             </CardTitle>
-            <Badge variant="secondary">RAM Developer Base</Badge>
+            <Badge variant="primary">Real-time Stock</Badge>
           </CardHeader>
           <CardContent className="p-0">
             <Table columns={columns} data={MOCK_STOCK} />

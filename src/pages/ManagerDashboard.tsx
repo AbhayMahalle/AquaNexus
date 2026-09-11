@@ -37,18 +37,18 @@ export default function ManagerDashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           {assignments.includes('production') && (
-            <Card variant="interactive" className="border-t-4 border-t-[#0F4C81]">
+            <Card variant="interactive" className="border-t-4 border-t-[#F97316]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Factory className="w-5 h-5 text-[#0F4C81]" />
+                  <Factory className="w-5 h-5 text-[#F97316]" />
                   <span>Production Line</span>
                 </CardTitle>
                 <Badge variant="primary">Active</Badge>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-2xl font-bold text-[#172033]">48,500 L</p>
-                  <p className="text-xs text-[#64748B]">Bottling target 85% achieved</p>
+                  <p className="text-2xl font-bold text-[#222222]">48,500 L</p>
+                  <p className="text-xs text-[#666666]">Bottling target 85% achieved</p>
                 </div>
                 <div className="flex gap-2">
                   <Link to="/manager/production" className="w-full">
@@ -60,18 +60,18 @@ export default function ManagerDashboardPage() {
           )}
 
           {assignments.includes('store') && (
-            <Card variant="interactive" className="border-t-4 border-t-[#1597D4]">
+            <Card variant="interactive" className="border-t-4 border-t-[#666666]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Package className="w-5 h-5 text-[#1597D4]" />
-                  <span>Store & Inventory (RAM)</span>
+                  <Package className="w-5 h-5 text-[#666666]" />
+                  <span>Store & Inventory</span>
                 </CardTitle>
-                <Badge variant="secondary">RAM Module</Badge>
+                <Badge variant="secondary">Optimal</Badge>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-2xl font-bold text-[#172033]">14,250 Jars</p>
-                  <p className="text-xs text-[#64748B]">Caps, Preforms, Label stock normal</p>
+                  <p className="text-2xl font-bold text-[#222222]">14,250 Jars</p>
+                  <p className="text-xs text-[#666666]">Caps, Preforms, Label stock normal</p>
                 </div>
                 <div className="flex gap-2">
                   <Link to="/manager/inventory" className="w-full">
@@ -83,18 +83,18 @@ export default function ManagerDashboardPage() {
           )}
 
           {assignments.includes('distribution') && (
-            <Card variant="interactive" className="border-t-4 border-t-[#22B8CF]">
+            <Card variant="interactive" className="border-t-4 border-t-[#16A34A]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Truck className="w-5 h-5 text-[#22B8CF]" />
+                  <Truck className="w-5 h-5 text-[#16A34A]" />
                   <span>Distribution & Dispatch</span>
                 </CardTitle>
-                <Badge variant="info">12 Dispatched</Badge>
+                <Badge variant="success">12 Dispatched</Badge>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-2xl font-bold text-[#172033]">18 Orders</p>
-                  <p className="text-xs text-[#64748B]">6 Pending loading vehicles</p>
+                  <p className="text-2xl font-bold text-[#222222]">18 Orders</p>
+                  <p className="text-xs text-[#666666]">6 Pending loading vehicles</p>
                 </div>
                 <div className="flex gap-2">
                   <Link to="/manager/distribution" className="w-full">
@@ -109,36 +109,36 @@ export default function ManagerDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-[#0F4C81]" />
-              <span>Phase 1 Frontend Foundation Teammates Status (React.js)</span>
+              <Layers className="w-5 h-5 text-[#F97316]" />
+              <span>Shift Operations & Station Readiness</span>
             </CardTitle>
             <CardDescription>
-              All shared components ready for parallel team development
+              Real-time operational status across plant departments
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-              <h4 className="font-bold text-sm text-[#172033] flex items-center gap-2">
+            <div className="p-4 rounded-xl bg-[#F8F8F8] border border-[#E5E5E5]">
+              <h4 className="font-bold text-sm text-[#222222] flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-                <span>RAM (Store Lead)</span>
+                <span>Raw Materials & Store</span>
               </h4>
-              <p className="text-xs text-[#64748B] mt-1">UNBLOCKED. Can import Button, Card, Table, Badge, Modal directly from `@/components/ui`.</p>
+              <p className="text-xs text-[#666666] mt-1">Sufficient cap stock and preforms loaded for ongoing shift operations.</p>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-              <h4 className="font-bold text-sm text-[#172033] flex items-center gap-2">
+            <div className="p-4 rounded-xl bg-[#F8F8F8] border border-[#E5E5E5]">
+              <h4 className="font-bold text-sm text-[#222222] flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-                <span>NIRANJAN (HR & Ops Lead)</span>
+                <span>Line Personnel & Attendance</span>
               </h4>
-              <p className="text-xs text-[#64748B] mt-1">UNBLOCKED. Attendance, Leave, Overtime, Production shells ready.</p>
+              <p className="text-xs text-[#666666] mt-1">Shift 1 fully staffed. 42 technicians and operators on active stations.</p>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
-              <h4 className="font-bold text-sm text-[#172033] flex items-center gap-2">
+            <div className="p-4 rounded-xl bg-[#F8F8F8] border border-[#E5E5E5]">
+              <h4 className="font-bold text-sm text-[#222222] flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-                <span>YASH (Finance Lead)</span>
+                <span>Logistics & Route Dispatch</span>
               </h4>
-              <p className="text-xs text-[#64748B] mt-1">UNBLOCKED. Distributor & Accountant navigation, types, layout bound.</p>
+              <p className="text-xs text-[#666666] mt-1">Delivery vehicles dispatched for Kothrud, Hadapsar, and Viman Nagar routes.</p>
             </div>
           </CardContent>
         </Card>

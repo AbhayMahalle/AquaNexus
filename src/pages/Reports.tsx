@@ -8,10 +8,10 @@ import { Download, FileText } from 'lucide-react';
 
 export default function ReportsPage() {
   const reports = [
-    { title: 'Daily Production & Yield Report', desc: 'Detailed breakdown of purified water liters produced per shift and line loss', date: 'Today' },
-    { title: 'Stock & Inventory Ledger (RAM)', desc: 'Caps, bottles, preforms, and finished jar inventory levels with reorder flags', date: 'Today' },
-    { title: 'Distributor Sales Summary (YASH)', desc: 'Agency dispatch counts, billing totals, and outstanding collections', date: 'This Month' },
-    { title: 'Shift Attendance & Overtime (NIRANJAN)', desc: 'Worker attendance records, shift hours, and overtime calculations', date: 'This Week' },
+    { title: 'Daily Production & Yield Report', desc: 'Detailed breakdown of purified water liters produced per shift and line efficiency', date: 'Today' },
+    { title: 'Stock & Inventory Ledger', desc: 'Caps, bottles, preforms, and finished jar inventory levels with reorder thresholds', date: 'Today' },
+    { title: 'Distributor Sales Summary', desc: 'Agency dispatch counts, billing totals, and outstanding collections', date: 'This Month' },
+    { title: 'Shift Attendance & Overtime Log', desc: 'Worker attendance records, shift hours, and overtime calculations', date: 'This Week' },
   ];
 
   return (
@@ -27,13 +27,13 @@ export default function ReportsPage() {
             <Card key={idx} variant="interactive">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-[#0F4C81]" />
+                  <FileText className="w-5 h-5 text-[#F97316]" />
                   <span>{rep.title}</span>
                 </CardTitle>
-                <span className="text-xs text-[#64748B]">{rep.date}</span>
+                <span className="text-xs text-[#666666]">{rep.date}</span>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-xs text-[#64748B] leading-relaxed">{rep.desc}</p>
+                <p className="text-xs text-[#666666] leading-relaxed">{rep.desc}</p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
                     Download CSV

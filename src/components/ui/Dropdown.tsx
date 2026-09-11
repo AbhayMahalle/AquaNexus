@@ -46,14 +46,14 @@ export function Dropdown({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-50 mt-2 w-56 rounded-xl border border-[#E2E8F0] bg-white p-1.5 shadow-dropdown animate-in fade-in zoom-in-95 duration-150",
+            "absolute z-50 mt-2 w-56 rounded-xl border border-[#E5E5E5] bg-white p-1.5 shadow-dropdown animate-in fade-in zoom-in-95 duration-150",
             align === 'right' ? "right-0 origin-top-right" : "left-0 origin-top-left",
             className
           )}
         >
           {items.map((item, idx) => {
             if (item.divider) {
-              return <div key={`div-${idx}`} className="my-1 border-t border-[#E2E8F0]" />;
+              return <div key={`div-${idx}`} className="my-1 border-t border-[#E5E5E5]" />;
             }
 
             return (
@@ -68,8 +68,8 @@ export function Dropdown({
                   "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors text-left select-none",
                   item.danger
                     ? "text-[#DC2626] hover:bg-[#FEF2F2]"
-                    : "text-[#172033] hover:bg-[#F5F8FB] hover:text-[#0F4C81]",
-                  item.disabled && "opacity-50 cursor-not-allowed"
+                    : "text-[#222222] hover:bg-[#F5F5F5] hover:text-[#EA580C]",
+                  item.disabled && "opacity-50 cursor-not-allowed text-[#999999]"
                 )}
               >
                 {item.icon && <span className="w-4 h-4 shrink-0">{item.icon}</span>}

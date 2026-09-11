@@ -108,14 +108,16 @@ export default function ProductionPage() {
   };
 
   const columns: Column<ProductionRow>[] = [
-    { key: 'batchNo', header: 'Batch', render: (r) => <span className="font-mono text-xs font-bold text-[#0F4C81]">{r.batchNo}</span> },
-    { key: 'line', header: 'Production Line', render: (r) => <span className="font-bold text-[#172033]">{r.line}</span> },
-    { key: 'item', header: 'Output Product' },
-    { key: 'target', header: 'Target', render: (r) => r.target.toLocaleString() },
-    { key: 'produced', header: 'Actual', render: (r) => r.produced.toLocaleString() },
-    { key: 'efficiency', header: 'Efficiency', render: (r) => (
-      <span className={`font-semibold ${parseInt(r.efficiency) >= 80 ? 'text-[#16A34A]' : parseInt(r.efficiency) >= 50 ? 'text-[#F59E0B]' : 'text-[#DC2626]'}`}>{r.efficiency}</span>
-    ) },
+    { key: 'batchNo', header: 'Batch', render: (r) => <span className="font-mono text-xs font-bold text-[#F97316]">{r.batchNo}</span> },
+    { key: 'line', header: 'Production Line', render: (r) => <span className="font-bold text-[#222222]">{r.line}</span> },
+    { key: 'item', header: 'Output Product', render: (r) => <span className="text-[#666666]">{r.item}</span> },
+    { key: 'target', header: 'Target', render: (r) => <span className="text-[#222222]">{r.target.toLocaleString()}</span> },
+    { key: 'produced', header: 'Actual', render: (r) => <span className="font-medium text-[#222222]">{r.produced.toLocaleString()}</span> },
+    {
+      key: 'efficiency', header: 'Efficiency', render: (r) => (
+        <span className={`font-semibold ${parseInt(r.efficiency) >= 80 ? 'text-[#16A34A]' : parseInt(r.efficiency) >= 50 ? 'text-[#F59E0B]' : 'text-[#DC2626]'}`}>{r.efficiency}</span>
+      )
+    },
     {
       key: 'status',
       header: 'Status',
@@ -127,7 +129,7 @@ export default function ProductionPage() {
     {
       key: 'actions', header: 'Actions', align: 'right',
       render: (r) => (
-        <button onClick={() => { setSelectedRow(r); setIsViewOpen(true); }} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F4C81] hover:bg-[#F5F8FB] transition-colors" title="View Details">
+        <button onClick={() => { setSelectedRow(r); setIsViewOpen(true); }} className="p-1.5 rounded-lg text-[#666666] hover:text-[#F97316] hover:bg-[#FFF7ED] transition-colors" title="View Details">
           <Eye className="w-4 h-4" />
         </button>
       )
@@ -147,20 +149,20 @@ export default function ProductionPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-xs flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-[#0F4C81]/10"><Zap className="w-5 h-5 text-[#0F4C81]" /></div>
-            <div><p className="text-xs text-[#64748B] font-semibold">Lines Running</p><p className="text-lg font-bold text-[#172033]">{stats.running}/{production.length}</p></div>
+          <div className="p-3 rounded-xl bg-white border border-[#E5E5E5] shadow-xs flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-[#FFF7ED]"><Zap className="w-5 h-5 text-[#F97316]" /></div>
+            <div><p className="text-xs text-[#666666] font-semibold">Lines Running</p><p className="text-lg font-bold text-[#222222]">{stats.running}/{production.length}</p></div>
           </div>
-          <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-xs flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-[#16A34A]/10"><TrendingUp className="w-5 h-5 text-[#16A34A]" /></div>
-            <div><p className="text-xs text-[#64748B] font-semibold">Overall Efficiency</p><p className="text-lg font-bold text-[#172033]">{overallEfficiency}%</p></div>
+          <div className="p-3 rounded-xl bg-white border border-[#E5E5E5] shadow-xs flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-[#F0FDF4]"><TrendingUp className="w-5 h-5 text-[#16A34A]" /></div>
+            <div><p className="text-xs text-[#666666] font-semibold">Overall Efficiency</p><p className="text-lg font-bold text-[#222222]">{overallEfficiency}%</p></div>
           </div>
-          <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-xs">
-            <p className="text-xs text-[#64748B] font-semibold">Total Target</p>
-            <p className="text-lg font-bold text-[#172033]">{stats.totalTarget.toLocaleString()}</p>
+          <div className="p-3 rounded-xl bg-white border border-[#E5E5E5] shadow-xs">
+            <p className="text-xs text-[#666666] font-semibold">Total Target</p>
+            <p className="text-lg font-bold text-[#222222]">{stats.totalTarget.toLocaleString()}</p>
           </div>
-          <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-xs">
-            <p className="text-xs text-[#64748B] font-semibold">Total Produced</p>
+          <div className="p-3 rounded-xl bg-white border border-[#E5E5E5] shadow-xs">
+            <p className="text-xs text-[#666666] font-semibold">Total Produced</p>
             <p className="text-lg font-bold text-[#16A34A]">{stats.totalProduced.toLocaleString()}</p>
           </div>
         </div>
@@ -168,11 +170,11 @@ export default function ProductionPage() {
         <Card>
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3">
             <CardTitle className="flex items-center gap-2">
-              <Factory className="w-5 h-5 text-[#0F4C81]" />
+              <Factory className="w-5 h-5 text-[#F97316]" />
               <span>Plant Filling Lines Status</span>
             </CardTitle>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Input placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} leftIcon={<Search className="w-4 h-4 text-[#94A3B8]" />} className="sm:!w-48" />
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto">
+              <Input placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} leftIcon={<Search className="w-4 h-4 text-[#999999]" />} className="sm:!w-48" />
               <Select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
                 options={[{ label: 'All Status', value: '' }, { label: 'Running', value: 'running' }, { label: 'Idle', value: 'idle' }, { label: 'Maintenance', value: 'maintenance' }]}
                 className="!w-36"
@@ -207,21 +209,21 @@ export default function ProductionPage() {
         <Modal isOpen={isViewOpen} onClose={() => { setIsViewOpen(false); setSelectedRow(null); }} title={`Line Details: ${selectedRow?.line || ''}`}>
           {selectedRow && (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-xs text-[#64748B] font-semibold">Batch No</p><p className="font-mono text-[#0F4C81] font-bold">{selectedRow.batchNo}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Status</p><Badge variant={selectedRow.status === 'running' ? 'success' : selectedRow.status === 'idle' ? 'warning' : 'danger'}>{selectedRow.status.toUpperCase()}</Badge></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Product</p><p className="text-[#172033]">{selectedRow.item}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Operator</p><p className="text-[#172033]">{selectedRow.operator}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Target</p><p className="text-[#172033]">{selectedRow.target.toLocaleString()}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Produced</p><p className="text-[#172033] font-bold">{selectedRow.produced.toLocaleString()}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Efficiency</p><p className="font-bold text-[#16A34A]">{selectedRow.efficiency}</p></div>
-                <div><p className="text-xs text-[#64748B] font-semibold">Shift</p><p className="text-[#172033]">{selectedRow.shift}</p></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div><p className="text-xs text-[#666666] font-semibold">Batch No</p><p className="font-mono text-[#F97316] font-bold">{selectedRow.batchNo}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Status</p><Badge variant={selectedRow.status === 'running' ? 'success' : selectedRow.status === 'idle' ? 'warning' : 'danger'}>{selectedRow.status.toUpperCase()}</Badge></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Product</p><p className="text-[#222222]">{selectedRow.item}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Operator</p><p className="text-[#222222]">{selectedRow.operator}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Target</p><p className="text-[#222222]">{selectedRow.target.toLocaleString()}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Produced</p><p className="text-[#222222] font-bold">{selectedRow.produced.toLocaleString()}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Efficiency</p><p className="font-bold text-[#16A34A]">{selectedRow.efficiency}</p></div>
+                <div><p className="text-xs text-[#666666] font-semibold">Shift</p><p className="text-[#222222]">{selectedRow.shift}</p></div>
               </div>
               {/* Progress bar */}
               <div className="mt-3">
-                <div className="flex justify-between text-xs mb-1"><span className="text-[#64748B]">Output Progress</span><span className="font-bold text-[#172033]">{selectedRow.efficiency}</span></div>
-                <div className="h-3 bg-[#E2E8F0] rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-[#0F4C81] to-[#1597D4] rounded-full transition-all" style={{ width: selectedRow.efficiency }} />
+                <div className="flex justify-between text-xs mb-1"><span className="text-[#666666]">Output Progress</span><span className="font-bold text-[#222222]">{selectedRow.efficiency}</span></div>
+                <div className="h-3 bg-[#E5E5E5] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#F97316] rounded-full transition-all" style={{ width: selectedRow.efficiency }} />
                 </div>
               </div>
             </div>
