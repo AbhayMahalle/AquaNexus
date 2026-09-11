@@ -105,6 +105,20 @@ const createLeave = async (req, res) => {
       return sendError(res, 'End date cannot be earlier than start date', 400);
     }
 
+    const overlappingLeave = await prisma.leave.findFirst({
+      where: {
+        employeeId,
+        status: { in: ['PENDING', 'APPROVED'] },
+        OR: [
+          { startDate: { lte: end }, endDate: { gte: start } }
+        ]
+      }
+    });
+
+    if (overlappingLeave) {
+      return sendError(res, 'An overlapping leave request already exists for this period', 409);
+    }
+
     const newLeave = await prisma.leave.create({
       data: {
         employeeId,
