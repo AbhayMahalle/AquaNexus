@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #0F4C81;
+    --color-secondary: #1597D4;
+    --color-accent: #22B8CF;
+    --color-bg-main: #F5F8FB;
+    --color-surface: #FFFFFF;
+    --color-text-primary: #172033;
+    --color-text-secondary: #64748B;
+    --color-border: #E2E8F0;
+  }
+
+  body {
+    background-color: #F5F8FB;
+    color: #172033;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Reusable custom utilities */
+.animate-page-entry {
+  animation: fadeInUp 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
