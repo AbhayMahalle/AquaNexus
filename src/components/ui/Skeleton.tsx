@@ -1,16 +1,30 @@
 import React from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '@/lib/utils';
 
-interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
+export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: 'text' | 'circle' | 'rectangle' | 'card';
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({ className, ...props }) => {
+export function Skeleton({
+  className,
+  variant = 'rectangle',
+  ...props
+}: SkeletonProps) {
+  const variants = {
+    text: "h-4 w-full rounded",
+    circle: "h-10 w-10 rounded-full shrink-0",
+    rectangle: "h-12 w-full rounded-lg",
+    card: "h-32 w-full rounded-xl border border-[#E5E5E5]",
+  };
+
   return (
     <div
-      className={twMerge(clsx('animate-pulse bg-slate-200 rounded-md', className))}
+      className={cn(
+        "animate-pulse bg-[#E5E5E5]/60",
+        variants[variant],
+        className
+      )}
       {...props}
     />
   );
-};
+}

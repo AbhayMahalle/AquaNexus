@@ -1,57 +1,99 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from './Button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-interface PaginationProps {
+export interface PaginationProps {
   currentPage: number;
   totalPages: number;
-  totalItems: number;
-  pageSize: number;
+  totalItems?: number;
+  itemsPerPage?: number;
+  pageSize?: number;
   onPageChange: (page: number) => void;
+  className?: string;
 }
 
-export const Pagination: React.FC<PaginationProps> = ({
+export function Pagination({
   currentPage,
   totalPages,
   totalItems,
+  itemsPerPage,
   pageSize,
   onPageChange,
-}) => {
-  const startItem = (currentPage - 1) * pageSize + 1;
-  const endItem = Math.min(currentPage * pageSize, totalItems);
+  className
+}: PaginationProps) {
+  if (totalPages <= 1) return null;
 
-  if (totalItems === 0) return null;
+  const perPage = itemsPerPage || pageSize;
+  const startItem = totalItems && perPage ? (currentPage - 1) * perPage + 1 : undefined;
+  const endItem = totalItems && perPage ? Math.min(currentPage * perPage, totalItems) : undefined;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-surface border-t border-border sm:px-6">
-      <div className="text-xs text-text-secondary">
-        Showing <span className="font-semibold text-text-primary">{startItem}</span> to{' '}
-        <span className="font-semibold text-text-primary">{endItem}</span> of{' '}
-        <span className="font-semibold text-text-primary">{totalItems}</span> entries
+    <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-4 py-3 border-t border-[#E5E5E5] px-2", className)}>
+      <div className="text-xs text-[#666666]">
+        {startItem && endItem && totalItems ? (
+          <span>Showing <strong className="text-[#222222] font-semibold">{startItem}</strong> to <strong className="text-[#222222] font-semibold">{endItem}</strong> of <strong className="text-[#222222] font-semibold">{totalItems}</strong> entries</span>
+        ) : (
+          <span>Page <strong className="text-[#222222] font-semibold">{currentPage}</strong> of <strong className="text-[#222222] font-semibold">{totalPages}</strong></span>
+        )}
       </div>
+
       <div className="flex items-center gap-1.5">
         <Button
-          variant="secondary"
+          variant="outline"
           size="sm"
-          disabled={currentPage === 1}
+          disabled={currentPage <= 1}
           onClick={() => onPageChange(currentPage - 1)}
-          icon={<ChevronLeft className="w-4 h-4" />}
+          leftIcon={<ChevronLeft className="w-4 h-4" />}
+          className="h-8 px-2.5 text-xs"
         >
           Previous
         </Button>
-        <span className="px-3 py-1 text-xs font-semibold text-text-primary">
-          Page {currentPage} of {totalPages || 1}
-        </span>
+
+        <div className="flex items-center gap-1 px-1">
+          {Array.from({ length: totalPages }).map((_, idx) => {
+            const page = idx + 1;
+            if (
+              page === 1 ||
+              page === totalPages ||
+              Math.abs(page - currentPage) <= 1
+            ) {
+              return (
+                <button
+                  key={page}
+                  onClick={() => onPageChange(page)}
+                  className={cn(
+                    "h-8 min-w-8 px-2 rounded-lg text-xs font-semibold transition-colors",
+                    page === currentPage
+                      ? "bg-[#F97316] text-white shadow-xs"
+                      : "text-[#666666] hover:bg-[#F5F5F5] hover:text-[#222222]"
+                  )}
+                >
+                  {page}
+                </button>
+              );
+            }
+            if (
+              (page === 2 && currentPage > 3) ||
+              (page === totalPages - 1 && currentPage < totalPages - 2)
+            ) {
+              return <span key={page} className="text-[#999999] text-xs px-1">...</span>;
+            }
+            return null;
+          })}
+        </div>
+
         <Button
-          variant="secondary"
+          variant="outline"
           size="sm"
           disabled={currentPage >= totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          icon={<ChevronRight className="w-4 h-4" />}
+          rightIcon={<ChevronRight className="w-4 h-4" />}
+          className="h-8 px-2.5 text-xs"
         >
           Next
         </Button>
       </div>
     </div>
   );
-};
+}

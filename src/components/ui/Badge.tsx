@@ -1,51 +1,44 @@
 import React from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '@/lib/utils';
 
-export type BadgeVariant = 
-  | 'success' 
-  | 'warning' 
-  | 'danger' 
-  | 'info' 
-  | 'neutral' 
-  | 'primary'
-  | 'secondary';
-
-interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: BadgeVariant;
+export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
   size?: 'sm' | 'md';
+  icon?: React.ReactNode | any;
 }
 
-export const Badge: React.FC<BadgeProps> = ({
+export function Badge({
   children,
+  className,
   variant = 'neutral',
   size = 'md',
-  className,
+  icon,
   ...props
-}) => {
-  const baseStyles = 'inline-flex items-center font-medium rounded-full border';
+}: BadgeProps) {
+  const baseStyles = "inline-flex items-center gap-1.5 font-medium rounded-full tracking-tight shrink-0";
 
-  const variants: Record<BadgeVariant, string> = {
-    success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    warning: 'bg-amber-50 text-amber-700 border-amber-200',
-    danger: 'bg-rose-50 text-rose-700 border-rose-200',
-    info: 'bg-blue-50 text-blue-700 border-blue-200',
-    neutral: 'bg-slate-100 text-slate-700 border-slate-200',
-    primary: 'bg-sky-50 text-primary border-sky-200',
-    secondary: 'bg-cyan-50 text-cyan-800 border-cyan-200',
+  const variants = {
+    primary: "bg-[#FFF7ED] text-[#EA580C] border border-[#FDBA74]/40",
+    secondary: "bg-[#F5F5F5] text-[#666666] border border-[#E5E5E5]",
+    success: "bg-[#F0FDF4] text-[#16A34A] border border-[#86EFAC]/40",
+    warning: "bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A]/50",
+    danger: "bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA]/50",
+    info: "bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]/50",
+    neutral: "bg-[#F5F5F5] text-[#666666] border border-[#E5E5E5]",
   };
 
   const sizes = {
-    sm: 'text-[11px] px-2 py-0.5',
-    md: 'text-xs px-2.5 py-1',
+    sm: "px-2 py-0.5 text-xs",
+    md: "px-2.5 py-1 text-xs font-semibold",
   };
 
   return (
     <span
-      className={twMerge(clsx(baseStyles, variants[variant], sizes[size], className))}
+      className={cn(baseStyles, variants[variant], sizes[size], className)}
       {...props}
     >
-      {children}
+      {icon && <span className="shrink-0">{icon}</span>}
+      <span>{children}</span>
     </span>
   );
-};
+}

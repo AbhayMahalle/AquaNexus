@@ -1,34 +1,47 @@
 import React from 'react';
-import { FolderOpen } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from './Button';
+import { Inbox } from 'lucide-react';
 
-interface EmptyStateProps {
-  title?: string;
+export interface EmptyStateProps {
+  title: string;
   description?: string;
-  icon?: React.ReactNode;
-  actionLabel?: string;
-  onAction?: () => void;
+  icon?: React.ReactNode | any;
+  action?: {
+    label: string;
+    onClick?: () => void;
+    href?: string;
+    icon?: React.ReactNode | any;
+  };
+  className?: string;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({
-  title = 'No data available',
-  description = 'There are no records matching your request at this time.',
-  icon = <FolderOpen className="w-10 h-10 text-text-muted" />,
-  actionLabel,
-  onAction,
-}) => {
+export function EmptyState({
+  title,
+  description,
+  icon,
+  action,
+  className
+}: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center p-8 my-6 text-center border border-dashed border-border rounded-card bg-surface">
-      <div className="p-3 mb-3 bg-slate-50 rounded-full border border-border">
-        {icon}
+    <div className={cn("flex flex-col items-center justify-center p-8 text-center", className)}>
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFF7ED] text-[#EA580C] mb-4 shadow-xs border border-[#FED7AA]/50">
+        {icon ? (typeof icon === 'function' ? React.createElement(icon as any, { className: "h-8 w-8 text-[#EA580C]" }) : icon) : <Inbox className="h-8 w-8 text-[#EA580C]" />}
       </div>
-      <h4 className="text-base font-semibold text-text-primary mb-1">{title}</h4>
-      <p className="text-xs text-text-secondary max-w-sm mb-4">{description}</p>
-      {actionLabel && onAction && (
-        <Button variant="primary" size="sm" onClick={onAction}>
-          {actionLabel}
+      <h3 className="text-base font-semibold text-[#222222] mb-1">{title}</h3>
+      {description && (
+        <p className="text-sm text-[#666666] max-w-sm mb-5 leading-relaxed">{description}</p>
+      )}
+      {action && (
+        <Button 
+          variant="primary" 
+          size="sm" 
+          onClick={action.onClick}
+          leftIcon={action.icon}
+        >
+          {action.label}
         </Button>
       )}
     </div>
   );
-};
+}

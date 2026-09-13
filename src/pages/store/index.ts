@@ -1,0 +1,11 @@
+export { default as StoreDashboardPage } from './StoreDashboardPage';
+export { default as InventoryListPage } from './InventoryListPage';
+export { default as InventoryDetailPage } from './InventoryDetailPage';
+export { default as StockInPage } from './StockInPage';
+export { default as StockOutPage } from './StockOutPage';
+export { default as GoodsReceivedPage } from './GoodsReceivedPage';
+export { default as DispatchPage } from './DispatchPage';
+export { default as ReturnsPage } from './ReturnsPage';
+export { default as DamagedGoodsPage } from './DamagedGoodsPage';
+export { default as LowStockAlertsPage } from './LowStockAlertsPage';
+export { default as StoreReportsPage } from './StoreReportsPage';

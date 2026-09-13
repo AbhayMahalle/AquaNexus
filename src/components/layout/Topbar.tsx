@@ -1,52 +1,99 @@
 import React from 'react';
-import { Bell, ChevronDown, Building2, Sparkles, UserCheck } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Dropdown } from '@/components/ui/Dropdown';
+import { Button } from '@/components/ui/Button';
+import { UserRole } from '@/types/auth';
+import { 
+  Menu, 
+  User as UserIcon, 
+  LogOut, 
+  Building2, 
+  Bell, 
+  Shield, 
+  CheckCircle2, 
+  Layers,
+  ChevronDown 
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-export const Topbar: React.FC = () => {
+interface TopbarProps {
+  onMobileToggle?: () => void;
+}
+
+export function Topbar({ onMobileToggle }: TopbarProps) {
+  const { user, logout } = useAuth();
+
+  const userInitial = user?.avatar || (user?.name ? user.name.trim().charAt(0).toUpperCase() : 'M');
+
   return (
-    <header className="h-14 bg-surface border-b border-border px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
-      {/* Left side: Plant Unit Context Selector */}
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 bg-white border-b border-[#E5E5E5] shadow-xs">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 border border-border rounded-md text-xs font-semibold text-text-primary">
-          <Building2 className="w-3.5 h-3.5 text-primary" />
-          <span>AquaNexus Main Unit - Pune</span>
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <button
+          onClick={onMobileToggle}
+          className="lg:hidden p-2 rounded-lg text-[#666666] hover:bg-[#F5F5F5] hover:text-[#222222] transition-colors"
+          aria-label="Toggle Navigation"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F8F8F8] border border-[#E5E5E5]">
+          <Building2 className="w-4 h-4 text-[#F97316]" />
+          <span className="text-xs font-semibold text-[#222222]">
+            {user?.plantName || 'AquaNexus Unit #1'}
+          </span>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
         </div>
       </div>
 
-      {/* Right side controls */}
-      <div className="flex items-center gap-3">
-        {/* Foundation UI badge */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-cyan-50 border border-cyan-200 rounded-md text-[11px] font-semibold text-cyan-800">
-          <Sparkles className="w-3 h-3 text-cyan-600" />
-          <span>Foundation UI</span>
-        </div>
-
-        {/* Mode Selector Pill */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-border rounded-md text-[11px] font-semibold text-text-primary cursor-pointer hover:bg-slate-200/60 transition-colors">
-          <UserCheck className="w-3.5 h-3.5 text-secondary" />
-          <span>Niranjan Mode (HR & Ops)</span>
-          <ChevronDown className="w-3 h-3 text-text-muted" />
-        </div>
-
-        {/* Notification bell */}
-        <button className="relative p-2 text-text-secondary hover:text-text-primary hover:bg-slate-100 rounded-full transition-colors">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-status-danger rounded-full ring-2 ring-surface"></span>
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Notifications */}
+        <button 
+          className="relative p-2 rounded-lg text-[#666666] hover:bg-[#F5F5F5] hover:text-[#222222] transition-colors"
+          aria-label="Notifications"
+        >
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#F97316]" />
         </button>
 
-        <div className="h-4 w-px bg-border"></div>
+        <div className="h-5 w-px bg-[#E5E5E5] mx-1" />
 
-        {/* Profile Avatar */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#0F4C81] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-            N
-          </div>
-          <div className="hidden md:block text-left">
-            <p className="text-xs font-bold text-text-primary leading-tight">Niranjan (HR Lead)</p>
-            <p className="text-[10px] font-medium text-text-secondary">HR & Operations Manager</p>
-          </div>
-        </div>
+        {/* Profile Avatar & Dropdown */}
+        <Dropdown
+          align="right"
+          trigger={
+            <button 
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-[#F97316] text-white font-bold text-xs shadow-xs hover:bg-[#EA580C] transition-colors focus:outline-none focus:ring-2 focus:ring-[#F97316]/30 cursor-pointer"
+              aria-label="User profile menu"
+              title={user?.name || 'User Profile'}
+            >
+              {userInitial}
+            </button>
+          }
+          items={[
+            {
+              label: `${user?.name || 'User'} (${user?.roleTitle || user?.role || 'Staff'})`,
+              disabled: true,
+            },
+            {
+              label: user?.email || 'user@aquanexus.com',
+              disabled: true,
+            },
+            { divider: true, label: '' },
+            {
+              label: 'Profile Settings',
+              icon: <UserIcon />,
+              onClick: () => {},
+            },
+            { divider: true, label: '' },
+            {
+              label: 'Logout',
+              icon: <LogOut />,
+              danger: true,
+              onClick: logout,
+            },
+          ]}
+        />
       </div>
     </header>
   );
-};
+}
