@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+*.log
+AquaNexus-*/
+vite.config.ts.timestamp*
+.env
+.env.*
+*.env
+backend/.env
