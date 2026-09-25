@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { Plus, Search, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -15,7 +16,8 @@ import { leaveService } from '../../services/leaveService';
 import type { Leave, LeaveStatus } from '../../types';
 
 export const LeaveListPage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState('ALL');
@@ -89,11 +91,11 @@ export const LeaveListPage: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/leave/${l.id}`)}
+            onClick={() => navigate(`/leave/${l.id}`)}
             title="View Details"
             icon={<Eye className="w-3.5 h-3.5 text-secondary" />}
           />
-          {l.status === 'PENDING' && (
+          {l.status === 'PENDING' && user?.role !== 'employee' && (
             <Button
               variant="secondary"
               size="sm"
@@ -116,7 +118,7 @@ export const LeaveListPage: React.FC = () => {
           <Button
             variant="primary"
             icon={<Plus className="w-4 h-4" />}
-            onClick={() => router.push('/leave/create')}
+            onClick={() => navigate('/leave/create')}
           >
             Apply New Leave
           </Button>

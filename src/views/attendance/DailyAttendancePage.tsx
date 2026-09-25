@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Save, CheckCircle2, Clock, UserX, UserPlus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -18,7 +19,8 @@ interface DailyAttendancePageProps {
 }
 
 export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowedStatuses }) => {
-  const router = useRouter();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [department, setDepartment] = useState('ALL');
   const [search, setSearch] = useState('');
@@ -117,28 +119,39 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
       accessorKey: 'status' as keyof Attendance,
       cell: (r: Attendance) => (
         <div className="w-36">
-          <Select
-            value={r.status}
-            onChange={(e) => handleStatusChange(r.id, e.target.value as AttendanceStatus)}
-            options={
-              allowedStatuses
-                ? [
-                    { value: '', label: 'Select Status...' },
-                    ...allowedStatuses.map(status => ({
-                      value: status,
-                      label: status.charAt(0) + status.slice(1).toLowerCase(),
-                    }))
-                  ]
-                : [
-                    { value: '', label: 'Select Status...' },
-                    { value: 'PRESENT', label: 'Present' },
-                    { value: 'LATE', label: 'Late Arrival' },
-                    { value: 'HALF_DAY', label: 'Half Day' },
-                    { value: 'ABSENT', label: 'Absent' },
-                    { value: 'ON_LEAVE', label: 'On Leave' },
-                  ]
-            }
-          />
+          {user?.role === 'employee' ? (
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+              r.status === 'PRESENT' ? 'bg-green-100 text-green-700' :
+              r.status === 'LATE' ? 'bg-amber-100 text-amber-700' :
+              r.status === 'ABSENT' ? 'bg-red-100 text-red-700' :
+              'bg-gray-100 text-gray-700'
+            }`}>
+              {r.status || 'PENDING'}
+            </span>
+          ) : (
+            <Select
+              value={r.status}
+              onChange={(e) => handleStatusChange(r.id, e.target.value as AttendanceStatus)}
+              options={
+                allowedStatuses
+                  ? [
+                      { value: '', label: 'Select Status...' },
+                      ...allowedStatuses.map(status => ({
+                        value: status,
+                        label: status.charAt(0) + status.slice(1).toLowerCase(),
+                      }))
+                    ]
+                  : [
+                      { value: '', label: 'Select Status...' },
+                      { value: 'PRESENT', label: 'Present' },
+                      { value: 'LATE', label: 'Late Arrival' },
+                      { value: 'HALF_DAY', label: 'Half Day' },
+                      { value: 'ABSENT', label: 'Absent' },
+                      { value: 'ON_LEAVE', label: 'On Leave' },
+                    ]
+              }
+            />
+          )}
         </div>
       ),
     },
@@ -163,16 +176,20 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
     {
       header: 'Remarks',
       cell: (r: Attendance) => (
-        <input
-          type="text"
-          placeholder="Add note..."
-          value={r.remarks || ''}
-          onChange={(e) => {
-            const val = e.target.value;
-            setRecords((prev) => prev.map((item) => (item.id === r.id ? { ...item, remarks: val } : item)));
-          }}
-          className="w-full text-xs px-2 py-1 bg-slate-50 border border-border rounded focus:outline-none focus:border-secondary"
-        />
+        user?.role === 'employee' ? (
+          <span className="text-xs text-text-secondary">{r.remarks || '-'}</span>
+        ) : (
+          <input
+            type="text"
+            placeholder="Add note..."
+            value={r.remarks || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setRecords((prev) => prev.map((item) => (item.id === r.id ? { ...item, remarks: val } : item)));
+            }}
+            className="w-full text-xs px-2 py-1 bg-slate-50 border border-border rounded focus:outline-none focus:border-secondary"
+          />
+        )
       ),
     },
   ];
@@ -180,26 +197,28 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
   return (
     <div>
       <PageHeader
-        title="Daily Attendance Logger"
-        description="Maintain daily shift attendance for water plant personnel."
+        title={user?.role === 'employee' ? "My Attendance" : "Daily Attendance Logger"}
+        description={user?.role === 'employee' ? "View your attendance records" : "Maintain daily shift attendance for water plant personnel."}
         action={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              icon={<UserPlus className="w-4 h-4" />}
-              onClick={() => router.push('/employees/add')}
-            >
-              Add Employee
-            </Button>
-            <Button
-              variant="primary"
-              isLoading={isSaving}
-              icon={<Save className="w-4 h-4" />}
-              onClick={handleSaveAll}
-            >
-              Save Attendance Log
-            </Button>
-          </div>
+          user?.role !== 'employee' && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                icon={<UserPlus className="w-4 h-4" />}
+                onClick={() => navigate(-1)}
+              >
+                Add Employee
+              </Button>
+              <Button
+                variant="primary"
+                isLoading={isSaving}
+                icon={<Save className="w-4 h-4" />}
+                onClick={handleSaveAll}
+              >
+                Save Attendance Log
+              </Button>
+            </div>
+          )
         }
       />
 

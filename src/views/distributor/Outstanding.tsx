@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { AlertCircle, CreditCard, Clock } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -13,7 +13,7 @@ import { Invoice } from '@/types/business';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export const DistributorOutstanding: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -80,7 +80,7 @@ export const DistributorOutstanding: React.FC = () => {
         <Button
           size="sm"
           variant="orange"
-          onClick={() => router.push('/distributor/payments')}
+          onClick={() => navigate(-1)}
           icon={CreditCard}
           className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
         >
@@ -111,7 +111,7 @@ export const DistributorOutstanding: React.FC = () => {
           </div>
         </div>
         <Button
-          onClick={() => router.push('/distributor/payments')}
+          onClick={() => navigate(-1)}
           variant="orange"
           className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
           icon={CreditCard}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -12,7 +12,7 @@ import type { Leave, LeaveStatus } from '../../types';
 
 export const LeaveDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [leave, setLeave] = useState<Leave | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -39,7 +39,7 @@ export const LeaveDetailPage: React.FC = () => {
     return (
       <div className="p-8 text-center text-text-muted">
         <p>Leave request not found.</p>
-        <Button variant="secondary" className="mt-4" onClick={() => router.push('/leave')}>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate(-1)}>
           Back to Leave List
         </Button>
       </div>
@@ -65,7 +65,7 @@ export const LeaveDetailPage: React.FC = () => {
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => router.push('/leave')}
+            onClick={() => navigate(-1)}
           >
             Back to List
           </Button>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import OriginalPage from '@/views/distributor/Payments';

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Edit, Mail, Phone, Calendar, MapPin, IndianRupee, Briefcase, Award } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -13,7 +13,7 @@ import type { Employee } from '../../types';
 
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -39,7 +39,7 @@ export const EmployeeDetailPage: React.FC = () => {
     return (
       <div className="text-center py-12">
         <p className="text-text-secondary text-sm">Employee not found.</p>
-        <Button variant="secondary" className="mt-4" onClick={() => router.push('/employees')}>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate(-1)}>
           Back to Employee List
         </Button>
       </div>
@@ -60,14 +60,14 @@ export const EmployeeDetailPage: React.FC = () => {
             <Button
               variant="secondary"
               icon={<ArrowLeft className="w-4 h-4" />}
-              onClick={() => router.push('/employees')}
+              onClick={() => navigate(-1)}
             >
               Back
             </Button>
             <Button
               variant="primary"
               icon={<Edit className="w-4 h-4" />}
-              onClick={() => router.push(`/employees/${employee.id}/edit`)}
+              onClick={() => navigate(-1)}
             >
               Edit Profile
             </Button>
@@ -160,13 +160,13 @@ export const EmployeeDetailPage: React.FC = () => {
 
           <Card title="Quick Action Shortcuts">
             <div className="flex flex-wrap gap-3">
-              <Button variant="secondary" size="sm" onClick={() => router.push('/attendance')}>
+              <Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
                 View Daily Attendance
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => router.push('/leave')}>
+              <Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
                 Check Leave Requests
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => router.push('/overtime')}>
+              <Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
                 Log Overtime Hours
               </Button>
             </div>

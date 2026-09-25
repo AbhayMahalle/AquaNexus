@@ -34,8 +34,8 @@ const INITIAL_USERS: UserRecord[] = [
   { id: '3', name: 'Ram Store', email: 'store@aquanexus.com', role: 'store_manager', roleTitle: 'Store & Inventory Lead', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43212', joinDate: '2024-03-10' },
   { id: '4', name: 'Yash Finance', email: 'finance@aquanexus.com', role: 'accountant', roleTitle: 'Chief Accountant', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43213', joinDate: '2024-04-05' },
   { id: '5', name: 'Niranjan Dist', email: 'distributor@aquanexus.com', role: 'distributor', roleTitle: 'Distributor Agency Lead', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43214', joinDate: '2024-05-20' },
-  { id: '6', name: 'Ramesh K.', email: 'ramesh@aquanexus.com', role: 'operator', roleTitle: 'Line Operator', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43215', joinDate: '2024-06-01' },
-  { id: '7', name: 'Sunil P.', email: 'sunil@aquanexus.com', role: 'operator', roleTitle: 'Filling Line Technician', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43216', joinDate: '2024-06-15' },
+  { id: '6', name: 'Ramesh K.', email: 'ramesh@aquanexus.com', role: 'employee', roleTitle: 'Line Operator', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43215', joinDate: '2024-06-01' },
+  { id: '7', name: 'Sunil P.', email: 'sunil@aquanexus.com', role: 'employee', roleTitle: 'Filling Line Technician', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43216', joinDate: '2024-06-15' },
   { id: '8', name: 'Priya M.', email: 'priya@aquanexus.com', role: 'manager', roleTitle: 'Quality Manager', status: 'inactive', plant: 'AquaNexus Unit #2', phone: '+91 98765 43217', joinDate: '2024-07-01' },
 ];
 
@@ -56,7 +56,7 @@ const ROLE_VARIANTS: Record<UserRole, 'primary' | 'secondary' | 'success' | 'war
   store_manager: 'success',
   accountant: 'info',
   distributor: 'warning',
-  operator: 'neutral',
+  employee: 'neutral',
 };
 
 export default function UserManagementPage() {
@@ -74,7 +74,7 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState({ name: '', email: '', role: 'operator' as UserRole, phone: '', plant: 'AquaNexus Unit #1' });
+  const [formData, setFormData] = useState({ name: '', email: '', role: 'employee' as UserRole, phone: '', plant: 'AquaNexus Unit #1' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
 
@@ -85,7 +85,7 @@ export default function UserManagementPage() {
         const raw = res.data.users || (Array.isArray(res.data) ? res.data : []);
         const mapped: UserRecord[] = raw.map((u: any) => {
           const roleName = (u.role?.name || u.userRoles?.[0]?.role?.name || '').toLowerCase();
-          let mappedRole: UserRole = 'operator';
+          let mappedRole: UserRole = 'employee';
           if (roleName === 'admin') mappedRole = 'admin';
           else if (roleName === 'manager') mappedRole = 'manager';
           else if (roleName === 'store_manager') mappedRole = 'store_manager';
@@ -164,7 +164,6 @@ export default function UserManagementPage() {
     store_manager: 'c2dcdbe3-2766-4f86-b8d3-adf1005b6827',
     accountant: 'bae5fff7-59b5-47c6-9d7f-73bfc0dfa773',
     distributor: '8af0c503-111a-465d-a8d2-91f0c95b5e14',
-    operator: 'b554c73c-16b8-40f8-ba3a-298d3af39e89',
   };
 
   // Create user
@@ -289,7 +288,7 @@ export default function UserManagementPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', role: 'operator', phone: '', plant: 'AquaNexus Unit #1' });
+    setFormData({ name: '', email: '', role: 'employee', phone: '', plant: 'AquaNexus Unit #1' });
     setFormErrors({});
   };
 
@@ -403,7 +402,6 @@ export default function UserManagementPage() {
                     { label: 'Store Manager', value: 'store_manager' },
                     { label: 'Accountant', value: 'accountant' },
                     { label: 'Distributor', value: 'distributor' },
-                    { label: 'Operator', value: 'operator' },
                   ]}
                   className="!w-36"
                 />

@@ -1,23 +1,23 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getDashboardRoute } from '@/lib/navigation';
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated || !user) {
-      router.replace('/login');
+      navigate('/login', { replace: true });
       return;
     }
-    router.replace(getDashboardRoute(user.role));
-  }, [isAuthenticated, isLoading, router, user]);
+    navigate(getDashboardRoute(user.role), { replace: true });
+  }, [isAuthenticated, isLoading, navigate, user]);
 
   return (
     <div className="flex h-screen items-center justify-center bg-background p-6">

@@ -1,1 +1,1 @@
-﻿export { default } from '@/views/store/DispatchPage';
+export { default } from '@/views/store/DispatchPage';

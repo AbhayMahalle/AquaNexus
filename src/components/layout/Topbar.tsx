@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { Menu, User as UserIcon, LogOut, Building2, Bell } from 'lucide-react';
@@ -10,8 +11,11 @@ interface TopbarProps {
   theme?: 'default' | 'sample';
 }
 
+import { NotificationBell } from './NotificationBell';
+
 export function Topbar({ onMobileToggle }: TopbarProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const userInitial = user?.avatar || (user?.name ? user.name.trim().charAt(0).toUpperCase() : 'M');
 
@@ -36,13 +40,7 @@ export function Topbar({ onMobileToggle }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <button
-          className="relative p-2 rounded-lg transition-colors text-gray-700 hover:bg-gray-100 hover:text-black"
-          aria-label="Notifications"
-        >
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-500" />
-        </button>
+        <NotificationBell />
 
         <div className="h-5 w-px mx-1 bg-gray-200" />
 
@@ -68,9 +66,9 @@ export function Topbar({ onMobileToggle }: TopbarProps) {
             },
             { divider: true, label: '' },
             {
-              label: 'Profile Settings',
+              label: 'Profile',
               icon: <UserIcon className="w-4 h-4" />,
-              onClick: () => {},
+              onClick: () => { navigate('/profile'); },
             },
             { divider: true, label: '' },
             {

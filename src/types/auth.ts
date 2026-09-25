@@ -4,7 +4,7 @@ export type UserRole =
   | 'store_manager'
   | 'accountant'
   | 'distributor'
-  | 'operator';
+  | 'employee';
 
 export type ManagerAssignment =
   | 'production'

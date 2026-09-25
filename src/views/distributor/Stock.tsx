@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { Boxes, AlertTriangle, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
@@ -12,7 +12,7 @@ import { DistributorStock } from '@/types/business';
 import { formatDate } from '@/lib/utils';
 
 export const DistributorStockPage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [stock, setStock] = useState<DistributorStock[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,7 +70,7 @@ export const DistributorStockPage: React.FC = () => {
         <Button
           size="sm"
           variant="orange"
-          onClick={() => router.push(`/distributor/orders/create?productId=${row.productId}`)}
+          onClick={() => navigate(-1)}
           icon={Plus}
           className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
         >
@@ -88,7 +88,7 @@ export const DistributorStockPage: React.FC = () => {
         breadcrumb={['AquaNexus', 'Distributor', 'Stock']}
         action={
           <Button
-            onClick={() => router.push('/distributor/orders/create')}
+            onClick={() => navigate(-1)}
             icon={Plus}
             variant="orange"
             className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"

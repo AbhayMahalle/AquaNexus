@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -13,7 +13,7 @@ import { employeeService } from '../../services/employeeService';
 import type { Product, Employee, ProductionStatus } from '../../types';
 
 export const CreateProductionPage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [products] = useState<Product[]>(PLANT_PRODUCTS);
   const [supervisors, setSupervisors] = useState<Employee[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +66,7 @@ export const CreateProductionPage: React.FC = () => {
     setIsSubmitting(false);
 
     if (res.success) {
-      router.push('/production');
+      navigate(-1);
     } else {
       setErrorMsg(res.message || 'Failed to create production batch');
     }
@@ -85,7 +85,7 @@ export const CreateProductionPage: React.FC = () => {
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => router.push('/production')}
+            onClick={() => navigate(-1)}
           >
             Cancel
           </Button>
@@ -175,7 +175,7 @@ export const CreateProductionPage: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="secondary" onClick={() => router.push('/production')}>
+            <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
               Cancel
             </Button>
             <Button

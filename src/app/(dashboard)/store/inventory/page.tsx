@@ -1,1 +1,1 @@
-﻿export { default } from '@/views/store/InventoryListPage';
+export { default } from '@/views/store/InventoryListPage';

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Eye, Edit, Trash2, Users, UserCheck, UserX, AlertCircle } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -16,7 +16,7 @@ import { employeeService } from '../../services/employeeService';
 import type { Employee } from '../../types';
 
 export const EmployeeListPage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -92,14 +92,14 @@ export const EmployeeListPage: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/employees/${e.id}`)}
+            onClick={() => navigate(-1)}
             title="View Details"
             icon={<Eye className="w-3.5 h-3.5 text-secondary" />}
           />
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/employees/${e.id}/edit`)}
+            onClick={() => navigate(-1)}
             title="Edit Record"
             icon={<Edit className="w-3.5 h-3.5 text-text-secondary" />}
           />
@@ -124,7 +124,7 @@ export const EmployeeListPage: React.FC = () => {
           <Button
             variant="primary"
             icon={<Plus className="w-4 h-4" />}
-            onClick={() => router.push('/employees/add')}
+            onClick={() => navigate(-1)}
           >
             Add Employee
           </Button>

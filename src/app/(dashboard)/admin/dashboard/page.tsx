@@ -1,1 +1,1 @@
-﻿export { default } from '@/views/admin/AdminDashboard';
+export { default } from '@/views/admin/AdminDashboard';

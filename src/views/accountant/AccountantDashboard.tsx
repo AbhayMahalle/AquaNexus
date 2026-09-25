@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   DollarSign,
@@ -22,15 +22,17 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { BarChartWrapper } from '@/components/charts/BarChartWrapper';
 import { DonutChartWrapper } from '@/components/charts/DonutChartWrapper';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 import { apiClient } from '@/lib/api-client';
 import { Expense, PayrollRecord, Payment, Invoice } from '@/types/business';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 
 // AquaNexus Brand Color Palette
 const THEME_PALETTE = ['#F97316', '#1F2937', '#EA580C', '#4B5563', '#FB923C', '#374151', '#F59E0B'];
 
 export const AccountantDashboard: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [payroll, setPayroll] = useState<PayrollRecord[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -132,7 +134,8 @@ export const AccountantDashboard: React.FC = () => {
   }, [expenses]);
 
   return (
-    <div className="space-y-6">
+    <AuthGuard allowedRoles={['admin', 'manager', 'accountant']}>
+      <div className="space-y-6">
       <PageHeader
         title="Plant Financial & Payroll Dashboard"
         description="Live overview of plant cash flows, distributor collections, supplier payments, operational expenses, and employee payroll."
@@ -142,10 +145,10 @@ export const AccountantDashboard: React.FC = () => {
             <Button variant="secondary" onClick={loadFinanceData} isLoading={isLoading} icon={RefreshCw}>
               Refresh
             </Button>
-            <Button onClick={() => router.push('/accountant/expenses')} icon={Plus}>
+            <Button onClick={() => navigate(-1)} icon={Plus}>
               Record Expense
             </Button>
-            <Button onClick={() => router.push('/accountant/reports')} variant="secondary" icon={PieChart}>
+            <Button onClick={() => navigate(-1)} variant="secondary" icon={PieChart}>
               Financial Reports
             </Button>
           </div>
@@ -243,7 +246,7 @@ export const AccountantDashboard: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push('/accountant/payments')}
+              onClick={() => navigate(-1)}
               className="bg-white text-black border-gray-300 hover:bg-gray-100 text-xs"
             >
               View All ({payments.length})
@@ -281,7 +284,7 @@ export const AccountantDashboard: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push('/accountant/payroll')}
+              onClick={() => navigate(-1)}
               className="bg-white text-black border-gray-300 hover:bg-gray-100 text-xs"
             >
               Manage Payroll ({payroll.length})
@@ -313,7 +316,10 @@ export const AccountantDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      <NotificationsPanel maxItems={4} />
+      </div>
+    </AuthGuard>
   );
 };
 

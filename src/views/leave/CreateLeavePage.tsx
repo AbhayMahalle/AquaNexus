@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { apiClient } from '../../lib/api-client';
 import { ArrowLeft, Save } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -13,7 +15,8 @@ import { leaveService } from '../../services/leaveService';
 import type { Employee, LeaveType } from '../../types';
 
 export const CreateLeavePage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -27,13 +30,35 @@ export const CreateLeavePage: React.FC = () => {
   });
 
   useEffect(() => {
-    employeeService.getEmployees().then((res) => {
-      if (res.success && res.data.length > 0) {
-        setEmployees(res.data);
-        setFormData((prev) => ({ ...prev, employeeId: res.data[0].employeeId }));
-      }
-    });
-  }, []);
+    if (user?.role === 'employee') {
+      apiClient.getMyProfile().then((res) => {
+        if (res.success && res.data) {
+          const emp = {
+            id: res.data.id,
+            employeeId: res.data.employeeCode || res.data.userId,
+            name: `${res.data.firstName} ${res.data.lastName}`.trim(),
+            department: res.data.department?.name || 'Operations',
+            role: 'EMPLOYEE',
+            status: 'ACTIVE',
+            email: user.email,
+            designation: res.data.designation || 'Staff',
+            contactNumber: res.data.phone || '',
+            joiningDate: res.data.joiningDate || '',
+            salary: res.data.salary || 0
+          } as Employee;
+          setEmployees([emp]);
+          setFormData((prev) => ({ ...prev, employeeId: emp.employeeId }));
+        }
+      });
+    } else {
+      employeeService.getEmployees().then((res) => {
+        if (res.success && res.data.length > 0) {
+          setEmployees(res.data);
+          setFormData((prev) => ({ ...prev, employeeId: res.data[0].employeeId }));
+        }
+      });
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +79,7 @@ export const CreateLeavePage: React.FC = () => {
     const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
     const res = await leaveService.createLeaveRequest({
-      employeeId: selectedEmp.employeeId,
+      employeeId: selectedEmp.id,
       employeeName: selectedEmp.name,
       department: selectedEmp.department,
       leaveType: formData.leaveType,
@@ -67,7 +92,7 @@ export const CreateLeavePage: React.FC = () => {
     setIsSubmitting(false);
 
     if (res.success) {
-      router.push('/leave');
+      navigate(-1);
     } else {
       setErrorMsg(res.message || 'Failed to submit leave application');
     }
@@ -86,7 +111,7 @@ export const CreateLeavePage: React.FC = () => {
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => router.push('/leave')}
+            onClick={() => navigate(-1)}
           >
             Cancel
           </Button>
@@ -156,7 +181,7 @@ export const CreateLeavePage: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="secondary" onClick={() => router.push('/leave')}>
+            <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
               Cancel
             </Button>
             <Button

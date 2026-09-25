@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Truck, CheckCircle2, Clock, FileText, Building } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -14,7 +14,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 
 export const DistributorOrderDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
@@ -64,10 +64,10 @@ export const DistributorOrderDetails: React.FC = () => {
         breadcrumb={['AquaNexus', 'Distributor', 'Orders', order.orderNumber]}
         action={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => router.push('/distributor/orders')} icon={ArrowLeft}>
+            <Button variant="secondary" onClick={() => navigate(-1)} icon={ArrowLeft}>
               Back
             </Button>
-            <Button onClick={() => router.push('/distributor/invoices')} icon={FileText}>
+            <Button onClick={() => navigate(-1)} icon={FileText}>
               View Invoice
             </Button>
           </div>

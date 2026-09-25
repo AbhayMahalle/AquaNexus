@@ -1,1 +1,1 @@
-﻿export { default } from '@/views/store/LowStockAlertsPage';
+export { default } from '@/views/store/LowStockAlertsPage';

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { User, UserRole, LoginCredentials, Permission } from '@/types/auth';
-import { loginApi, getCurrentUserSync, setCurrentUserSync, MOCK_USERS } from '@/lib/auth';
+import { loginApi, getCurrentUserSync, setCurrentUserSync } from '@/lib/auth';
 import { getDashboardRoute } from '@/lib/navigation';
 
 interface AuthContextType {
@@ -11,7 +11,6 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
-  switchRole: (newRole: UserRole) => void;
   hasPermission: (permission: Permission) => boolean;
 }
 
@@ -20,7 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const cachedUser = getCurrentUserSync();
@@ -36,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await loginApi(credentials);
       setUser(response.user);
       const dest = credentials.redirectTo || getDashboardRoute(response.user.role);
-      router.replace(dest);
+      navigate(dest, { replace: true });
     } finally {
       setIsLoading(false);
     }
@@ -45,14 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     setCurrentUserSync(null);
-    router.replace('/login');
+    localStorage.removeItem('token');
+    navigate('/login', { replace: true });
   };
 
-  const switchRole = (newRole: UserRole) => {
-    const newUser = MOCK_USERS[newRole] || MOCK_USERS.admin;
-    setUser(newUser);
-    setCurrentUserSync(newUser);
-  };
+
 
   const hasPermission = (permission: Permission): boolean => {
     if (!user) return false;
@@ -69,7 +65,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         logout,
-        switchRole,
         hasPermission,
       }}
     >

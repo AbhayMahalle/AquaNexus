@@ -1,1 +1,1 @@
-﻿export { default } from '@/views/store/GoodsReceivedPage';
+export { default } from '@/views/store/GoodsReceivedPage';

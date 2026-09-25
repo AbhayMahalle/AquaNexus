@@ -1,1 +1,1 @@
-﻿export { default } from '@/views/admin/PermissionMatrix';
+export { default } from '@/views/admin/PermissionMatrix';

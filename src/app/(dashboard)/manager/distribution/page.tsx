@@ -61,7 +61,7 @@ export default function ManagerDistributionPage() {
   ];
 
   return (
-    <AuthGuard allowedRoles={['manager']}>
+    <AuthGuard allowedRoles={['manager', 'admin', 'distributor']}>
       <DashboardLayout>
         <PageHeader
           title="Manager Distribution & Dispatch"

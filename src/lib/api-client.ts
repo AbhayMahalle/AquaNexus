@@ -669,4 +669,43 @@ export const apiClient = {
     const employees = res.data?.employees || (Array.isArray(res.data) ? res.data : []);
     return { success: true, data: employees, message: res.message };
   },
+
+  async getNotifications(): Promise<ApiResponse<any[]>> {
+    const res = await fetchApi<any[]>('/notifications');
+    return { success: res.success, data: res.data || [], message: res.message };
+  },
+
+  async markNotificationAsRead(id: string): Promise<ApiResponse<any>> {
+    return fetchApi(`/notifications/${id}/read`, { method: 'PATCH' });
+  },
+
+  async getMyProfile(): Promise<ApiResponse<any>> {
+    // We fetch a list of employees to find ourselves, or we need a /me route.
+    // For now, since employees list is restricted, we'll try fetching it anyway or maybe just use local storage data.
+    // Actually, backend has GET /employees/:id, but we need our own ID. The backend employee.controller.js requires an ID.
+    // We can fetch from /employees?limit=1 if we are employee, the backend scoped it to us.
+    const res = await fetchApi<{ employees: any[] }>('/employees?limit=1');
+    if (!res.success) return { success: false, data: null, message: res.message };
+    const emp = res.data?.employees?.[0];
+    return { success: true, data: emp, message: res.message };
+  },
+
+  async getAttendance(): Promise<ApiResponse<any[]>> {
+    const res = await fetchApi<any>('/attendance');
+    return { success: res.success, data: Array.isArray(res.data) ? res.data : (res.data?.attendance || []), message: res.message };
+  },
+
+  async getLeaves(): Promise<ApiResponse<any[]>> {
+    const res = await fetchApi<any>('/leave');
+    return { success: res.success, data: Array.isArray(res.data) ? res.data : (res.data?.leaves || []), message: res.message };
+  },
+
+  async getOvertime(): Promise<ApiResponse<any[]>> {
+    const res = await fetchApi<any>('/overtime');
+    return { success: res.success, data: Array.isArray(res.data) ? res.data : (res.data?.overtimes || []), message: res.message };
+  },
+
+  async get(endpoint: string): Promise<ApiResponse<any>> {
+    return fetchApi<any>(endpoint);
+  },
 };

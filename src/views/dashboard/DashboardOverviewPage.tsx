@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   CalendarCheck, 
@@ -23,7 +23,7 @@ import { productionService } from '../../services/productionService';
 import type { Production } from '../../types';
 
 export const DashboardOverviewPage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalEmployees: 0,
     presentToday: 0,
@@ -97,7 +97,7 @@ export const DashboardOverviewPage: React.FC = () => {
         title="Plant Operations & HR Dashboard"
         description="Centralized overview of employees, attendance, leave approvals, overtime and water production."
         action={
-          <Button variant="primary" icon={<Factory className="w-4 h-4" />} onClick={() => router.push('/production/create')}>
+          <Button variant="primary" icon={<Factory className="w-4 h-4" />} onClick={() => navigate(-1)}>
             New Production Batch
           </Button>
         }
@@ -136,7 +136,7 @@ export const DashboardOverviewPage: React.FC = () => {
           <div>
             <p className="text-xs text-text-secondary">Pending Leave Requests</p>
             <h4 className="text-2xl font-bold text-text-primary">{stats.pendingLeaves}</h4>
-            <p className="text-[11px] text-secondary font-medium mt-0.5 cursor-pointer" onClick={() => router.push('/leave')}>
+            <p className="text-[11px] text-secondary font-medium mt-0.5 cursor-pointer" onClick={() => navigate('/leave')}>
               Requires Manager Approval
             </p>
           </div>
@@ -161,7 +161,7 @@ export const DashboardOverviewPage: React.FC = () => {
             <Button
               variant="secondary"
               className="w-full justify-between text-xs"
-              onClick={() => router.push('/employees')}
+              onClick={() => navigate('/employees')}
               icon={<Users className="w-4 h-4 text-primary" />}
             >
               <span>Employee Management</span>
@@ -171,7 +171,7 @@ export const DashboardOverviewPage: React.FC = () => {
             <Button
               variant="secondary"
               className="w-full justify-between text-xs"
-              onClick={() => router.push('/attendance')}
+              onClick={() => navigate('/attendance')}
               icon={<CalendarCheck className="w-4 h-4 text-status-success" />}
             >
               <span>Daily Attendance</span>
@@ -181,7 +181,7 @@ export const DashboardOverviewPage: React.FC = () => {
             <Button
               variant="secondary"
               className="w-full justify-between text-xs"
-              onClick={() => router.push('/leave')}
+              onClick={() => navigate('/leave')}
               icon={<CalendarOff className="w-4 h-4 text-status-warning" />}
             >
               <span>Leave Applications</span>
@@ -191,7 +191,7 @@ export const DashboardOverviewPage: React.FC = () => {
             <Button
               variant="secondary"
               className="w-full justify-between text-xs"
-              onClick={() => router.push('/overtime')}
+              onClick={() => navigate('/overtime')}
               icon={<Clock className="w-4 h-4 text-secondary" />}
             >
               <span>Overtime Logs</span>
@@ -201,7 +201,7 @@ export const DashboardOverviewPage: React.FC = () => {
             <Button
               variant="secondary"
               className="w-full justify-between text-xs"
-              onClick={() => router.push('/production')}
+              onClick={() => navigate('/production')}
               icon={<Factory className="w-4 h-4 text-primary" />}
             >
               <span>Production Batches</span>
@@ -215,7 +215,7 @@ export const DashboardOverviewPage: React.FC = () => {
           title="Recent Production Batches"
           subtitle="Water bottling lines status"
           action={
-            <Button variant="ghost" size="sm" onClick={() => router.push('/production')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/production')}>
               View All
             </Button>
           }

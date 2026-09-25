@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, FileText } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
@@ -12,7 +12,7 @@ import { Order, OrderStatus } from '@/types/business';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export const DistributorOrders: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
@@ -87,7 +87,7 @@ export const DistributorOrders: React.FC = () => {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => router.push(`/distributor/orders/${row.id}`)}
+            onClick={() => navigate(-1)}
             icon={Eye}
             className="bg-white text-black border-gray-300 hover:bg-gray-100"
           >
@@ -113,7 +113,7 @@ export const DistributorOrders: React.FC = () => {
         breadcrumb={['AquaNexus', 'Distributor', 'Orders']}
         action={
           <Button
-            onClick={() => router.push('/distributor/orders/create')}
+            onClick={() => navigate(-1)}
             icon={Plus}
             variant="orange"
             className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"

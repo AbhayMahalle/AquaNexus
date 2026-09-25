@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Factory, Clock, PackageCheck, Eye } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -14,7 +14,7 @@ import { productionService } from '../../services/productionService';
 import type { Production, ProductionStatus } from '../../types';
 
 export const ProductionListPage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [batches, setBatches] = useState<Production[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState('ALL');
@@ -97,7 +97,7 @@ export const ProductionListPage: React.FC = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push(`/production/${b.id}`)}
+          onClick={() => navigate(-1)}
           title="View Batch Details"
           icon={<Eye className="w-3.5 h-3.5 text-secondary" />}
         />
@@ -114,7 +114,7 @@ export const ProductionListPage: React.FC = () => {
           <Button
             variant="primary"
             icon={<Plus className="w-4 h-4" />}
-            onClick={() => router.push('/production/create')}
+            onClick={() => navigate(-1)}
           >
             Create Production Batch
           </Button>

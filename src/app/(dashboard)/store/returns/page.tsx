@@ -1,1 +1,1 @@
-﻿export { default } from '@/views/store/ReturnsPage';
+export { default } from '@/views/store/ReturnsPage';

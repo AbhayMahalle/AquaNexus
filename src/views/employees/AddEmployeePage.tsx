@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -12,7 +12,7 @@ import { employeeService } from '../../services/employeeService';
 import type { EmployeeStatus } from '../../types';
 
 export const AddEmployeePage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -42,7 +42,7 @@ export const AddEmployeePage: React.FC = () => {
     setIsSubmitting(false);
 
     if (res.success) {
-      router.push('/employees');
+      navigate(-1);
     } else {
       setErrorMsg(res.message || 'Failed to add employee');
     }
@@ -61,7 +61,7 @@ export const AddEmployeePage: React.FC = () => {
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => router.push('/employees')}
+            onClick={() => navigate(-1)}
           >
             Back to List
           </Button>
@@ -170,7 +170,7 @@ export const AddEmployeePage: React.FC = () => {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => router.push('/employees')}
+              onClick={() => navigate(-1)}
             >
               Cancel
             </Button>

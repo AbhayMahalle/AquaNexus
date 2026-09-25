@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { formatCurrency, formatNumber } from '@/lib/utils';
+import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 import {
   Factory,
   Package,
@@ -31,15 +32,15 @@ interface ProductionBatch {
   item: string;
   quantity: number;
   unit: string;
-  operator: string;
+  manager: string;
   status: 'completed' | 'in_progress' | 'scheduled';
   time: string;
 }
 
 const MOCK_BATCHES: ProductionBatch[] = [
-  { id: '1', batchNo: 'BATCH-2026-089', item: '20L Jar Water', quantity: 2400, unit: 'Units', operator: 'Ramesh K.', status: 'completed', time: '10:30 AM' },
-  { id: '2', batchNo: 'BATCH-2026-090', item: '1L Packaged Bottle', quantity: 5000, unit: 'Units', operator: 'Sunil P.', status: 'in_progress', time: '01:15 PM' },
-  { id: '3', batchNo: 'BATCH-2026-091', item: '500ml Bottle Case', quantity: 1200, unit: 'Cases', operator: 'Amit S.', status: 'scheduled', time: '04:00 PM' },
+  { id: '1', batchNo: 'BATCH-2026-089', item: '20L Jar Water', quantity: 2400, unit: 'Units', manager: 'Ramesh K.', status: 'completed', time: '10:30 AM' },
+  { id: '2', batchNo: 'BATCH-2026-090', item: '1L Packaged Bottle', quantity: 5000, unit: 'Units', manager: 'Sunil P.', status: 'in_progress', time: '01:15 PM' },
+  { id: '3', batchNo: 'BATCH-2026-091', item: '500ml Bottle Case', quantity: 1200, unit: 'Cases', manager: 'Amit S.', status: 'scheduled', time: '04:00 PM' },
 ];
 
 export default function AdminDashboardPage() {
@@ -67,9 +68,9 @@ export default function AdminDashboardPage() {
       render: (r) => <span className="font-medium text-black">{`${formatNumber(r.quantity)} ${r.unit}`}</span>,
     },
     {
-      key: 'operator',
-      header: <span className="text-black font-bold">Line Operator</span>,
-      render: (r) => <span className="text-gray-700 font-medium">{r.operator}</span>,
+      key: 'manager',
+      header: <span className="text-black font-bold">Line manager</span>,
+      render: (r) => <span className="text-gray-700 font-medium">{r.manager}</span>,
     },
     {
       key: 'time',
@@ -304,6 +305,9 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Notifications */}
+              <NotificationsPanel maxItems={4} />
             </div>
           </div>
 

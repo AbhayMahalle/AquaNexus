@@ -1,1 +1,1 @@
-﻿export { default } from '@/views/store/StockOutPage';
+export { default } from '@/views/store/StockOutPage';

@@ -194,7 +194,7 @@ export const AccountantReports: React.FC = () => {
             <div className="py-3 flex justify-between items-center">
               <div>
                 <p className="font-semibold text-textPrimary">Employee Compensation &amp; Overtime</p>
-                <p className="text-xs text-textMuted">Monthly salaries and plant operator overtime disbursements</p>
+                <p className="text-xs text-textMuted">Monthly salaries and plant manager overtime disbursements</p>
               </div>
               <span className="font-bold text-danger text-base">-{formatCurrency(totalPayroll)}</span>
             </div>

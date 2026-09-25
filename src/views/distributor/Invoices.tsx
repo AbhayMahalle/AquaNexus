@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { FileText, Eye, CreditCard, Download } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
@@ -13,7 +13,7 @@ import { Invoice } from '@/types/business';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export const DistributorInvoices: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [distributorInfo, setDistributorInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -103,7 +103,7 @@ export const DistributorInvoices: React.FC = () => {
           {row.outstandingAmount > 0 && (
             <Button
               size="sm"
-              onClick={() => router.push('/distributor/payments')}
+              onClick={() => navigate(-1)}
               icon={CreditCard}
             >
               Pay

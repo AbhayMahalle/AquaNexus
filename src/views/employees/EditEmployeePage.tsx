@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -14,7 +14,7 @@ import type { Employee, EmployeeStatus } from '../../types';
 
 export const EditEmployeePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -42,7 +42,7 @@ export const EditEmployeePage: React.FC = () => {
     setIsSubmitting(false);
 
     if (res.success) {
-      router.push(`/employees/${id}`);
+      navigate(-1);
     } else {
       setErrorMsg(res.message || 'Failed to update employee');
     }
@@ -66,7 +66,7 @@ export const EditEmployeePage: React.FC = () => {
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => router.push(`/employees/${id}`)}
+            onClick={() => navigate(-1)}
           >
             Cancel
           </Button>
@@ -168,7 +168,7 @@ export const EditEmployeePage: React.FC = () => {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => router.push(`/employees/${id}`)}
+              onClick={() => navigate(-1)}
             >
               Cancel
             </Button>

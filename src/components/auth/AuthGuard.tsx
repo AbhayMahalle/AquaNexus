@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types/auth';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -12,18 +12,19 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = location.pathname;
 
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
-      } else if (allowedRoles && user && !allowedRoles.includes(user.role) && user.role !== 'admin') {
-        router.replace(getDashboardRoute(user.role));
+        navigate(`/login?redirect=${pathname}`, { replace: true });
+      } else if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+        navigate(getDashboardRoute(user.role), { replace: true });
       }
     }
-  }, [isAuthenticated, isLoading, user, allowedRoles, router, pathname]);
+  }, [isAuthenticated, isLoading, user, allowedRoles, navigate, pathname]);
 
   if (isLoading) {
     return (
@@ -37,7 +38,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     );
   }
 
-  if (!isAuthenticated || (allowedRoles && user && !allowedRoles.includes(user.role) && user.role !== 'admin')) {
+  if (!isAuthenticated || (allowedRoles && user && !allowedRoles.includes(user.role))) {
     return null;
   }
 

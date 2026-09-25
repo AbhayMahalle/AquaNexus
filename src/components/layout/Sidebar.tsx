@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { getDashboardRoute, getNavigationForUser } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
@@ -70,7 +70,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
   const { user } = useAuth();
   const navSections = getNavigationForUser(user);
 

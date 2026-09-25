@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 import { 
   Factory, 
   Package, 
@@ -75,7 +76,7 @@ export default function ManagerDashboardPage() {
                   <p className="text-xs text-[#64748B]">Caps, Preforms, Label stock normal</p>
                 </div>
                 <div className="flex gap-2">
-                  <Link href="/manager/inventory" className="w-full">
+                  <Link href="/manager/store/inventory" className="w-full">
                     <Button variant="outline" size="sm" fullWidth>Open Store</Button>
                   </Link>
                 </div>
@@ -131,7 +132,7 @@ export default function ManagerDashboardPage() {
                 <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
                 <span>Line Personnel & Attendance</span>
               </h4>
-              <p className="text-xs text-[#64748B] mt-1">Shift 1 fully staffed. 42 technicians and operators on active stations.</p>
+              <p className="text-xs text-[#64748B] mt-1">Shift 1 fully staffed. 42 technicians and managers on active stations.</p>
             </div>
 
             <div className="p-4 rounded-xl bg-[#F5F8FB] border border-[#E2E8F0]">
@@ -143,6 +144,8 @@ export default function ManagerDashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        <NotificationsPanel maxItems={4} />
       </DashboardLayout>
     </AuthGuard>
   );

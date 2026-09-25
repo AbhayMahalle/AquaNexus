@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, ArrowLeft, CheckCircle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -18,8 +18,8 @@ interface OrderItemForm {
 }
 
 export const CreateOrder: React.FC = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const initialProductId = searchParams.get('productId');
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -106,7 +106,7 @@ export const CreateOrder: React.FC = () => {
 
     setIsSubmitting(false);
     if (res.success) {
-      router.push('/distributor/orders');
+      navigate(-1);
     } else {
       alert(res.message || 'Failed to submit order');
     }
@@ -119,7 +119,7 @@ export const CreateOrder: React.FC = () => {
         description="Select products, specify dispatch quantities, and submit order to central plant store."
         breadcrumb={['AquaNexus', 'Distributor', 'Orders', 'Create']}
         action={
-          <Button variant="secondary" onClick={() => router.push('/distributor/orders')} icon={ArrowLeft}>
+          <Button variant="secondary" onClick={() => navigate(-1)} icon={ArrowLeft}>
             Back to Orders
           </Button>
         }

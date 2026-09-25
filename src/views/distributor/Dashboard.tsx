@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCart,
   Boxes,
@@ -22,11 +22,13 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LineChartWrapper } from '@/components/charts/LineChartWrapper';
 import { apiClient } from '@/lib/api-client';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Order, DistributorStock, Sale, Invoice } from '@/types/business';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 
 export const DistributorDashboard: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [stock, setStock] = useState<DistributorStock[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -117,7 +119,8 @@ export const DistributorDashboard: React.FC = () => {
     : distributorInfo?.address || 'Sector 1 to 24, Industrial & Commercial Hub';
 
   return (
-    <div className="space-y-6 text-black">
+    <AuthGuard allowedRoles={['admin', 'manager', 'distributor']}>
+      <div className="space-y-6 text-black">
       {/* Authorized Area Header Banner */}
       <div className="bg-white text-black p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-gray-200 border-l-4 border-l-orange-500 shadow-xs">
         <div>
@@ -138,7 +141,7 @@ export const DistributorDashboard: React.FC = () => {
             Refresh
           </Button>
           <Button
-            onClick={() => router.push('/distributor/orders/create')}
+            onClick={() => navigate(-1)}
             variant="orange"
             className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
             icon={Plus}
@@ -228,7 +231,7 @@ export const DistributorDashboard: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push('/distributor/stock')}
+              onClick={() => navigate(-1)}
               className="bg-white text-black border-gray-300 hover:bg-gray-100"
             >
               View All ({stock.length})
@@ -275,7 +278,7 @@ export const DistributorDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push('/distributor/orders')}
+            onClick={() => navigate(-1)}
             className="bg-white text-black border-gray-300 hover:bg-gray-100"
           >
             View Orders List ({orders.length})
@@ -286,7 +289,7 @@ export const DistributorDashboard: React.FC = () => {
             <div className="py-8 text-center text-xs text-gray-500">
               No orders placed yet.{' '}
               <button
-                onClick={() => router.push('/distributor/orders/create')}
+                onClick={() => navigate(-1)}
                 className="text-orange-600 font-bold underline ml-1"
               >
                 Create your first plant order
@@ -337,7 +340,7 @@ export const DistributorDashboard: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => router.push(`/distributor/orders/${order.id}`)}
+                      onClick={() => navigate(-1)}
                       icon={ArrowRight}
                       className="bg-white text-black border-gray-300 hover:bg-gray-100"
                     />
@@ -348,7 +351,10 @@ export const DistributorDashboard: React.FC = () => {
           )}
         </CardContent>
       </Card>
-    </div>
+
+      <NotificationsPanel maxItems={4} />
+      </div>
+    </AuthGuard>
   );
 };
 

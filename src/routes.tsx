@@ -5,21 +5,36 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 // Root and Auth Pages
 import HomePage from '@/app/page';
 import LoginPage from '@/app/login/page';
+import { PlaceholderPage } from '@/components/layout/PlaceholderPage';
 
 // Admin Pages
 import AdminDashboardPage from '@/app/(dashboard)/admin/dashboard/page';
+import { EmployeeDashboardPage } from '@/pages/employee/EmployeeDashboard';
+import { ProfilePage } from '@/pages/shared/ProfilePage';
+import { EmployeeNotificationsPage } from '@/pages/employee/EmployeeNotificationsPage';
 import AdminUsersPage from '@/app/(dashboard)/admin/users/page';
 import AdminRolesPage from '@/app/(dashboard)/admin/roles/page';
 import AdminPermissionsPage from '@/app/(dashboard)/admin/permissions/page';
-import AdminEmployeesPage from '@/app/(dashboard)/admin/employees/page';
-import AdminProductionPage from '@/app/(dashboard)/admin/production/page';
-import AdminInventoryPage from '@/app/(dashboard)/admin/inventory/page';
-import AdminDistributorsPage from '@/app/(dashboard)/admin/distributors/page';
-import AdminPurchasesPage from '@/app/(dashboard)/admin/purchases/page';
-import AdminPayrollPage from '@/app/(dashboard)/admin/payroll/page';
-import AdminPaymentsPage from '@/app/(dashboard)/admin/payments/page';
-import AdminReportsPage from '@/app/(dashboard)/admin/reports/page';
 import AdminStoreManagerDashboardPage from '@/app/(dashboard)/admin/store-manager-oversight/dashboard/page';
+
+import AdminManagerDashboardPage from '@/app/(dashboard)/admin/manager-dashboard/page';
+import AdminStoreDashboardPage from '@/app/(dashboard)/admin/store-dashboard/page';
+import AdminDistributorDashboardPage from '@/app/(dashboard)/admin/distributor-dashboard/page';
+import AdminAccountantDashboardPage from '@/app/(dashboard)/admin/accountant-dashboard/page';
+
+
+import AdminManagerAssignmentsPage from '@/app/(dashboard)/admin/manager-assignments/page';
+import AdminDepartmentsPage from '@/app/(dashboard)/admin/departments/page';
+import AdminAuditLogsPage from '@/app/(dashboard)/admin/audit-logs/page';
+
+import ManagerDepartmentsPage from '@/app/(dashboard)/manager/departments/page';
+
+import StoreProductsPage from '@/app/(dashboard)/store/products/page';
+import StoreStockTransactionsPage from '@/app/(dashboard)/store/stock-transactions/page';
+
+import DistributorDispatchPage from '@/app/(dashboard)/distributor/dispatch/page';
+
+import AccountantSuppliersPage from '@/app/(dashboard)/accountant/suppliers/page';
 
 // Accountant Pages
 import AccountantDashboardPage from '@/app/(dashboard)/accountant/dashboard/page';
@@ -32,16 +47,13 @@ import AccountantReportsPage from '@/app/(dashboard)/accountant/reports/page';
 
 // Manager Pages
 import ManagerDashboardPage from '@/app/(dashboard)/manager/dashboard/page';
-import ManagerEmployeesPage from '@/app/(dashboard)/manager/employees/page';
-import ManagerAttendancePage from '@/app/(dashboard)/manager/attendance/page';
-import ManagerAttendanceDailyPage from '@/app/(dashboard)/manager/attendance/daily/page';
-import ManagerAttendanceMonthlyPage from '@/app/(dashboard)/manager/attendance/monthly/page';
-import ManagerLeavePage from '@/app/(dashboard)/manager/leave/page';
-import ManagerOvertimePage from '@/app/(dashboard)/manager/overtime/page';
-import ManagerProductionPage from '@/app/(dashboard)/manager/production/page';
-import ManagerInventoryPage from '@/app/(dashboard)/manager/inventory/page';
+
 import ManagerDistributionPage from '@/app/(dashboard)/manager/distribution/page';
 import ManagerReportsPage from '@/app/(dashboard)/manager/reports/page';
+
+import ManagerStoreDashboardPage from '@/app/(dashboard)/manager/store-dashboard/page';
+import ManagerDistributorDashboardPage from '@/app/(dashboard)/manager/distributor-dashboard/page';
+import ManagerAccountantDashboardPage from '@/app/(dashboard)/manager/accountant-dashboard/page';
 
 // Store Pages
 import StoreDashboardPage from '@/app/(dashboard)/store/dashboard/page';
@@ -102,22 +114,29 @@ export function AppRoutes() {
         }
       >
         {/* Admin */}
-        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/roles" element={<AdminRolesPage />} />
         <Route path="/admin/permissions" element={<AdminPermissionsPage />} />
-        <Route path="/admin/employees" element={<AdminEmployeesPage />} />
-        <Route path="/admin/production" element={<AdminProductionPage />} />
-        <Route path="/admin/inventory" element={<AdminInventoryPage />} />
-        <Route path="/admin/distributors" element={<AdminDistributorsPage />} />
-        <Route path="/admin/purchases" element={<AdminPurchasesPage />} />
-        <Route path="/admin/payroll" element={<AdminPayrollPage />} />
-        <Route path="/admin/payments" element={<AdminPaymentsPage />} />
-        <Route path="/admin/reports" element={<AdminReportsPage />} />
+        <Route path="/admin/managers" element={<AdminUsersPage />} />
+        <Route path="/admin/employees" element={<EmployeesListPage />} />
         <Route path="/admin/store-manager-oversight/dashboard" element={<AdminStoreManagerDashboardPage />} />
+        <Route path="/admin/attendance" element={<AttendancePage />} />
+        <Route path="/admin/production" element={<ProductionListPage />} />
+        <Route path="/admin/store/inventory" element={<StoreInventoryPage />} />
+        <Route path="/admin/distribution" element={<ManagerDistributionPage />} />
+        <Route path="/admin/reports" element={<ManagerReportsPage />} />
+
+        <Route path="/admin/manager-dashboard" element={<AdminManagerDashboardPage />} />
+        <Route path="/admin/store-dashboard" element={<AdminStoreDashboardPage />} />
+        <Route path="/admin/distributor-dashboard" element={<AdminDistributorDashboardPage />} />
+        <Route path="/admin/accountant-dashboard" element={<AdminAccountantDashboardPage />} />
 
         {/* Accountant */}
         <Route path="/accountant/dashboard" element={<AccountantDashboardPage />} />
+
+        <Route path="/accountant/invoices" element={<DistributorInvoicesPage />} />
         <Route path="/accountant/payroll" element={<AccountantPayrollPage />} />
         <Route path="/accountant/deductions" element={<AccountantDeductionsPage />} />
         <Route path="/accountant/payments" element={<AccountantPaymentsPage />} />
@@ -127,21 +146,25 @@ export function AppRoutes() {
 
         {/* Manager */}
         <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
-        <Route path="/manager/employees" element={<ManagerEmployeesPage />} />
-        <Route path="/manager/attendance" element={<ManagerAttendancePage />} />
-        <Route path="/manager/attendance/daily" element={<ManagerAttendanceDailyPage />} />
-        <Route path="/manager/attendance/monthly" element={<ManagerAttendanceMonthlyPage />} />
-        <Route path="/manager/leave" element={<ManagerLeavePage />} />
-        <Route path="/manager/overtime" element={<ManagerOvertimePage />} />
-        <Route path="/manager/production" element={<ManagerProductionPage />} />
-        <Route path="/manager/inventory" element={<ManagerInventoryPage />} />
+        <Route path="/manager/employees" element={<EmployeesListPage />} />
+
+        <Route path="/manager/leave" element={<LeaveListPage />} />
+        <Route path="/manager/overtime" element={<OvertimePage />} />
+        <Route path="/manager/attendance" element={<AttendancePage />} />
+        <Route path="/manager/production" element={<ProductionListPage />} />
+        <Route path="/manager/store/inventory" element={<StoreInventoryPage />} />
         <Route path="/manager/distribution" element={<ManagerDistributionPage />} />
         <Route path="/manager/reports" element={<ManagerReportsPage />} />
+
+        <Route path="/manager/store-dashboard" element={<ManagerStoreDashboardPage />} />
+        <Route path="/manager/distributor-dashboard" element={<ManagerDistributorDashboardPage />} />
+        <Route path="/manager/accountant-dashboard" element={<ManagerAccountantDashboardPage />} />
 
         {/* Store */}
         <Route path="/store/dashboard" element={<StoreDashboardPage />} />
         <Route path="/store/inventory" element={<StoreInventoryPage />} />
         <Route path="/store/inventory/:id" element={<StoreInventoryDetailPage />} />
+
         <Route path="/store/low-stock" element={<StoreLowStockPage />} />
         <Route path="/store/damaged" element={<StoreDamagedPage />} />
         <Route path="/store/returns" element={<StoreReturnsPage />} />
@@ -149,7 +172,16 @@ export function AppRoutes() {
         <Route path="/store/stock-out" element={<StoreStockOutPage />} />
         <Route path="/store/goods-received" element={<StoreGoodsReceivedPage />} />
         <Route path="/store/dispatch" element={<StoreDispatchPage />} />
+
         <Route path="/store/reports" element={<StoreReportsPage />} />
+
+        {/* Employee */}
+        <Route path="/employee/dashboard" element={<EmployeeDashboardPage />} />
+        <Route path="/employee/profile" element={<ProfilePage />} />
+        <Route path="/employee/attendance" element={<AttendancePage />} />
+        <Route path="/employee/leave" element={<LeaveListPage />} />
+        <Route path="/employee/overtime" element={<OvertimePage />} />
+        <Route path="/employee/notifications" element={<EmployeeNotificationsPage />} />
 
         {/* Distributor */}
         <Route path="/distributor/dashboard" element={<DistributorDashboardPage />} />
@@ -163,6 +195,7 @@ export function AppRoutes() {
         <Route path="/distributor/invoices" element={<DistributorInvoicesPage />} />
         <Route path="/distributor/payments" element={<DistributorPaymentsPage />} />
         <Route path="/distributor/outstanding" element={<DistributorOutstandingPage />} />
+
 
         {/* Shared Operational Modules */}
         <Route path="/employees" element={<EmployeesListPage />} />
@@ -180,6 +213,17 @@ export function AppRoutes() {
         <Route path="/production/create" element={<CreateProductionPage />} />
         <Route path="/production/history" element={<ProductionHistoryPage />} />
         <Route path="/production/:id" element={<ProductionDetailPage />} />
+        
+        {/* Missing pages */}
+        <Route path="/admin/manager-assignments" element={<AdminManagerAssignmentsPage />} />
+        <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
+        <Route path="/admin/audit-logs" element={<AdminAuditLogsPage />} />
+        <Route path="/manager/departments" element={<ManagerDepartmentsPage />} />
+        <Route path="/store/products" element={<StoreProductsPage />} />
+        <Route path="/store/stock-transactions" element={<StoreStockTransactionsPage />} />
+        <Route path="/distributor/dispatch" element={<DistributorDispatchPage />} />
+        <Route path="/accountant/suppliers" element={<AccountantSuppliersPage />} />
+
       </Route>
 
       {/* Catch-all redirect */}

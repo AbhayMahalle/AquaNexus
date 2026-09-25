@@ -16,14 +16,14 @@ const ROLE_EMAILS: Record<UserRole, string> = {
   store_manager: 'store@aquanexus.com',
   accountant: 'accountant@aquanexus.com',
   distributor: 'distributor@aquanexus.com',
-  operator: 'manager@aquanexus.com',
+  employee: 'employee@aquanexus.com',
 };
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
 
   const [email, setEmail] = useState('admin@aquanexus.com');
-  const [password, setPassword] = useState('Password@123');
+  const [password, setPassword] = useState('Abhay@123');
   const [roleOverride, setRoleOverride] = useState<UserRole>('admin');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,7 +51,7 @@ export default function LoginPage() {
       else if (lowerEmail.includes('store')) effectiveRole = 'store_manager';
       else if (lowerEmail.includes('finance') || lowerEmail.includes('accountant')) effectiveRole = 'accountant';
       else if (lowerEmail.includes('distributor')) effectiveRole = 'distributor';
-      else if (lowerEmail.includes('operator')) effectiveRole = 'operator';
+      else if (lowerEmail.includes('employee')) effectiveRole = 'employee';
 
       // Always open the proper dashboard dedicated to the role
       const targetDashboard = getDashboardRoute(effectiveRole);
@@ -129,6 +129,7 @@ export default function LoginPage() {
                 const r = e.target.value as UserRole;
                 setRoleOverride(r);
                 setEmail(ROLE_EMAILS[r] || `${r}@aquanexus.com`);
+                setPassword('Abhay@123');
               }}
               options={[
                 { label: 'Admin (System Lead)', value: 'admin' },
@@ -136,7 +137,7 @@ export default function LoginPage() {
                 { label: 'Store & Inventory Manager', value: 'store_manager' },
                 { label: 'Chief Accountant', value: 'accountant' },
                 { label: 'Distributor Agency', value: 'distributor' },
-                { label: 'Line Operator', value: 'operator' },
+                { label: 'Employee Portal', value: 'employee' },
               ]}
               helperText="Auto-populates credentials and role-specific permissions"
             />

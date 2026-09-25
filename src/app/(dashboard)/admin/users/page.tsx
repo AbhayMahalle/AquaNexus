@@ -1,1 +1,1 @@
-﻿export { default } from '@/views/admin/UserManagement';
+export { default } from '@/views/admin/UserManagement';

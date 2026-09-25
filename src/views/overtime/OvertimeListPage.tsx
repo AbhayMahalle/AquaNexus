@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { apiClient } from '../../lib/api-client';
 import { Plus, Search, Clock, CheckCircle, XCircle, DollarSign } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -15,6 +18,7 @@ import { employeeService } from '../../services/employeeService';
 import type { Overtime, Employee, OvertimeStatus } from '../../types';
 
 export const OvertimeListPage: React.FC = () => {
+  const { user } = useAuth();
   const [logs, setLogs] = useState<Overtime[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,13 +43,35 @@ export const OvertimeListPage: React.FC = () => {
 
   useEffect(() => {
     fetchLogs();
-    employeeService.getEmployees().then((res) => {
-      if (res.success && res.data.length > 0) {
-        setEmployees(res.data);
-        setFormData((prev) => ({ ...prev, employeeId: res.data[0].employeeId }));
-      }
-    });
-  }, [fetchLogs, search, statusFilter]);
+    if (user?.role === 'employee') {
+      apiClient.getMyProfile().then((res) => {
+        if (res.success && res.data) {
+          const emp = {
+            id: res.data.id,
+            employeeId: res.data.employeeCode || res.data.userId,
+            name: `${res.data.firstName} ${res.data.lastName}`.trim(),
+            department: res.data.department?.name || 'Operations',
+            role: 'EMPLOYEE',
+            status: 'ACTIVE',
+            email: user.email,
+            designation: res.data.designation || 'Staff',
+            contactNumber: res.data.phone || '',
+            joiningDate: res.data.joiningDate || '',
+            salary: res.data.salary || 0
+          } as Employee;
+          setEmployees([emp]);
+          setFormData((prev) => ({ ...prev, employeeId: emp.employeeId }));
+        }
+      });
+    } else {
+      employeeService.getEmployees().then((res) => {
+        if (res.success && res.data.length > 0) {
+          setEmployees(res.data);
+          setFormData((prev) => ({ ...prev, employeeId: res.data[0].employeeId }));
+        }
+      });
+    }
+  }, [fetchLogs, search, statusFilter, user]);
 
   const handleCreateLog = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +79,7 @@ export const OvertimeListPage: React.FC = () => {
     if (!emp) return;
 
     await overtimeService.logOvertime({
-      employeeId: emp.employeeId,
+      employeeId: emp.id,
       employeeName: emp.name,
       department: emp.department,
       date: formData.date,
@@ -118,22 +144,26 @@ export const OvertimeListPage: React.FC = () => {
       cell: (o: Overtime) => (
         <div className="flex items-center gap-1">
           {o.status === 'PENDING' ? (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleUpdateStatus(o.id, 'APPROVED')}
-                title="Approve OT"
-                icon={<CheckCircle className="w-4 h-4 text-status-success" />}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleUpdateStatus(o.id, 'REJECTED')}
-                title="Reject OT"
-                icon={<XCircle className="w-4 h-4 text-status-danger" />}
-              />
-            </>
+            user?.role === 'employee' ? (
+              <span className="text-[11px] text-text-muted italic">Pending Approval</span>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleUpdateStatus(o.id, 'APPROVED')}
+                  title="Approve OT"
+                  icon={<CheckCircle className="w-4 h-4 text-status-success" />}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleUpdateStatus(o.id, 'REJECTED')}
+                  title="Reject OT"
+                  icon={<XCircle className="w-4 h-4 text-status-danger" />}
+                />
+              </>
+            )
           ) : (
             <span className="text-[11px] text-text-muted italic">Reviewed</span>
           )}
@@ -153,7 +183,7 @@ export const OvertimeListPage: React.FC = () => {
             icon={<Plus className="w-4 h-4" />}
             onClick={() => setIsModalOpen(true)}
           >
-            Log Overtime
+            {user?.role === 'employee' ? 'Request Overtime' : 'Log Overtime'}
           </Button>
         }
       />
@@ -218,19 +248,25 @@ export const OvertimeListPage: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Log Overtime Hours"
-        subtitle="Record additional operational hours worked by plant employee"
+        title={user?.role === 'employee' ? 'Request Overtime' : 'Log Overtime Hours'}
+        subtitle={user?.role === 'employee' ? 'Submit an overtime request for approval' : 'Record additional operational hours worked by plant employee'}
       >
         <form onSubmit={handleCreateLog} className="space-y-4">
-          <Select
-            label="Select Employee"
-            value={formData.employeeId}
-            onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-            options={employees.map((e) => ({
-              value: e.employeeId,
-              label: `${e.name} (${e.employeeId} - ${e.department})`,
-            }))}
-          />
+          {user?.role === 'employee' ? (
+            <div className="p-3 bg-gray-50 border border-border rounded-md text-sm text-text-primary">
+              Requesting overtime for: <strong className="font-semibold">{employees[0]?.name || 'Me'}</strong>
+            </div>
+          ) : (
+            <Select
+              label="Select Employee"
+              value={formData.employeeId}
+              onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+              options={employees.map((e) => ({
+                value: e.employeeId,
+                label: `${e.name} (${e.employeeId} - ${e.department})`,
+              }))}
+            />
+          )}
 
           <Input
             label="Date Worked"
@@ -273,7 +309,7 @@ export const OvertimeListPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary">
-              Log Overtime Record
+              {user?.role === 'employee' ? 'Submit Request' : 'Log Overtime Record'}
             </Button>
           </div>
         </form>

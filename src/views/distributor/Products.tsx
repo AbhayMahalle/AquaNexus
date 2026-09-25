@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Package } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
@@ -12,7 +12,7 @@ import { Product } from '@/types/business';
 import { formatCurrency } from '@/lib/utils';
 
 export const DistributorProducts: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,7 +76,7 @@ export const DistributorProducts: React.FC = () => {
           size="sm"
           variant="orange"
           disabled={row.status === 'OUT_OF_STOCK'}
-          onClick={() => router.push(`/distributor/orders/create?productId=${row.id}`)}
+          onClick={() => navigate(-1)}
           icon={ShoppingCart}
           className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
         >
@@ -94,7 +94,7 @@ export const DistributorProducts: React.FC = () => {
         breadcrumb={['AquaNexus', 'Distributor', 'Products']}
         action={
           <Button
-            onClick={() => router.push('/distributor/orders/create')}
+            onClick={() => navigate(-1)}
             icon={ShoppingCart}
             variant="orange"
             className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
