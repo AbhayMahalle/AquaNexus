@@ -12,8 +12,9 @@ const requireManagerArea = (requiredArea) => {
       return sendError(res, "Access denied", 403);
     }
 
-    // Admins have implicit access to all areas
-    if (req.user.role.name === "ADMIN") {
+    // Only the 'MANAGER' role requires specific area assignments.
+    // Other roles are restricted by their specific RBAC permissions.
+    if (req.user.role.name !== "MANAGER") {
       return next();
     }
 

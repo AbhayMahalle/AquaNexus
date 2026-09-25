@@ -9,8 +9,11 @@ const {
 const { requireAuth } = require("../middleware/auth.middleware");
 const { requireRole } = require("../middleware/rbac.middleware");
 
+const { requireManagerArea } = require("../middleware/managerAccess.middleware");
+
 const router = express.Router();
 
+router.use(requireManagerArea("DISTRIBUTION"));
 router.get("/sales-areas", requireAuth, getSalesAreas);
 router.post(
   "/sales-areas",
