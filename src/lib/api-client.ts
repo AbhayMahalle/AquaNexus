@@ -137,6 +137,8 @@ export const apiClient = {
       orderDate: new Date().toISOString(),
       items: newOrder.items.map((i) => ({ productId: i.productId, quantity: Number(i.quantity) })),
       notes: newOrder.notes,
+      tax: (newOrder as any).taxAmount ?? (newOrder as any).tax ?? 0,
+      discount: (newOrder as any).discount ?? 0,
     };
 
     const res = await fetchApi<{ order: any }>('/orders', {
@@ -662,7 +664,7 @@ export const apiClient = {
   },
 
   async getEmployees(): Promise<ApiResponse<any[]>> {
-    const res = await fetchApi<{ employees: any[] }>('/employees');
+    const res = await fetchApi<{ employees: any[] }>('/employees?limit=100');
     if (!res.success) {
       return { success: false, data: [], message: res.message };
     }
@@ -686,7 +688,7 @@ export const apiClient = {
     // We can fetch from /employees?limit=1 if we are employee, the backend scoped it to us.
     const res = await fetchApi<{ employees: any[] }>('/employees?limit=1');
     if (!res.success) return { success: false, data: null, message: res.message };
-    const emp = res.data?.employees?.[0];
+    const emp = res.data?.employees?.[0] || (Array.isArray(res.data) ? res.data[0] : (res.data as any)?.data?.[0]) || null;
     return { success: true, data: emp, message: res.message };
   },
 

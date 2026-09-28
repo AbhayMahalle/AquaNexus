@@ -11,5 +11,6 @@ const {
 router.get('/', requireAuth, requirePermission('attendance.view'), getOvertime);
 router.post('/', requireAuth, requirePermission('attendance.create'), createOvertime);
 router.patch('/:id', requireAuth, requirePermission('attendance.update'), updateOvertimeStatus);
+router.patch('/:id/status', requireAuth, requirePermission('attendance.update'), updateOvertimeStatus);
 
 module.exports = router;

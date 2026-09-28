@@ -5,9 +5,12 @@ const TODAY = new Date().toISOString().split('T')[0];
 
 function mapOvertime(o: any): Overtime {
   const hours = Number(o.hours || 0);
-  const rateMultiplier = 1.5;
+  const match = (o.reason || o.notes)?.match(/\[Multiplier:\s*([0-9.]+)x\]/i);
+  const rateMultiplier = Number(o.rateMultiplier || (match ? parseFloat(match[1]) : 1.5));
   const baseHourlyRate = 150;
-  const payrollAmount = Number(o.amount || hours * baseHourlyRate * rateMultiplier);
+  const payrollAmount = Number(o.payrollAmount || o.amount || hours * baseHourlyRate * rateMultiplier);
+  const rawNotes = o.reason || o.notes || '';
+  const notes = rawNotes.replace(/\[Multiplier:\s*[0-9.]+x\]\s*/i, '');
 
   return {
     id: o.id,
@@ -20,7 +23,7 @@ function mapOvertime(o: any): Overtime {
     status: (o.status || 'PENDING') as OvertimeStatus,
     approvedBy: o.approver ? `${o.approver.firstName || ''} ${o.approver.lastName || ''}`.trim() : undefined,
     payrollAmount,
-    notes: o.reason || '',
+    notes,
   };
 }
 
@@ -61,11 +64,16 @@ export const overtimeService = {
   },
 
   async logOvertime(record: Omit<Overtime, 'id' | 'status' | 'payrollAmount'>): Promise<ApiResponse<Overtime>> {
+    const mult = Number(record.rateMultiplier || 1.5);
+    const cleanNotes = record.notes || 'Shift overtime work';
+    const reason = `[Multiplier: ${mult.toFixed(1)}x] ${cleanNotes}`;
+
     const payload = {
       employeeId: record.employeeId,
       overtimeDate: new Date(record.date || TODAY).toISOString(),
       hours: Number(record.hours),
-      reason: record.notes || 'Shift overtime work',
+      rateMultiplier: mult,
+      reason,
     };
 
     const realResponse = await fetchApi<any>('/overtime', {

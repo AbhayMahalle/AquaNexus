@@ -141,7 +141,7 @@ export const DistributorDashboard: React.FC = () => {
             Refresh
           </Button>
           <Button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/distributor/orders/create')}
             variant="orange"
             className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
             icon={Plus}
@@ -231,7 +231,7 @@ export const DistributorDashboard: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/distributor/stock')}
               className="bg-white text-black border-gray-300 hover:bg-gray-100"
             >
               View All ({stock.length})
@@ -278,7 +278,7 @@ export const DistributorDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/distributor/orders')}
             className="bg-white text-black border-gray-300 hover:bg-gray-100"
           >
             View Orders List ({orders.length})
@@ -289,7 +289,7 @@ export const DistributorDashboard: React.FC = () => {
             <div className="py-8 text-center text-xs text-gray-500">
               No orders placed yet.{' '}
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/distributor/orders/create')}
                 className="text-orange-600 font-bold underline ml-1"
               >
                 Create your first plant order
@@ -340,7 +340,7 @@ export const DistributorDashboard: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate(-1)}
+                      onClick={() => navigate(`/distributor/orders/${order.id}`)}
                       icon={ArrowRight}
                       className="bg-white text-black border-gray-300 hover:bg-gray-100"
                     />

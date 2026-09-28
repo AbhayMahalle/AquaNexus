@@ -87,7 +87,7 @@ export const DistributorOrders: React.FC = () => {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/distributor/orders/${row.id}`)}
             icon={Eye}
             className="bg-white text-black border-gray-300 hover:bg-gray-100"
           >
@@ -113,7 +113,7 @@ export const DistributorOrders: React.FC = () => {
         breadcrumb={['AquaNexus', 'Distributor', 'Orders']}
         action={
           <Button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/distributor/orders/create')}
             icon={Plus}
             variant="orange"
             className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"

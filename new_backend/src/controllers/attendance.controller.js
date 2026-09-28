@@ -94,16 +94,20 @@ const getAttendance = async (req, res) => {
  */
 const recordAttendance = async (req, res) => {
   try {
-    const { records, employeeId, attendanceDate, status, checkIn, checkOut, remarks } = req.body;
+    const { records, employeeId, attendanceDate, date, status, checkIn, checkOut, remarks, notes } = req.body;
+
+    const defaultEmpId = (req.user && req.user.role?.name === 'EMPLOYEE' && req.user.employee?.id) ? req.user.employee.id : employeeId;
+    const defaultDate = attendanceDate || date;
+    const defaultRemarks = remarks !== undefined ? remarks : notes;
 
     // Single record mode or bulk records array mode
     const attendanceItems = Array.isArray(records) ? records : [{
-      employeeId,
-      attendanceDate,
-      status,
+      employeeId: defaultEmpId,
+      attendanceDate: defaultDate,
+      status: status || 'PRESENT',
       checkIn,
       checkOut,
-      remarks
+      remarks: defaultRemarks
     }];
 
     if (attendanceItems.length === 0 || !attendanceItems[0].employeeId || !attendanceItems[0].attendanceDate || !attendanceItems[0].status) {
@@ -112,15 +116,45 @@ const recordAttendance = async (req, res) => {
 
     const results = [];
 
+    const parseDateTime = (val, baseDate) => {
+      if (!val) return undefined;
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) return d;
+      const timeMatch = String(val).match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
+      if (timeMatch) {
+        let [_, hours, minutes, meridiem] = timeMatch;
+        let h = parseInt(hours, 10);
+        const m = parseInt(minutes, 10);
+        if (meridiem) {
+          if (meridiem.toUpperCase() === 'PM' && h < 12) h += 12;
+          if (meridiem.toUpperCase() === 'AM' && h === 12) h = 0;
+        }
+        const combined = new Date(baseDate);
+        combined.setHours(h, m, 0, 0);
+        return combined;
+      }
+      return undefined;
+    };
+
     for (const item of attendanceItems) {
       const dateObj = new Date(item.attendanceDate);
 
       let empId = item.employeeId;
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.employeeId);
-      if (!isUuid) {
-        const emp = await prisma.employee.findUnique({ where: { employeeCode: item.employeeId } });
-        if (emp) empId = emp.id;
+      if (req.user && req.user.role?.name === 'EMPLOYEE') {
+        if (!req.user.employee || !req.user.employee.id) {
+          return sendError(res, 'Employee profile not found for this user', 403);
+        }
+        empId = req.user.employee.id;
+      } else {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.employeeId);
+        if (!isUuid) {
+          const emp = await prisma.employee.findUnique({ where: { employeeCode: item.employeeId } });
+          if (emp) empId = emp.id;
+        }
       }
+
+      const parsedCheckIn = parseDateTime(item.checkIn, dateObj);
+      const parsedCheckOut = parseDateTime(item.checkOut, dateObj);
 
       const record = await prisma.attendance.upsert({
         where: {
@@ -131,16 +165,16 @@ const recordAttendance = async (req, res) => {
         },
         update: {
           status: item.status,
-          ...(item.checkIn && { checkIn: new Date(item.checkIn) }),
-          ...(item.checkOut && { checkOut: new Date(item.checkOut) }),
+          ...(parsedCheckIn && { checkIn: parsedCheckIn }),
+          ...(parsedCheckOut && { checkOut: parsedCheckOut }),
           ...(item.remarks !== undefined && { remarks: item.remarks })
         },
         create: {
           employeeId: empId,
           attendanceDate: dateObj,
           status: item.status,
-          ...(item.checkIn && { checkIn: new Date(item.checkIn) }),
-          ...(item.checkOut && { checkOut: new Date(item.checkOut) }),
+          ...(parsedCheckIn && { checkIn: parsedCheckIn }),
+          ...(parsedCheckOut && { checkOut: parsedCheckOut }),
           remarks: item.remarks
         },
         include: {

@@ -42,6 +42,12 @@ export const LeaveListPage: React.FC = () => {
     fetchLeaves();
   };
 
+  const handleCancel = async (leaveId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this leave request?')) return;
+    await leaveService.updateLeaveStatus(leaveId, 'CANCELLED');
+    fetchLeaves();
+  };
+
   const columns = [
     {
       header: 'Employee',
@@ -76,10 +82,11 @@ export const LeaveListPage: React.FC = () => {
     {
       header: 'Status',
       cell: (l: Leave) => {
-        const variantMap: Record<LeaveStatus, 'warning' | 'success' | 'danger'> = {
+        const variantMap: Record<LeaveStatus, 'warning' | 'success' | 'danger' | 'secondary'> = {
           PENDING: 'warning',
           APPROVED: 'success',
           REJECTED: 'danger',
+          CANCELLED: 'secondary',
         };
         return <Badge variant={variantMap[l.status]}>{l.status}</Badge>;
       },
@@ -104,6 +111,15 @@ export const LeaveListPage: React.FC = () => {
               Review
             </Button>
           )}
+          {l.status === 'PENDING' && user?.role === 'employee' && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => handleCancel(l.id)}
+            >
+              Cancel
+            </Button>
+          )}
         </div>
       ),
     },
@@ -112,8 +128,8 @@ export const LeaveListPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Leave Management"
-        description="Track and process employee leave requests and approvals."
+        title={user?.role === 'employee' ? 'My Leave Requests' : 'Leave Management'}
+        description={user?.role === 'employee' ? 'Track your leave requests and file new applications.' : 'Track and process employee leave requests and approvals.'}
         action={
           <Button
             variant="primary"
@@ -144,6 +160,7 @@ export const LeaveListPage: React.FC = () => {
                 { value: 'PENDING', label: 'Pending Review' },
                 { value: 'APPROVED', label: 'Approved' },
                 { value: 'REJECTED', label: 'Rejected' },
+                { value: 'CANCELLED', label: 'Cancelled' },
               ]}
             />
           </div>

@@ -102,11 +102,12 @@ export const CreateOrder: React.FC = () => {
       items: validItems,
       deliveryAddress: deliveryAddress || distributor?.address || 'Main Delivery Hub',
       notes,
-    });
+      taxAmount,
+    } as any);
 
     setIsSubmitting(false);
     if (res.success) {
-      navigate(-1);
+      navigate('/distributor/orders');
     } else {
       alert(res.message || 'Failed to submit order');
     }
@@ -119,7 +120,7 @@ export const CreateOrder: React.FC = () => {
         description="Select products, specify dispatch quantities, and submit order to central plant store."
         breadcrumb={['AquaNexus', 'Distributor', 'Orders', 'Create']}
         action={
-          <Button variant="secondary" onClick={() => navigate(-1)} icon={ArrowLeft}>
+          <Button variant="secondary" onClick={() => navigate('/distributor/orders')} icon={ArrowLeft}>
             Back to Orders
           </Button>
         }

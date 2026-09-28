@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -13,6 +14,7 @@ import type { Leave, LeaveStatus } from '../../types';
 export const LeaveDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [leave, setLeave] = useState<Leave | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,7 +27,7 @@ export const LeaveDetailPage: React.FC = () => {
     }
   }, [id]);
 
-  const handleAction = async (status: 'APPROVED' | 'REJECTED') => {
+  const handleAction = async (status: 'APPROVED' | 'REJECTED' | 'CANCELLED') => {
     if (!id) return;
     const res = await leaveService.updateLeaveStatus(id, status);
     if (res.success) setLeave(res.data);
@@ -46,11 +48,14 @@ export const LeaveDetailPage: React.FC = () => {
     );
   }
 
-  const variantMap: Record<LeaveStatus, 'warning' | 'success' | 'danger'> = {
+  const variantMap: Record<LeaveStatus, 'warning' | 'success' | 'danger' | 'secondary'> = {
     PENDING: 'warning',
     APPROVED: 'success',
     REJECTED: 'danger',
+    CANCELLED: 'secondary',
   };
+
+  const isEmp = user?.role === 'employee';
 
   return (
     <div>
@@ -58,14 +63,14 @@ export const LeaveDetailPage: React.FC = () => {
         title={`Leave Application #${leave.id}`}
         description={`Submitted by ${leave.employeeName} (${leave.employeeId})`}
         breadcrumbs={[
-          { label: 'Leave Requests', href: '/leave' },
+          { label: 'Leave Requests', href: isEmp ? '/employee/leave' : '/leave' },
           { label: `Leave #${leave.id}` },
         ]}
         action={
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(isEmp ? '/employee/leave' : '/leave')}
           >
             Back to List
           </Button>
@@ -128,20 +133,32 @@ export const LeaveDetailPage: React.FC = () => {
 
           {leave.status === 'PENDING' && (
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-              <Button
-                variant="danger"
-                onClick={() => handleAction('REJECTED')}
-                icon={<XCircle className="w-4 h-4" />}
-              >
-                Reject Request
-              </Button>
-              <Button
-                variant="success"
-                onClick={() => handleAction('APPROVED')}
-                icon={<CheckCircle className="w-4 h-4" />}
-              >
-                Approve Request
-              </Button>
+              {isEmp ? (
+                <Button
+                  variant="danger"
+                  onClick={() => handleAction('CANCELLED')}
+                  icon={<XCircle className="w-4 h-4" />}
+                >
+                  Cancel Leave Request
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleAction('REJECTED')}
+                    icon={<XCircle className="w-4 h-4" />}
+                  >
+                    Reject Request
+                  </Button>
+                  <Button
+                    variant="success"
+                    onClick={() => handleAction('APPROVED')}
+                    icon={<CheckCircle className="w-4 h-4" />}
+                  >
+                    Approve Request
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </div>

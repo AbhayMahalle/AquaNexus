@@ -97,19 +97,28 @@ const createLeave = async (req, res) => {
   try {
     const { employeeId, leaveType, startDate, endDate, reason } = req.body;
 
-    if (!employeeId || !leaveType || !startDate || !endDate || !reason) {
+    let empId = employeeId;
+    if (req.user && req.user.role?.name === 'EMPLOYEE') {
+      if (!req.user.employee || !req.user.employee.id) {
+        return sendError(res, 'Employee profile not found for this user', 403);
+      }
+      empId = req.user.employee.id;
+    }
+
+    if (!empId || !leaveType || !startDate || !endDate || !reason) {
       return sendError(res, 'employeeId, leaveType, startDate, endDate, and reason are required', 400);
     }
 
-    let empId = employeeId;
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
-    const employee = await prisma.employee.findFirst({
-      where: isUuid ? { OR: [{ id: employeeId }, { employeeCode: employeeId }] } : { employeeCode: employeeId }
-    });
-    if (!employee) {
-      return sendError(res, 'Employee not found', 404);
+    if (req.user?.role?.name !== 'EMPLOYEE') {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
+      const employee = await prisma.employee.findFirst({
+        where: isUuid ? { OR: [{ id: employeeId }, { employeeCode: employeeId }] } : { employeeCode: employeeId }
+      });
+      if (!employee) {
+        return sendError(res, 'Employee not found', 404);
+      }
+      empId = employee.id;
     }
-    empId = employee.id;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -167,6 +176,15 @@ const updateLeaveStatus = async (req, res) => {
     const existingLeave = await prisma.leave.findUnique({ where: { id } });
     if (!existingLeave) {
       return sendError(res, 'Leave record not found', 404);
+    }
+
+    if (req.user && req.user.role?.name === 'EMPLOYEE') {
+      if (existingLeave.employeeId !== req.user.employee?.id) {
+        return sendError(res, 'You can only cancel your own leave requests', 403);
+      }
+      if (status !== 'CANCELLED') {
+        return sendError(res, 'Employees are only authorized to cancel their own leave requests', 403);
+      }
     }
 
     const updatedLeave = await prisma.leave.update({

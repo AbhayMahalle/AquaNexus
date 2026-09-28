@@ -41,8 +41,8 @@ export interface Attendance {
   remarks?: string;
 }
 
-export type LeaveType = 'SICK' | 'CASUAL' | 'PAID' | 'UNPAID';
-export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type LeaveType = 'SICK' | 'CASUAL' | 'PAID' | 'UNPAID' | 'ANNUAL' | 'EMERGENCY' | 'OTHER';
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export interface Leave {
   id: string;

@@ -50,10 +50,12 @@ export const AccountantPayroll: React.FC = () => {
       if (payRes.success) setPayroll(payRes.data);
       if (empRes.success && empRes.data.length > 0) {
         setEmployees(empRes.data);
-        if (!selectedEmployeeId) {
-          setSelectedEmployeeId(empRes.data[0].id);
-          if (empRes.data[0].salary) setBasicSalary(Number(empRes.data[0].salary));
-        }
+        setSelectedEmployeeId((prev) => {
+          if (prev && empRes.data.some((e: any) => e.id === prev)) return prev;
+          const first = empRes.data[0];
+          if (first?.salary) setBasicSalary(Number(first.salary));
+          return first.id;
+        });
       }
     } catch (err) {
       console.error('Failed to load payroll data:', err);
@@ -213,6 +215,10 @@ export const AccountantPayroll: React.FC = () => {
             <Button
               onClick={() => {
                 setErrorMsg('');
+                if ((!selectedEmployeeId || !employees.some((e) => e.id === selectedEmployeeId)) && employees.length > 0) {
+                  setSelectedEmployeeId(employees[0].id);
+                  if (employees[0].salary) setBasicSalary(Number(employees[0].salary));
+                }
                 setIsCreateModalOpen(true);
               }}
               icon={Plus}
@@ -377,6 +383,7 @@ export const AccountantPayroll: React.FC = () => {
 
           <Select
             label="Select Plant Employee"
+            placeholder="-- Select Employee --"
             options={employees.map((e) => ({
               label: `${e.firstName} ${e.lastName} (${e.employeeCode} - ${e.designation})`,
               value: e.id,

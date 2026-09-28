@@ -43,6 +43,7 @@ app.use("/api/manager-assignments", managerAssignmentRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/leave", leaveRoutes);
+app.use("/api/leaves", leaveRoutes);
 app.use("/api/overtime", overtimeRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/production", productionRoutes);

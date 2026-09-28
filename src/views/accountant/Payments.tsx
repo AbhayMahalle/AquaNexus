@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { DollarSign, Plus, RefreshCw, ArrowDownLeft, ArrowUpRight, CreditCard } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
@@ -57,12 +58,16 @@ export const AccountantPayments: React.FC = () => {
       if (payRes.success) setPayments(payRes.data);
       if (expRes.success) setExpenses(expRes.data);
       if (payrRes.success) setPayroll(payrRes.data);
-      if (invRes.success) {
+      if (invRes.success && invRes.data.length > 0) {
         setInvoices(invRes.data);
-        const openInv = invRes.data.find((i) => (i.outstandingAmount || 0) > 0);
-        if (openInv) {
-          setSelectedInvoiceId(openInv.id);
-          setAmount(openInv.outstandingAmount || openInv.totalAmount);
+        const searchParams = new URLSearchParams(window.location.search);
+        const queryInvoiceId = searchParams.get('invoiceId');
+        const targetInv = (queryInvoiceId && invRes.data.find((i) => i.id === queryInvoiceId)) ||
+                          invRes.data.find((i) => (i.outstandingAmount || 0) > 0) ||
+                          invRes.data[0];
+        if (targetInv) {
+          setSelectedInvoiceId((prev) => (prev && invRes.data.some((i: any) => i.id === prev) ? prev : targetInv.id));
+          setAmount(targetInv.outstandingAmount > 0 ? targetInv.outstandingAmount : 0);
         }
       }
     } catch (err) {
@@ -72,9 +77,15 @@ export const AccountantPayments: React.FC = () => {
     }
   };
 
+  const location = useLocation();
+
   useEffect(() => {
     loadData();
-  }, []);
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('pay') === 'true' || searchParams.get('invoiceId') || location.state?.openPayment) {
+      setIsModalOpen(true);
+    }
+  }, [location]);
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,13 +97,30 @@ export const AccountantPayments: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      if (!selectedInvoiceId) {
+        setErrorMsg('Please select a valid billed invoice');
+        setIsSubmitting(false);
+        return;
+      }
+      if (selectedInvoice && selectedInvoice.outstandingAmount <= 0) {
+        setErrorMsg('This invoice is already fully paid and settled.');
+        setIsSubmitting(false);
+        return;
+      }
+      if (selectedInvoice && Number(amount) > selectedInvoice.outstandingAmount) {
+        setErrorMsg(`Payment amount cannot exceed invoice outstanding dues of ${formatCurrency(selectedInvoice.outstandingAmount)}`);
+        setIsSubmitting(false);
+        return;
+      }
+
       const res = await apiClient.recordPayment({
         invoiceId: selectedInvoiceId,
+        invoiceNumber: selectedInvoice?.invoiceNumber || '',
         amount: Number(amount),
         paymentMethod: paymentMethod as any,
         referenceId: referenceNumber.trim() || `TXN-${Date.now().toString().slice(-6)}`,
         notes,
-        payerName: 'Distributor Agency',
+        payerName: selectedInvoice?.distributorName || 'Distributor Agency',
         paymentType: 'DISTRIBUTOR_PAYMENT',
       });
 
@@ -231,6 +259,15 @@ export const AccountantPayments: React.FC = () => {
             <Button
               onClick={() => {
                 setErrorMsg('');
+                if (invoices.length > 0) {
+                  const targetInv = invoices.find((i) => i.id === selectedInvoiceId) ||
+                                    invoices.find((i) => (i.outstandingAmount || 0) > 0) ||
+                                    invoices[0];
+                  if (targetInv) {
+                    setSelectedInvoiceId(targetInv.id);
+                    setAmount(targetInv.outstandingAmount > 0 ? targetInv.outstandingAmount : 0);
+                  }
+                }
                 setIsModalOpen(true);
               }}
               icon={Plus}
@@ -334,15 +371,16 @@ export const AccountantPayments: React.FC = () => {
 
           <Select
             label="Select Billed Invoice"
+            placeholder="-- Select Billed Invoice --"
             options={invoices.map((inv) => ({
-              label: `${inv.invoiceNumber} - ${inv.distributorName} (Dues: ${formatCurrency(inv.outstandingAmount || inv.totalAmount)})`,
+              label: `${inv.invoiceNumber} - ${inv.distributorName} (${inv.outstandingAmount > 0 ? `Dues: ${formatCurrency(inv.outstandingAmount)}` : 'Fully Settled'})`,
               value: inv.id,
             }))}
             value={selectedInvoiceId}
             onChange={(e) => {
               setSelectedInvoiceId(e.target.value);
               const inv = invoices.find((i) => i.id === e.target.value);
-              if (inv) setAmount(inv.outstandingAmount || inv.totalAmount);
+              if (inv) setAmount(inv.outstandingAmount > 0 ? inv.outstandingAmount : 0);
             }}
           />
 
@@ -351,14 +389,14 @@ export const AccountantPayments: React.FC = () => {
               label="Settlement Amount (₹)"
               type="number"
               min="1"
-              max={selectedInvoice ? selectedInvoice.outstandingAmount || selectedInvoice.totalAmount : undefined}
+              max={selectedInvoice && selectedInvoice.outstandingAmount > 0 ? selectedInvoice.outstandingAmount : undefined}
               value={amount || ''}
               onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
               required
             />
             {selectedInvoice && (
               <span className="text-xs text-textSecondary mt-1 block">
-                Total Invoice Outstanding: {formatCurrency(selectedInvoice.outstandingAmount || selectedInvoice.totalAmount)}
+                Total Invoice Outstanding: {formatCurrency(selectedInvoice.outstandingAmount)}
               </span>
             )}
           </div>

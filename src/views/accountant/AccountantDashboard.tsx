@@ -145,10 +145,10 @@ export const AccountantDashboard: React.FC = () => {
             <Button variant="secondary" onClick={loadFinanceData} isLoading={isLoading} icon={RefreshCw}>
               Refresh
             </Button>
-            <Button onClick={() => navigate(-1)} icon={Plus}>
+            <Button onClick={() => navigate('/accountant/expenses?new=true', { state: { openNew: true } })} icon={Plus}>
               Record Expense
             </Button>
-            <Button onClick={() => navigate(-1)} variant="secondary" icon={PieChart}>
+            <Button onClick={() => navigate('/accountant/reports')} variant="secondary" icon={PieChart}>
               Financial Reports
             </Button>
           </div>

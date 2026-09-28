@@ -12,7 +12,7 @@ const getRequestedDistributorId = (req, requestedId) => {
     return null;
   }
 
-  return requestedId || (accessibleIds.length === 1 ? accessibleIds[0] : null);
+  return requestedId || (accessibleIds.length > 0 ? accessibleIds[0] : null);
 };
 
 const getOrders = async (req, res) => {

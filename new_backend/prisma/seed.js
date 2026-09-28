@@ -173,6 +173,7 @@ async function main() {
     "expense.view",
     "expense.manage",
     "report.view",
+    "employee.view",
   ];
   for (const code of accountantPerms) {
     const pid = permissions[code].id;

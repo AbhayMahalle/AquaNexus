@@ -120,7 +120,7 @@ export const OvertimeListPage: React.FC = () => {
     },
     {
       header: 'Rate Multiplier',
-      cell: (o: Overtime) => <Badge variant="secondary">{o.rateMultiplier}x</Badge>,
+      cell: (o: Overtime) => <Badge variant="secondary">{Number(o.rateMultiplier || 1.5).toFixed(1)}x</Badge>,
     },
     {
       header: 'Payroll Amount (₹)',
@@ -288,9 +288,10 @@ export const OvertimeListPage: React.FC = () => {
 
             <Select
               label="Multiplier Rate"
-              value={formData.rateMultiplier.toString()}
-              onChange={(e) => setFormData({ ...formData, rateMultiplier: Number(e.target.value) })}
+              value={Number(formData.rateMultiplier || 1.5).toFixed(1)}
+              onChange={(e) => setFormData({ ...formData, rateMultiplier: parseFloat(e.target.value) || 1.5 })}
               options={[
+                { value: '1.0', label: '1.0x (Standard Shift)' },
                 { value: '1.5', label: '1.5x (Standard Overtime)' },
                 { value: '2.0', label: '2.0x (Holiday / Night Shift)' },
               ]}

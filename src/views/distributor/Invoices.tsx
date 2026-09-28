@@ -8,6 +8,8 @@ import { Table, Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { apiClient } from '@/lib/api-client';
 import { Invoice } from '@/types/business';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -18,6 +20,15 @@ export const DistributorInvoices: React.FC = () => {
   const [distributorInfo, setDistributorInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+
+  // Pay Invoice Modal State
+  const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'UPI' | 'CHEQUE' | 'CASH'>('BANK_TRANSFER');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
 
   const loadInvoices = async () => {
     setLoading(true);
@@ -40,6 +51,46 @@ export const DistributorInvoices: React.FC = () => {
   useEffect(() => {
     loadInvoices();
   }, []);
+
+  const handlePayInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payingInvoice) return;
+    setPaymentError('');
+
+    if (paymentAmount <= 0) {
+      setPaymentError('Payment amount must be greater than zero');
+      return;
+    }
+    if (paymentAmount > payingInvoice.outstandingAmount) {
+      setPaymentError(`Payment amount cannot exceed outstanding amount of ${formatCurrency(payingInvoice.outstandingAmount)}`);
+      return;
+    }
+
+    setIsSubmittingPayment(true);
+    try {
+      const res = await apiClient.recordPayment({
+        invoiceId: payingInvoice.id,
+        invoiceNumber: payingInvoice.invoiceNumber,
+        amount: Number(paymentAmount),
+        paymentMethod: paymentMethod as any,
+        referenceId: referenceNumber.trim() || `TXN-${Date.now().toString().slice(-6)}`,
+        notes: paymentNotes || 'Invoice Settlement',
+        payerName: payingInvoice.distributorName || 'Distributor Agency',
+        paymentType: 'DISTRIBUTOR_PAYMENT',
+      });
+
+      if (res.success) {
+        setPayingInvoice(null);
+        await loadInvoices();
+      } else {
+        setPaymentError(res.message || 'Failed to record payment');
+      }
+    } catch (err: any) {
+      setPaymentError(err.message || 'An error occurred while saving payment');
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
 
   const columns: Column<Invoice>[] = [
     {
@@ -103,7 +154,13 @@ export const DistributorInvoices: React.FC = () => {
           {row.outstandingAmount > 0 && (
             <Button
               size="sm"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                setPayingInvoice(row);
+                setPaymentAmount(row.outstandingAmount);
+                setReferenceNumber('');
+                setPaymentNotes('');
+                setPaymentError('');
+              }}
               icon={CreditCard}
             >
               Pay
@@ -195,6 +252,89 @@ export const DistributorInvoices: React.FC = () => {
               </div>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Pay Invoice Modal */}
+      {payingInvoice && (
+        <Modal
+          isOpen={!!payingInvoice}
+          onClose={() => setPayingInvoice(null)}
+          title={`Pay Invoice — ${payingInvoice.invoiceNumber}`}
+          maxWidth="md"
+        >
+          <form onSubmit={handlePayInvoice} className="space-y-4">
+            {paymentError && (
+              <div className="p-3 text-xs bg-red-50 text-red-700 border border-red-200 rounded-lg">
+                {paymentError}
+              </div>
+            )}
+
+            <div className="p-3 bg-bgMain rounded-lg border border-border space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-textSecondary">Distributor:</span>
+                <span className="font-semibold text-textPrimary">{payingInvoice.distributorName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-textSecondary">Total Amount:</span>
+                <span className="font-semibold">{formatCurrency(payingInvoice.totalAmount)}</span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-1">
+                <span className="font-bold text-textPrimary">Outstanding Dues:</span>
+                <span className="font-extrabold text-danger">{formatCurrency(payingInvoice.outstandingAmount)}</span>
+              </div>
+            </div>
+
+            <div>
+              <Input
+                label="Payment Amount (₹)"
+                type="number"
+                min="1"
+                max={payingInvoice.outstandingAmount}
+                value={paymentAmount || ''}
+                onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                required
+              />
+              <span className="text-[11px] text-textSecondary mt-0.5 block">
+                Max payable: {formatCurrency(payingInvoice.outstandingAmount)}
+              </span>
+            </div>
+
+            <Select
+              label="Payment Method"
+              options={[
+                { label: 'Bank Electronic Transfer (NEFT/RTGS/IMPS)', value: 'BANK_TRANSFER' },
+                { label: 'Online UPI (GPay, PhonePe, Paytm)', value: 'UPI' },
+                { label: 'Company Bank Cheque', value: 'CHEQUE' },
+                { label: 'Direct Cash Payment', value: 'CASH' },
+              ]}
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value as any)}
+            />
+
+            <Input
+              label="Transaction Reference / Cheque No."
+              placeholder="e.g. UTR-982348274 or CHQ-001234"
+              value={referenceNumber}
+              onChange={(e) => setReferenceNumber(e.target.value)}
+            />
+
+            <Input
+              label="Payment Notes"
+              placeholder="e.g. Invoice settlement"
+              value={paymentNotes}
+              onChange={(e) => setPaymentNotes(e.target.value)}
+            />
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-border/60">
+              <Button type="button" variant="secondary" onClick={() => setPayingInvoice(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" isLoading={isSubmittingPayment} icon={CreditCard}>
+                Confirm &amp; Record Payment
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>

@@ -86,6 +86,44 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
     );
   };
 
+  const handleEmployeeMarkAttendance = async () => {
+    if (records.length === 0) return;
+    const rec = records[0];
+    setIsSaving(true);
+    setSaveSuccessMsg('');
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const isAlreadyCheckedIn = rec.status === 'PRESENT' || Boolean(rec.checkIn);
+    const isAlreadyCheckedOut = Boolean(rec.checkOut);
+
+    const payload: any = {
+      employeeId: rec.employeeId,
+      date: selectedDate,
+      status: 'PRESENT',
+    };
+
+    if (isAlreadyCheckedIn && !isAlreadyCheckedOut) {
+      payload.checkIn = rec.checkIn || timeStr;
+      payload.checkOut = timeStr;
+    } else {
+      payload.checkIn = timeStr;
+      if (rec.checkOut) payload.checkOut = rec.checkOut;
+    }
+
+    const res = await attendanceService.markAttendance(payload);
+    await loadAttendance();
+    setIsSaving(false);
+    if (res.success) {
+      setSaveSuccessMsg(
+        isAlreadyCheckedIn && !isAlreadyCheckedOut
+          ? `Check-out recorded at ${timeStr} for ${selectedDate}`
+          : `Check-in recorded at ${timeStr} for ${selectedDate}`
+      );
+      setTimeout(() => setSaveSuccessMsg(''), 4000);
+    }
+  };
+
   const handleSaveAll = async () => {
     setIsSaving(true);
     setSaveSuccessMsg('');
@@ -200,12 +238,12 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
         title={user?.role === 'employee' ? "My Attendance" : "Daily Attendance Logger"}
         description={user?.role === 'employee' ? "View your attendance records" : "Maintain daily shift attendance for water plant personnel."}
         action={
-          user?.role !== 'employee' && (
+          user?.role !== 'employee' ? (
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 icon={<UserPlus className="w-4 h-4" />}
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/employees/add')}
               >
                 Add Employee
               </Button>
@@ -216,6 +254,22 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
                 onClick={handleSaveAll}
               >
                 Save Attendance Log
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                isLoading={isSaving}
+                icon={<Clock className="w-4 h-4" />}
+                onClick={handleEmployeeMarkAttendance}
+                disabled={Boolean(records[0]?.checkIn && records[0]?.checkOut)}
+              >
+                {records[0]?.checkIn && records[0]?.checkOut
+                  ? 'Checked Out'
+                  : records[0]?.status === 'PRESENT' || records[0]?.checkIn
+                  ? 'Check Out'
+                  : 'Check In'}
               </Button>
             </div>
           )

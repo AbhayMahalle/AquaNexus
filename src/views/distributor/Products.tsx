@@ -76,7 +76,7 @@ export const DistributorProducts: React.FC = () => {
           size="sm"
           variant="orange"
           disabled={row.status === 'OUT_OF_STOCK'}
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/distributor/orders/create?productId=${row.id}`)}
           icon={ShoppingCart}
           className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
         >
@@ -94,7 +94,7 @@ export const DistributorProducts: React.FC = () => {
         breadcrumb={['AquaNexus', 'Distributor', 'Products']}
         action={
           <Button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/distributor/orders/create')}
             icon={ShoppingCart}
             variant="orange"
             className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"

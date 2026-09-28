@@ -44,6 +44,11 @@ const requirePermission = (requiredPermission) => {
       return next();
     }
 
+    // Allow ACCOUNTANT to view employees for payroll calculation and processing
+    if (req.user.role.name === 'ACCOUNTANT' && requiredPermission === 'employee.view') {
+      return next();
+    }
+
     if (!permissions.includes(requiredPermission)) {
       return sendError(res, `Forbidden: Requires ${requiredPermission} permission`, 403);
     }

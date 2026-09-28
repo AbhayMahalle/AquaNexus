@@ -40,7 +40,7 @@ const getOvertime = async (req, res) => {
       if (endDate) where.overtimeDate.lte = new Date(endDate);
     }
 
-    const [overtimes, total] = await Promise.all([
+    const [rawOvertimes, total] = await Promise.all([
       prisma.overtime.findMany({
         where,
         skip,
@@ -69,6 +69,18 @@ const getOvertime = async (req, res) => {
       prisma.overtime.count({ where })
     ]);
 
+    const overtimes = rawOvertimes.map(ot => {
+      const match = ot.reason?.match(/\[Multiplier:\s*([0-9.]+)x\]/i);
+      const mult = match ? parseFloat(match[1]) : 1.5;
+      const baseHourlyRate = 150;
+      const payrollAmount = Number(ot.hours) * baseHourlyRate * mult;
+      return {
+        ...ot,
+        rateMultiplier: mult,
+        payrollAmount
+      };
+    });
+
     return sendSuccess(res, {
       overtimes,
       data: overtimes,
@@ -90,9 +102,17 @@ const getOvertime = async (req, res) => {
  */
 const createOvertime = async (req, res) => {
   try {
-    const { employeeId, overtimeDate, hours, reason } = req.body;
+    const { employeeId, overtimeDate, hours, reason, rateMultiplier } = req.body;
 
-    if (!employeeId || !overtimeDate || hours === undefined) {
+    let empId = employeeId;
+    if (req.user && req.user.role?.name === 'EMPLOYEE') {
+      if (!req.user.employee || !req.user.employee.id) {
+        return sendError(res, 'Employee profile not found for this user', 403);
+      }
+      empId = req.user.employee.id;
+    }
+
+    if (!empId || !overtimeDate || hours === undefined) {
       return sendError(res, 'employeeId, overtimeDate, and hours are required', 400);
     }
 
@@ -101,22 +121,35 @@ const createOvertime = async (req, res) => {
       return sendError(res, 'Hours must be a positive number', 400);
     }
 
-    let empId = employeeId;
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
-    const employee = await prisma.employee.findFirst({
-      where: isUuid ? { OR: [{ id: employeeId }, { employeeCode: employeeId }] } : { employeeCode: employeeId }
-    });
-    if (!employee) {
-      return sendError(res, 'Employee not found', 404);
+    if (req.user?.role?.name !== 'EMPLOYEE') {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
+      const employee = await prisma.employee.findFirst({
+        where: isUuid ? { OR: [{ id: employeeId }, { employeeCode: employeeId }] } : { employeeCode: employeeId }
+      });
+      if (!employee) {
+        return sendError(res, 'Employee not found', 404);
+      }
+      empId = employee.id;
     }
-    empId = employee.id;
+
+    let finalReason = reason || 'Shift overtime work';
+    let mult = 1.5;
+    if (rateMultiplier !== undefined && rateMultiplier !== null) {
+      const parsedMult = parseFloat(rateMultiplier);
+      if (!isNaN(parsedMult)) {
+        mult = parsedMult;
+        if (!finalReason.includes(`[Multiplier: ${parsedMult.toFixed(1)}x]`)) {
+          finalReason = `[Multiplier: ${parsedMult.toFixed(1)}x] ${finalReason}`;
+        }
+      }
+    }
 
     const newOvertime = await prisma.overtime.create({
       data: {
         employeeId: empId,
         overtimeDate: new Date(overtimeDate),
         hours: numHours,
-        reason,
+        reason: finalReason,
         status: 'PENDING'
       },
       include: {
@@ -124,7 +157,15 @@ const createOvertime = async (req, res) => {
       }
     });
 
-    return sendSuccess(res, { overtime: newOvertime, data: newOvertime, ...newOvertime }, 'Overtime record created successfully', 201);
+    const baseHourlyRate = 150;
+    const payrollAmount = Number(newOvertime.hours) * baseHourlyRate * mult;
+    const formatted = {
+      ...newOvertime,
+      rateMultiplier: mult,
+      payrollAmount
+    };
+
+    return sendSuccess(res, { overtime: formatted, data: formatted, ...formatted }, 'Overtime record created successfully', 201);
   } catch (error) {
     console.error('createOvertime error:', error);
     return sendError(res, 'Failed to create overtime record', 500);
@@ -146,6 +187,10 @@ const updateOvertimeStatus = async (req, res) => {
     const existingOvertime = await prisma.overtime.findUnique({ where: { id } });
     if (!existingOvertime) {
       return sendError(res, 'Overtime record not found', 404);
+    }
+
+    if (req.user && req.user.role?.name === 'EMPLOYEE') {
+      return sendError(res, 'Employees are not authorized to approve or reject overtime requests', 403);
     }
 
     const updatedOvertime = await prisma.overtime.update({

@@ -302,7 +302,7 @@ const createExpense = async (req, res) => {
         amount: Number(amount),
         expenseDate: parsedDate,
         description,
-        supplierId,
+        supplierId: supplierId ? supplierId : null,
         createdBy: req.user.id,
       },
       include: { supplier: true },

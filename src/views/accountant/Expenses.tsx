@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Plus, Receipt, RefreshCw, TrendingDown, Building2, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
@@ -45,9 +46,15 @@ export const AccountantExpenses: React.FC = () => {
     }
   };
 
+  const location = useLocation();
+
   useEffect(() => {
     loadData();
-  }, []);
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('new') === 'true' || location.state?.openNew) {
+      setIsModalOpen(true);
+    }
+  }, [location]);
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();

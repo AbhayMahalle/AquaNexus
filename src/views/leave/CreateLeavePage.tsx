@@ -91,12 +91,16 @@ export const CreateLeavePage: React.FC = () => {
 
     setIsSubmitting(false);
 
+    const isEmp = user?.role === 'employee';
+
     if (res.success) {
-      navigate(-1);
+      navigate(isEmp ? '/employee/leave' : '/leave');
     } else {
       setErrorMsg(res.message || 'Failed to submit leave application');
     }
   };
+
+  const isEmp = user?.role === 'employee';
 
   return (
     <div>
@@ -104,14 +108,14 @@ export const CreateLeavePage: React.FC = () => {
         title="Apply for Leave"
         description="File an official leave request for plant employees."
         breadcrumbs={[
-          { label: 'Leave Requests', href: '/leave' },
+          { label: 'Leave Requests', href: isEmp ? '/employee/leave' : '/leave' },
           { label: 'Apply Leave' },
         ]}
         action={
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(isEmp ? '/employee/leave' : '/leave')}
           >
             Cancel
           </Button>
@@ -130,6 +134,7 @@ export const CreateLeavePage: React.FC = () => {
             <Select
               label="Select Employee"
               value={formData.employeeId}
+              disabled={isEmp}
               onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
               options={employees.map((e) => ({
                 value: e.employeeId,

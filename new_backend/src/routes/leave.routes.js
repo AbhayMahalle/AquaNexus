@@ -11,5 +11,6 @@ const {
 router.get('/', requireAuth, requirePermission('attendance.view'), getLeaves);
 router.post('/', requireAuth, requirePermission('attendance.create'), createLeave);
 router.patch('/:id', requireAuth, requirePermission('attendance.update'), updateLeaveStatus);
+router.patch('/:id/status', requireAuth, requirePermission('attendance.update'), updateLeaveStatus);
 
 module.exports = router;
