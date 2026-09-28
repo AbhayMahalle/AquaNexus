@@ -15,7 +15,7 @@ router.use(requireManagerArea("DISTRIBUTION"));
 router.get(
   "/sales",
   requireAuth,
-  requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR"]),
+  requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "ACCOUNTANT"]),
   getSales,
 );
 router.post(
@@ -27,13 +27,13 @@ router.post(
 router.get(
   "/returns",
   requireAuth,
-  requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR"]),
+  requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "STORE_MANAGER"]),
   getReturns,
 );
 router.post(
   "/returns",
   requireAuth,
-  requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR"]),
+  requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "STORE_MANAGER"]),
   createReturn,
 );
 module.exports = router;

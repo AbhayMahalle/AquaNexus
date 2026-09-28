@@ -8,6 +8,7 @@ const {
   getLowStockAlerts,
   getStockTransactions,
   receiveGoods,
+  getGoodsReceived,
   createStockTransaction
 } = require('../controllers/inventory.controller');
 
@@ -23,6 +24,7 @@ router.get('/stock-transactions', requirePermission('inventory.view'), getStockT
 router.post('/stock-transactions', requirePermission('inventory.manage'), createStockTransaction);
 
 // Goods Received from Production
+router.get('/goods-received', requirePermission('inventory.view'), getGoodsReceived);
 router.post('/goods-received', requirePermission('inventory.manage'), receiveGoods);
 
 module.exports = router;

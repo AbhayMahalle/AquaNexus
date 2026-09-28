@@ -38,9 +38,10 @@ const getInvoices = async (req, res) => {
       orderBy: { invoiceDate: "desc" },
     });
 
+    const formatted = invoices.map(formatInvoice);
     return sendSuccess(
       res,
-      { invoices: invoices.map(formatInvoice) },
+      { invoices: formatted, data: formatted },
       "Invoices retrieved successfully",
     );
   } catch (error) {
@@ -142,7 +143,7 @@ const getPayments = async (req, res) => {
       orderBy: { paymentDate: "desc" },
     });
 
-    return sendSuccess(res, { payments }, "Payments retrieved successfully");
+    return sendSuccess(res, { payments, data: payments }, "Payments retrieved successfully");
   } catch (error) {
     console.error("getPayments error:", error);
     return sendError(res, "Failed to retrieve payments", 500);
@@ -262,7 +263,7 @@ const getExpenses = async (req, res) => {
       include: { supplier: true, creator: true, approver: true },
       orderBy: { expenseDate: "desc" },
     });
-    return sendSuccess(res, { expenses }, "Expenses retrieved successfully");
+    return sendSuccess(res, { expenses, data: expenses }, "Expenses retrieved successfully");
   } catch (error) {
     console.error("getExpenses error:", error);
     return sendError(res, "Failed to retrieve expenses", 500);
@@ -321,7 +322,7 @@ const getPayroll = async (req, res) => {
       include: { employee: true, processor: true },
       orderBy: { payPeriodStart: "desc" },
     });
-    return sendSuccess(res, { payroll }, "Payroll retrieved successfully");
+    return sendSuccess(res, { payroll, data: payroll }, "Payroll retrieved successfully");
   } catch (error) {
     console.error("getPayroll error:", error);
     return sendError(res, "Failed to retrieve payroll", 500);
@@ -370,9 +371,16 @@ const createPayroll = async (req, res) => {
       return sendError(res, "Salary values produce an invalid net salary", 400);
     }
 
+    let empId = employeeId;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
+    if (!isUuid) {
+      const emp = await prisma.employee.findUnique({ where: { employeeCode: employeeId } });
+      if (emp) empId = emp.id;
+    }
+
     const payroll = await prisma.payroll.create({
       data: {
-        employeeId,
+        employeeId: empId,
         payPeriodStart: start,
         payPeriodEnd: end,
         basicSalary: Number(basicSalary),
@@ -389,10 +397,53 @@ const createPayroll = async (req, res) => {
       },
       include: { employee: true, processor: true },
     });
-    return sendSuccess(res, { payroll }, "Payroll created successfully", 201);
+    return sendSuccess(res, { payroll, data: payroll }, "Payroll created successfully", 201);
   } catch (error) {
     console.error("createPayroll error:", error);
     return sendError(res, "Failed to create payroll", 500);
+  }
+};
+
+const updatePayroll = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, basicSalary, overtimeAmount, deductions } = req.body;
+
+    const existing = await prisma.payroll.findUnique({ where: { id } });
+    if (!existing) {
+      return sendError(res, "Payroll record not found", 404);
+    }
+
+    const data = {};
+    if (status) {
+      data.status = status;
+      if (["PROCESSED", "PAID"].includes(status)) {
+        data.processedBy = req.user.id;
+        data.processedAt = new Date();
+      }
+    }
+
+    const bSalary = basicSalary !== undefined ? Number(basicSalary) : Number(existing.basicSalary);
+    const otAmount = overtimeAmount !== undefined ? Number(overtimeAmount) : Number(existing.overtimeAmount);
+    const ded = deductions !== undefined ? Number(deductions) : Number(existing.deductions);
+
+    if (basicSalary !== undefined || overtimeAmount !== undefined || deductions !== undefined) {
+      data.basicSalary = bSalary;
+      data.overtimeAmount = otAmount;
+      data.deductions = ded;
+      data.netSalary = bSalary + otAmount - ded;
+    }
+
+    const updated = await prisma.payroll.update({
+      where: { id },
+      data,
+      include: { employee: true, processor: true },
+    });
+
+    return sendSuccess(res, { payroll: updated, data: updated }, "Payroll updated successfully");
+  } catch (error) {
+    console.error("updatePayroll error:", error);
+    return sendError(res, "Failed to update payroll", 500);
   }
 };
 
@@ -405,4 +456,5 @@ module.exports = {
   createExpense,
   getPayroll,
   createPayroll,
+  updatePayroll,
 };

@@ -71,6 +71,7 @@ const getOvertime = async (req, res) => {
 
     return sendSuccess(res, {
       overtimes,
+      data: overtimes,
       pagination: {
         total,
         page: parseInt(page),
@@ -100,14 +101,19 @@ const createOvertime = async (req, res) => {
       return sendError(res, 'Hours must be a positive number', 400);
     }
 
-    const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
+    let empId = employeeId;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
+    const employee = await prisma.employee.findFirst({
+      where: isUuid ? { OR: [{ id: employeeId }, { employeeCode: employeeId }] } : { employeeCode: employeeId }
+    });
     if (!employee) {
       return sendError(res, 'Employee not found', 404);
     }
+    empId = employee.id;
 
     const newOvertime = await prisma.overtime.create({
       data: {
-        employeeId,
+        employeeId: empId,
         overtimeDate: new Date(overtimeDate),
         hours: numHours,
         reason,
@@ -118,7 +124,7 @@ const createOvertime = async (req, res) => {
       }
     });
 
-    return sendSuccess(res, newOvertime, 'Overtime record created successfully', 201);
+    return sendSuccess(res, { overtime: newOvertime, data: newOvertime, ...newOvertime }, 'Overtime record created successfully', 201);
   } catch (error) {
     console.error('createOvertime error:', error);
     return sendError(res, 'Failed to create overtime record', 500);

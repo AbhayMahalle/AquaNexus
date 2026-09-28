@@ -5,10 +5,16 @@
  */
 
 const sendSuccess = (res, data = {}, message = 'Success', statusCode = 200) => {
+  let responseData = data;
+  let responseMessage = message;
+  if (typeof data === 'string' && (typeof message === 'object' || Array.isArray(message))) {
+    responseData = message;
+    responseMessage = data;
+  }
   return res.status(statusCode).json({
     success: true,
-    data,
-    message
+    data: responseData,
+    message: responseMessage
   });
 };
 

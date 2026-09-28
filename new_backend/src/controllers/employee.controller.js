@@ -70,6 +70,7 @@ const getEmployees = async (req, res) => {
 
     return sendSuccess(res, {
       employees,
+      data: employees,
       pagination: {
         total,
         page: parseInt(page),
@@ -100,8 +101,22 @@ const getEmployeeById = async (req, res) => {
       }
     }
 
-    const employee = await prisma.employee.findUnique({
-      where: { id },
+    let targetId = id;
+    if (id === 'me') {
+      const myEmp = req.user?.employee || (req.user?.id ? await prisma.employee.findUnique({ where: { userId: req.user.id } }) : null);
+      if (!myEmp) {
+        return sendError(res, 'Employee profile not found for this user', 404);
+      }
+      targetId = myEmp.id;
+    }
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+    const where = isUuid
+      ? { OR: [{ id: targetId }, { employeeCode: targetId }] }
+      : { employeeCode: targetId };
+
+    const employee = await prisma.employee.findFirst({
+      where,
       include: {
         department: true,
         attendances: {
@@ -123,7 +138,7 @@ const getEmployeeById = async (req, res) => {
       return sendError(res, 'Employee not found', 404);
     }
 
-    return sendSuccess(res, employee, 'Employee details retrieved successfully');
+    return sendSuccess(res, { employee, data: employee }, 'Employee details retrieved successfully');
   } catch (error) {
     console.error('getEmployeeById error:', error);
     return sendError(res, 'Failed to retrieve employee details', 500);
@@ -142,23 +157,36 @@ const createEmployee = async (req, res) => {
       email,
       phone,
       departmentId,
-      designation,
+      department: departmentName,
+      designation = 'Staff',
       joiningDate,
       employmentType = 'PERMANENT',
       status = 'ACTIVE'
     } = req.body;
 
-    if (!firstName || !lastName || !departmentId || !designation || !joiningDate) {
-      return sendError(res, 'First name, last name, department, designation, and joining date are required', 400);
+    if (!firstName || !lastName) {
+      return sendError(res, 'First name and last name are required', 400);
     }
 
-    // Verify department exists
-    const department = await prisma.department.findUnique({
-      where: { id: departmentId }
-    });
+    // Resolve department: by ID, by Name, or fallback to first active department
+    let targetDept = null;
+    if (departmentId) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(departmentId);
+      if (isUuid) {
+        targetDept = await prisma.department.findUnique({ where: { id: departmentId } });
+      }
+    }
+    if (!targetDept && departmentName) {
+      targetDept = await prisma.department.findFirst({
+        where: { name: { equals: departmentName, mode: 'insensitive' } }
+      });
+    }
+    if (!targetDept) {
+      targetDept = await prisma.department.findFirst({ where: { status: 'ACTIVE' } });
+    }
 
-    if (!department) {
-      return sendError(res, 'Invalid department ID', 400);
+    if (!targetDept) {
+      return sendError(res, 'No active department found to assign employee to', 400);
     }
 
     // Generate code if not provided
@@ -176,16 +204,18 @@ const createEmployee = async (req, res) => {
       return sendError(res, `Employee code '${code}' already exists`, 400);
     }
 
+    const resolvedJoiningDate = joiningDate ? new Date(joiningDate) : new Date();
+
     const newEmployee = await prisma.employee.create({
       data: {
         employeeCode: code,
         firstName,
         lastName,
-        email,
-        phone,
-        departmentId,
+        email: email || `${firstName.toLowerCase()}.${Date.now().toString().slice(-4)}@aquanexus.com`,
+        phone: phone || '9876543210',
+        departmentId: targetDept.id,
         designation,
-        joiningDate: new Date(joiningDate),
+        joiningDate: resolvedJoiningDate,
         employmentType,
         status
       },
@@ -194,7 +224,7 @@ const createEmployee = async (req, res) => {
       }
     });
 
-    return sendSuccess(res, newEmployee, 'Employee created successfully', 201);
+    return sendSuccess(res, { employee: newEmployee, data: newEmployee }, 'Employee created successfully', 201);
   } catch (error) {
     console.error('createEmployee error:', error);
     return sendError(res, 'Failed to create employee', 500);
@@ -249,7 +279,7 @@ const updateEmployee = async (req, res) => {
       }
     });
 
-    return sendSuccess(res, updatedEmployee, 'Employee updated successfully');
+    return sendSuccess(res, { employee: updatedEmployee, data: updatedEmployee }, 'Employee updated successfully');
   } catch (error) {
     console.error('updateEmployee error:', error);
     return sendError(res, 'Failed to update employee', 500);
@@ -265,10 +295,41 @@ const getDepartments = async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
-    return sendSuccess(res, departments, 'Departments retrieved successfully');
+    return sendSuccess(res, { departments, data: departments }, 'Departments retrieved successfully');
   } catch (error) {
     console.error('getDepartments error:', error);
     return sendError(res, 'Failed to retrieve departments', 500);
+  }
+};
+
+/**
+ * Delete / deactivate employee
+ */
+const deleteEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const existing = await prisma.employee.findFirst({
+      where: isUuid ? { OR: [{ id }, { employeeCode: id }] } : { employeeCode: id }
+    });
+
+    if (!existing) {
+      return sendError(res, 'Employee not found', 404);
+    }
+
+    try {
+      await prisma.employee.delete({ where: { id: existing.id } });
+    } catch {
+      await prisma.employee.update({
+        where: { id: existing.id },
+        data: { status: 'TERMINATED' }
+      });
+    }
+
+    return sendSuccess(res, { success: true }, 'Employee removed successfully');
+  } catch (error) {
+    console.error('deleteEmployee error:', error);
+    return sendError(res, 'Failed to remove employee', 500);
   }
 };
 
@@ -277,5 +338,6 @@ module.exports = {
   getEmployeeById,
   createEmployee,
   updateEmployee,
-  getDepartments
+  getDepartments,
+  deleteEmployee
 };

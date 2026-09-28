@@ -10,10 +10,9 @@ const { requireManagerArea } = require("../middleware/managerAccess.middleware")
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole(["ADMIN", "MANAGER", "STORE_MANAGER"]));
 router.use(requireManagerArea("DISTRIBUTION"));
 
-router.get("/", getDispatches);
-router.post("/", createDispatch);
+router.get("/", requireRole(["ADMIN", "MANAGER", "STORE_MANAGER", "DISTRIBUTOR"]), getDispatches);
+router.post("/", requireRole(["ADMIN", "MANAGER", "STORE_MANAGER"]), createDispatch);
 
 module.exports = router;

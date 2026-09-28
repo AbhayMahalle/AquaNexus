@@ -42,6 +42,19 @@ const createAuditLog = async ({
   }
 };
 
+const logAction = async (userId, action, entityType, entityId, oldValues, newValues, req) => {
+  return createAuditLog({
+    userId,
+    action,
+    entityType,
+    entityId,
+    oldValues,
+    newValues,
+    ipAddress: req?.ip,
+  });
+};
+
 module.exports = {
   createAuditLog,
+  logAction,
 };

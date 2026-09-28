@@ -21,7 +21,7 @@ const getSalesAreas = async (req, res) => {
 
     return sendSuccess(
       res,
-      { salesAreas },
+      { salesAreas, data: salesAreas },
       "Sales areas retrieved successfully",
     );
   } catch (error) {
@@ -73,7 +73,7 @@ const getDistributors = async (req, res) => {
 
     return sendSuccess(
       res,
-      { distributors },
+      { distributors, data: distributors },
       "Distributors retrieved successfully",
     );
   } catch (error) {
@@ -147,7 +147,7 @@ const getDistributorStock = async (req, res) => {
 
     return sendSuccess(
       res,
-      { stock },
+      { stock, data: stock },
       "Distributor stock retrieved successfully",
     );
   } catch (error) {

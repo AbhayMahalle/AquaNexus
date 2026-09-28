@@ -26,15 +26,16 @@ const getAuditLogs = async (req, res) => {
       prisma.auditLog.count({ where })
     ]);
 
-    return sendSuccess(res, 'Audit logs fetched', {
+    return sendSuccess(res, {
       logs,
+      data: logs,
       pagination: {
         total,
         page: parseInt(page),
         limit: take,
         totalPages: Math.ceil(total / take)
       }
-    });
+    }, 'Audit logs fetched');
   } catch (error) {
     console.error('Error fetching audit logs:', error);
     return sendError(res, 'Failed to fetch audit logs', 500);

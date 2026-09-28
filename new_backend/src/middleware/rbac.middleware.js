@@ -20,8 +20,14 @@ const requirePermission = (requiredPermission) => {
       return sendError(res, 'Access denied', 403);
     }
 
+    // ADMIN always has all permissions
+    if (req.user.role.name === 'ADMIN') {
+      return next();
+    }
+
     // Check if user has the permission directly or via role
-    const permissions = req.user.role.rolePermissions.map(rp => rp.permission.code);
+    const rolePerms = req.user.role.rolePermissions || [];
+    const permissions = rolePerms.map(rp => rp.permission?.code).filter(Boolean);
 
     if (req.user.role.name === 'EMPLOYEE' && requiredPermission.endsWith('.view')) {
       // Employees can implicitly view their own data (scoped by controllers)
@@ -29,7 +35,12 @@ const requirePermission = (requiredPermission) => {
     }
     
     // Also, allow employees to create attendance/leave/overtime (these should be scoped by controller too, but to be safe we bypass the strict permission check)
-    if (req.user.role.name === 'EMPLOYEE' && requiredPermission.endsWith('.create') || requiredPermission.endsWith('.update')) {
+    if (req.user.role.name === 'EMPLOYEE' && (requiredPermission.endsWith('.create') || requiredPermission.endsWith('.update'))) {
+      return next();
+    }
+
+    // Allow STORE_MANAGER to initiate replenishment stock requisitions via production.create
+    if (req.user.role.name === 'STORE_MANAGER' && requiredPermission === 'production.create') {
       return next();
     }
 

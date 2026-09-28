@@ -29,9 +29,15 @@ export async function apiRequest<T>(
     }
 
     const errorBody = await res.text().catch(() => '');
+    let errorMessage = errorBody;
+    try {
+      const parsed = JSON.parse(errorBody);
+      if (parsed.message) errorMessage = parsed.message;
+      else if (parsed.error) errorMessage = parsed.error;
+    } catch {}
     return {
       ok: false,
-      error: errorBody || `Request failed with status ${res.status}`,
+      error: errorMessage || `Request failed with status ${res.status}`,
       status: res.status,
     };
   } catch (err) {

@@ -121,9 +121,14 @@ export function AppRoutes() {
         <Route path="/admin/permissions" element={<AdminPermissionsPage />} />
         <Route path="/admin/managers" element={<AdminUsersPage />} />
         <Route path="/admin/employees" element={<EmployeesListPage />} />
+        <Route path="/admin/employees/add" element={<AddEmployeePage />} />
+        <Route path="/admin/employees/:id" element={<EmployeeDetailPage />} />
+        <Route path="/admin/employees/:id/edit" element={<EditEmployeePage />} />
         <Route path="/admin/store-manager-oversight/dashboard" element={<AdminStoreManagerDashboardPage />} />
         <Route path="/admin/attendance" element={<AttendancePage />} />
         <Route path="/admin/production" element={<ProductionListPage />} />
+        <Route path="/admin/production/create" element={<CreateProductionPage />} />
+        <Route path="/admin/production/:id" element={<ProductionDetailPage />} />
         <Route path="/admin/store/inventory" element={<StoreInventoryPage />} />
         <Route path="/admin/distribution" element={<ManagerDistributionPage />} />
         <Route path="/admin/reports" element={<ManagerReportsPage />} />
@@ -147,11 +152,16 @@ export function AppRoutes() {
         {/* Manager */}
         <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
         <Route path="/manager/employees" element={<EmployeesListPage />} />
+        <Route path="/manager/employees/add" element={<AddEmployeePage />} />
+        <Route path="/manager/employees/:id" element={<EmployeeDetailPage />} />
+        <Route path="/manager/employees/:id/edit" element={<EditEmployeePage />} />
 
         <Route path="/manager/leave" element={<LeaveListPage />} />
         <Route path="/manager/overtime" element={<OvertimePage />} />
         <Route path="/manager/attendance" element={<AttendancePage />} />
         <Route path="/manager/production" element={<ProductionListPage />} />
+        <Route path="/manager/production/create" element={<CreateProductionPage />} />
+        <Route path="/manager/production/:id" element={<ProductionDetailPage />} />
         <Route path="/manager/store/inventory" element={<StoreInventoryPage />} />
         <Route path="/manager/distribution" element={<ManagerDistributionPage />} />
         <Route path="/manager/reports" element={<ManagerReportsPage />} />

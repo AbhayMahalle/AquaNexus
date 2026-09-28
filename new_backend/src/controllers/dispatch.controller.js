@@ -20,7 +20,7 @@ const getDispatches = async (req, res) => {
 
     return sendSuccess(
       res,
-      { dispatches },
+      { dispatches, data: dispatches },
       "Dispatches retrieved successfully",
     );
   } catch (error) {

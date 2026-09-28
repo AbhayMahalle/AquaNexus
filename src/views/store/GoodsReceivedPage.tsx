@@ -328,10 +328,13 @@ export default function GoodsReceivedPage() {
   const selectedProd = productions.find((p) => p.id === selectedProductionId);
   const productionOptions =
     productions.length > 0
-      ? productions.map((p) => ({
-          label: `${p.productionNumber || p.batchNumber || p.id.slice(0, 8)} - ${p.product?.name || 'Water'} (Batch Qty: ${p.quantity} ${p.product?.unit || 'Units'})`,
-          value: p.id,
-        }))
+      ? productions.map((p) => {
+          const remaining = p.remainingQuantity !== undefined ? p.remainingQuantity : p.quantity;
+          return {
+            label: `${p.productionNumber || p.batchNumber || p.id.slice(0, 8)} - ${p.product?.name || 'Water'} (Remaining: ${remaining} / ${p.quantity} ${p.product?.unit || 'Units'})`,
+            value: p.id,
+          };
+        })
       : [{ label: 'No production batches available', value: '' }];
 
   return (
@@ -529,7 +532,7 @@ export default function GoodsReceivedPage() {
                 Cancel
               </Button>
               <Button variant="primary" size="sm" type="submit" disabled={isSubmitting} leftIcon={<FileCheck2 className="w-4 h-4" />}>
-                {isSubmitting ? 'Saving...' : 'Acknowledge & Save GRN'}
+                {isSubmitting ? 'Saving...' : 'Generate GRN'}
               </Button>
             </div>
           </form>

@@ -76,6 +76,7 @@ const getLeaves = async (req, res) => {
 
     return sendSuccess(res, {
       leaves,
+      data: leaves,
       pagination: {
         total,
         page: parseInt(page),
@@ -100,10 +101,15 @@ const createLeave = async (req, res) => {
       return sendError(res, 'employeeId, leaveType, startDate, endDate, and reason are required', 400);
     }
 
-    const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
+    let empId = employeeId;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
+    const employee = await prisma.employee.findFirst({
+      where: isUuid ? { OR: [{ id: employeeId }, { employeeCode: employeeId }] } : { employeeCode: employeeId }
+    });
     if (!employee) {
       return sendError(res, 'Employee not found', 404);
     }
+    empId = employee.id;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -113,7 +119,7 @@ const createLeave = async (req, res) => {
 
     const overlappingLeave = await prisma.leave.findFirst({
       where: {
-        employeeId,
+        employeeId: empId,
         status: { in: ['PENDING', 'APPROVED'] },
         OR: [
           { startDate: { lte: end }, endDate: { gte: start } }
@@ -127,7 +133,7 @@ const createLeave = async (req, res) => {
 
     const newLeave = await prisma.leave.create({
       data: {
-        employeeId,
+        employeeId: empId,
         leaveType,
         startDate: start,
         endDate: end,
@@ -139,7 +145,7 @@ const createLeave = async (req, res) => {
       }
     });
 
-    return sendSuccess(res, newLeave, 'Leave request submitted successfully', 201);
+    return sendSuccess(res, { leave: newLeave, data: newLeave, ...newLeave }, 'Leave request submitted successfully', 201);
   } catch (error) {
     console.error('createLeave error:', error);
     return sendError(res, 'Failed to submit leave request', 500);

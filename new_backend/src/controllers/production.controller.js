@@ -25,8 +25,9 @@ const getProductions = async (req, res) => {
       where.productId = productId;
     }
 
-    if (status) {
-      where.status = status;
+    if (status && status !== 'ALL') {
+      const s = String(status).toUpperCase();
+      where.status = s === 'PENDING' ? 'PLANNED' : s;
     }
 
     if (startDate || endDate) {
@@ -90,6 +91,7 @@ const getProductions = async (req, res) => {
 
     return sendSuccess(res, {
       productions: formatted,
+      data: formatted,
       pagination: {
         total,
         page: parseInt(page),
@@ -103,15 +105,48 @@ const getProductions = async (req, res) => {
   }
 };
 
+const getProductionStats = async (req, res) => {
+  try {
+    const [totalBatches, plannedBatches, inProgressBatches, completedBatches, aggregateQty] = await Promise.all([
+      prisma.production.count(),
+      prisma.production.count({ where: { status: 'PLANNED' } }),
+      prisma.production.count({ where: { status: 'IN_PROGRESS' } }),
+      prisma.production.count({ where: { status: 'COMPLETED' } }),
+      prisma.production.aggregate({ _sum: { quantity: true } })
+    ]);
+
+    const stats = {
+      totalBatches,
+      plannedBatches,
+      inProgressBatches,
+      completedBatches,
+      totalQuantity: aggregateQty._sum?.quantity || 0
+    };
+
+    return sendSuccess(res, { stats, data: stats, ...stats }, 'Production statistics retrieved successfully');
+  } catch (error) {
+    console.error('getProductionStats error:', error);
+    return sendError(res, 'Failed to retrieve production statistics', 500);
+  }
+};
+
 /**
  * Get production batch details by ID
  */
 const getProductionById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (id === 'stats') {
+      return getProductionStats(req, res);
+    }
 
-    const production = await prisma.production.findUnique({
-      where: { id },
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const where = isUuid
+      ? { OR: [{ id }, { batchNumber: id }, { productionNumber: id }] }
+      : { OR: [{ batchNumber: id }, { productionNumber: id }] };
+
+    const production = await prisma.production.findFirst({
+      where,
       include: {
         product: true,
         creator: {
@@ -132,10 +167,12 @@ const getProductionById = async (req, res) => {
       return sendError(res, 'Production record not found', 404);
     }
 
-    const totalReceived = production.goodsReceived.reduce((acc, gr) => acc + gr.quantity, 0);
+    const totalReceived = (production.goodsReceived || []).reduce((acc, gr) => acc + gr.quantity, 0);
 
     return sendSuccess(res, {
       ...production,
+      production,
+      data: production,
       totalReceived,
       remainingQuantity: production.quantity - totalReceived
     }, 'Production record details retrieved successfully');
@@ -169,17 +206,42 @@ const createProduction = async (req, res) => {
       return sendError(res, 'Quantity must be a positive integer', 400);
     }
 
-    const product = await prisma.product.findUnique({ where: { id: productId } });
+    const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+    const product = isUuid(productId)
+      ? await prisma.product.findUnique({ where: { id: productId } })
+      : await prisma.product.findFirst({ where: { OR: [{ sku: productId }, { name: productId }] } });
+
     if (!product) {
       return sendError(res, 'Product not found', 400);
     }
 
-    // Auto-generate productionNumber if not provided
+    // Map status: frontend may send 'PENDING' for planned start; PostgreSQL enum is PLANNED | IN_PROGRESS | COMPLETED | CANCELLED
+    let resolvedStatus = 'PLANNED';
+    if (status) {
+      const s = String(status).toUpperCase();
+      if (s === 'PENDING' || s === 'PLANNED') {
+        resolvedStatus = 'PLANNED';
+      } else if (['IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(s)) {
+        resolvedStatus = s;
+      }
+    }
+
+    // Auto-generate productionNumber if not provided or ensure uniqueness
     let prodNum = productionNumber;
     if (!prodNum) {
       const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const count = await prisma.production.count();
       prodNum = `PRD-${dateStr}-${String(count + 1).padStart(3, '0')}`;
+    }
+    const existingProdNum = await prisma.production.findFirst({ where: { productionNumber: prodNum } });
+    if (existingProdNum) {
+      prodNum = `${prodNum}-${Math.floor(Math.random() * 900 + 100)}`;
+    }
+
+    let finalBatchNumber = batchNumber || `BATCH-${Date.now()}`;
+    const existingBatch = await prisma.production.findFirst({ where: { batchNumber: finalBatchNumber } });
+    if (existingBatch) {
+      finalBatchNumber = `${finalBatchNumber}-${Math.floor(Math.random() * 900 + 100)}`;
     }
 
     // Determine createdBy user
@@ -191,11 +253,11 @@ const createProduction = async (req, res) => {
     const newProduction = await prisma.production.create({
       data: {
         productionNumber: prodNum,
-        productId,
+        productId: product.id,
         quantity: qty,
         productionDate: new Date(productionDate),
-        status,
-        batchNumber: batchNumber || `BATCH-${Date.now()}`,
+        status: resolvedStatus,
+        batchNumber: finalBatchNumber,
         remarks,
         createdBy
       },
@@ -204,7 +266,11 @@ const createProduction = async (req, res) => {
       }
     });
 
-    return sendSuccess(res, newProduction, 'Production record created successfully', 201);
+    return sendSuccess(res, {
+      ...newProduction,
+      production: newProduction,
+      data: newProduction
+    }, 'Production record created successfully', 201);
   } catch (error) {
     console.error('createProduction error:', error);
     return sendError(res, 'Failed to create production record', 500);
@@ -219,7 +285,10 @@ const updateProductionStatus = async (req, res) => {
     const { id } = req.params;
     const { status, remarks } = req.body;
 
-    if (!['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(status)) {
+    let resolvedStatus = status;
+    if (resolvedStatus === 'PENDING') resolvedStatus = 'PLANNED';
+
+    if (!['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(resolvedStatus)) {
       return sendError(res, 'Invalid production status', 400);
     }
 
@@ -231,7 +300,7 @@ const updateProductionStatus = async (req, res) => {
     const updatedProduction = await prisma.production.update({
       where: { id },
       data: {
-        status,
+        status: resolvedStatus,
         ...(remarks !== undefined && { remarks })
       },
       include: {
@@ -239,7 +308,11 @@ const updateProductionStatus = async (req, res) => {
       }
     });
 
-    return sendSuccess(res, updatedProduction, `Production status updated to ${status}`);
+    return sendSuccess(res, {
+      ...updatedProduction,
+      production: updatedProduction,
+      data: updatedProduction
+    }, `Production status updated to ${resolvedStatus}`);
   } catch (error) {
     console.error('updateProductionStatus error:', error);
     return sendError(res, 'Failed to update production status', 500);
@@ -249,6 +322,7 @@ const updateProductionStatus = async (req, res) => {
 module.exports = {
   getProductions,
   getProductionById,
+  getProductionStats,
   createProduction,
   updateProductionStatus
 };

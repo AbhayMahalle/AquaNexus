@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, ArrowRight } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -13,6 +13,12 @@ import type { Production, ProductionStatus } from '../../types';
 export const ProductionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const listHref = location.pathname.startsWith('/manager')
+    ? '/manager/production'
+    : location.pathname.startsWith('/admin')
+    ? '/admin/production'
+    : '/production';
   const [batch, setBatch] = useState<Production | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -39,7 +45,7 @@ export const ProductionDetailPage: React.FC = () => {
     return (
       <div className="p-8 text-center text-text-muted">
         <p>Production batch not found.</p>
-        <Button variant="secondary" className="mt-4" onClick={() => navigate(-1)}>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate(listHref)}>
           Back to Production Batches
         </Button>
       </div>
@@ -59,14 +65,14 @@ export const ProductionDetailPage: React.FC = () => {
         title={`Batch #${batch.batchNumber}`}
         description={`Product: ${batch.productName}`}
         breadcrumbs={[
-          { label: 'Production', href: '/production' },
+          { label: 'Production', href: listHref },
           { label: batch.batchNumber },
         ]}
         action={
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(listHref)}
           >
             Back to List
           </Button>

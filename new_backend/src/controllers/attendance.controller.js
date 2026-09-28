@@ -75,6 +75,7 @@ const getAttendance = async (req, res) => {
 
     return sendSuccess(res, {
       attendance,
+      data: attendance,
       pagination: {
         total,
         page: parseInt(page),
@@ -114,10 +115,17 @@ const recordAttendance = async (req, res) => {
     for (const item of attendanceItems) {
       const dateObj = new Date(item.attendanceDate);
 
+      let empId = item.employeeId;
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.employeeId);
+      if (!isUuid) {
+        const emp = await prisma.employee.findUnique({ where: { employeeCode: item.employeeId } });
+        if (emp) empId = emp.id;
+      }
+
       const record = await prisma.attendance.upsert({
         where: {
           employeeId_attendanceDate: {
-            employeeId: item.employeeId,
+            employeeId: empId,
             attendanceDate: dateObj
           }
         },
@@ -128,7 +136,7 @@ const recordAttendance = async (req, res) => {
           ...(item.remarks !== undefined && { remarks: item.remarks })
         },
         create: {
-          employeeId: item.employeeId,
+          employeeId: empId,
           attendanceDate: dateObj,
           status: item.status,
           ...(item.checkIn && { checkIn: new Date(item.checkIn) }),

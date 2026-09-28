@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -14,13 +14,20 @@ import type { Product, Employee, ProductionStatus } from '../../types';
 
 export const CreateProductionPage: React.FC = () => {
   const navigate = useNavigate();
-  const [products] = useState<Product[]>(PLANT_PRODUCTS);
+  const location = useLocation();
+  const listHref = location.pathname.startsWith('/manager')
+    ? '/manager/production'
+    : location.pathname.startsWith('/admin')
+    ? '/admin/production'
+    : '/production';
+
+  const [products, setProducts] = useState<Product[]>(PLANT_PRODUCTS);
   const [supervisors, setSupervisors] = useState<Employee[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const [formData, setFormData] = useState({
-    productId: PLANT_PRODUCTS[0].productId,
+    productId: PLANT_PRODUCTS[0]?.productId || '',
     quantityProduced: 1000,
     productionDate: new Date().toISOString().split('T')[0],
     shift: 'MORNING' as 'MORNING' | 'AFTERNOON' | 'NIGHT',
@@ -30,6 +37,16 @@ export const CreateProductionPage: React.FC = () => {
   });
 
   useEffect(() => {
+    productionService.getProducts().then((res) => {
+      if (res.success && res.data && res.data.length > 0) {
+        setProducts(res.data);
+        setFormData((prev) => ({
+          ...prev,
+          productId: res.data[0].productId || res.data[0].id,
+        }));
+      }
+    });
+
     employeeService.getEmployees({ department: 'Production' }).then((res) => {
       if (res.success && res.data.length > 0) {
         setSupervisors(res.data);
@@ -47,12 +64,12 @@ export const CreateProductionPage: React.FC = () => {
     setErrorMsg('');
     setIsSubmitting(true);
 
-    const selectedProd = products.find((p) => p.productId === formData.productId);
+    const selectedProd = products.find((p) => p.productId === formData.productId || p.id === formData.productId);
     if (!selectedProd) return;
 
     const res = await productionService.createProductionBatch({
       batchNumber: `BATCH-${Date.now().toString().slice(-6)}`,
-      productId: selectedProd.productId,
+      productId: selectedProd.id || selectedProd.productId,
       productName: selectedProd.name,
       quantityProduced: Number(formData.quantityProduced),
       unit: selectedProd.unit,
@@ -66,7 +83,7 @@ export const CreateProductionPage: React.FC = () => {
     setIsSubmitting(false);
 
     if (res.success) {
-      navigate(-1);
+      navigate(listHref);
     } else {
       setErrorMsg(res.message || 'Failed to create production batch');
     }
@@ -78,14 +95,14 @@ export const CreateProductionPage: React.FC = () => {
         title="Create Production Batch"
         description="Schedule a new water purification and bottling production run."
         breadcrumbs={[
-          { label: 'Production', href: '/production' },
+          { label: 'Production', href: listHref },
           { label: 'Create Batch' },
         ]}
         action={
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(listHref)}
           >
             Cancel
           </Button>
@@ -175,7 +192,7 @@ export const CreateProductionPage: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
+            <Button type="button" variant="secondary" onClick={() => navigate(listHref)}>
               Cancel
             </Button>
             <Button

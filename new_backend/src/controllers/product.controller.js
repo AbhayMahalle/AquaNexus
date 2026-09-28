@@ -57,6 +57,7 @@ const getProducts = async (req, res) => {
 
     return sendSuccess(res, {
       products,
+      data: products,
       pagination: {
         total,
         page: parseInt(page),

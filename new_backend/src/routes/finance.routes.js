@@ -8,6 +8,7 @@ const {
   createExpense,
   getPayroll,
   createPayroll,
+  updatePayroll,
 } = require("../controllers/finance.controller");
 const { requireAuth } = require("../middleware/auth.middleware");
 const { requireRole } = require("../middleware/rbac.middleware");
@@ -61,6 +62,12 @@ router.post(
   requireAuth,
   requireRole(["ADMIN", "ACCOUNTANT"]),
   createPayroll,
+);
+router.patch(
+  "/payroll/:id",
+  requireAuth,
+  requireRole(["ADMIN", "ACCOUNTANT"]),
+  updatePayroll,
 );
 
 module.exports = router;

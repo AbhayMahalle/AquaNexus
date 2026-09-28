@@ -21,7 +21,7 @@ function mapProduction(p: any): Production {
     productionDate: p.productionDate ? new Date(p.productionDate).toISOString().split('T')[0] : TODAY,
     shift: 'MORNING',
     supervisor: p.creator ? `${p.creator.firstName || ''} ${p.creator.lastName || ''}`.trim() : 'Plant Manager',
-    status: p.status === 'COMPLETED' ? 'COMPLETED' : p.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'CANCELLED',
+    status: p.status === 'COMPLETED' ? 'COMPLETED' : p.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : p.status === 'CANCELLED' ? 'CANCELLED' : 'PENDING',
     goodsReceivedStatus: p.totalReceived >= p.quantity ? 'RECEIVED' : 'PENDING',
     notes: p.remarks || '',
   };
@@ -99,7 +99,7 @@ export const productionService = {
       productionDate: new Date(batchData.productionDate || TODAY).toISOString(),
       batchNumber: batchData.batchNumber || `BATCH-${Date.now().toString().slice(-6)}`,
       remarks: batchData.notes,
-      status: batchData.status || 'IN_PROGRESS',
+      status: batchData.status === 'PENDING' ? 'PLANNED' : (batchData.status || 'IN_PROGRESS'),
     };
 
     const realResponse = await fetchApi<any>('/production', {

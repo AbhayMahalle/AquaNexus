@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -13,6 +13,11 @@ import type { EmployeeStatus } from '../../types';
 
 export const AddEmployeePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isManager = location.pathname.startsWith('/manager');
+  const isAdmin = location.pathname.startsWith('/admin');
+  const listHref = isManager ? '/manager/employees' : (isAdmin ? '/admin/employees' : '/employees');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -42,7 +47,7 @@ export const AddEmployeePage: React.FC = () => {
     setIsSubmitting(false);
 
     if (res.success) {
-      navigate(-1);
+      navigate(listHref);
     } else {
       setErrorMsg(res.message || 'Failed to add employee');
     }
@@ -54,14 +59,14 @@ export const AddEmployeePage: React.FC = () => {
         title="Add New Employee"
         description="Register a new plant staff member into the internal management system."
         breadcrumbs={[
-          { label: 'Employees', href: '/employees' },
+          { label: 'Employees', href: listHref },
           { label: 'Add Employee' },
         ]}
         action={
           <Button
             variant="secondary"
             icon={<ArrowLeft className="w-4 h-4" />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(listHref)}
           >
             Back to List
           </Button>
@@ -170,7 +175,7 @@ export const AddEmployeePage: React.FC = () => {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate(listHref)}
             >
               Cancel
             </Button>

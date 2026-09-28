@@ -55,6 +55,7 @@ const getInventory = async (req, res) => {
 
     return sendSuccess(res, {
       inventory: paginatedItems,
+      data: paginatedItems,
       pagination: {
         total,
         page: parseInt(page),
@@ -149,8 +150,17 @@ const getStockTransactions = async (req, res) => {
       prisma.stockTransaction.count({ where })
     ]);
 
+    const enrichedTransactions = transactions.map((tx) => {
+      const refInRemarks = tx.remarks?.match(/\[Ref:\s*([^\]]+)\]/)?.[1];
+      return {
+        ...tx,
+        referenceId: tx.referenceId || refInRemarks || null
+      };
+    });
+
     return sendSuccess(res, {
-      transactions,
+      transactions: enrichedTransactions,
+      data: enrichedTransactions,
       pagination: {
         total,
         page: parseInt(page),
@@ -192,42 +202,68 @@ const receiveGoods = async (req, res) => {
       return sendError(res, 'Authenticated user context required', 401);
     }
 
+    const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
     const result = await prisma.$transaction(async (tx) => {
       // 1. Verify production batch
-      const production = await tx.production.findUnique({
-        where: { id: productionId },
-        include: { goodsReceived: true }
-      });
+      const production = isUuid(productionId)
+        ? await tx.production.findUnique({
+            where: { id: productionId },
+            include: { goodsReceived: true }
+          })
+        : await tx.production.findFirst({
+            where: { OR: [{ batchNumber: productionId }, { productionNumber: productionId }] },
+            include: { goodsReceived: true }
+          });
 
       if (!production) {
         throw new Error('PRODUCTION_NOT_FOUND');
       }
 
-      if (production.productId !== productId) {
+      // Resolve product: if productId provided, look up; otherwise default to production's linked product
+      let product = null;
+      if (productId) {
+        product = isUuid(productId)
+          ? await tx.product.findUnique({ where: { id: productId } })
+          : await tx.product.findFirst({ where: { OR: [{ sku: productId }, { name: productId }] } });
+      }
+      if (!product && production.productId) {
+        product = await tx.product.findUnique({ where: { id: production.productId } });
+      }
+
+      if (!product) {
+        throw new Error('PRODUCT_NOT_FOUND');
+      }
+
+      if (production.productId !== product.id) {
         throw new Error('PRODUCT_MISMATCH');
       }
 
-      const alreadyReceived = production.goodsReceived.reduce((sum, gr) => sum + gr.quantity, 0);
+      const alreadyReceived = (production.goodsReceived || []).reduce((sum, gr) => sum + gr.quantity, 0);
       const remainingAllowed = production.quantity - alreadyReceived;
 
-      if (qty > remainingAllowed) {
+      if (remainingAllowed > 0 && qty > remainingAllowed) {
         throw new Error(`OVER_RECEIPT_EXCEEDED:${remainingAllowed}`);
       }
 
-      // 2. Auto-generate GRN number if not provided
+      // 2. Auto-generate GRN number if not provided or ensure uniqueness
       let grnNum = grnNumber;
       if (!grnNum) {
         const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
         const count = await tx.goodsReceived.count();
         grnNum = `GRN-${dateStr}-${String(count + 1).padStart(3, '0')}`;
       }
+      const existingGrn = await tx.goodsReceived.findFirst({ where: { grnNumber: grnNum } });
+      if (existingGrn) {
+        grnNum = `${grnNum}-${Math.floor(Math.random() * 900 + 100)}`;
+      }
 
       // 3. Create GoodsReceived record
       const goodsReceived = await tx.goodsReceived.create({
         data: {
           grnNumber: grnNum,
-          productId,
-          productionId,
+          productId: product.id,
+          productionId: production.id,
           quantity: qty,
           receivedDate: receivedDate ? new Date(receivedDate) : new Date(),
           receivedBy: userId,
@@ -238,7 +274,7 @@ const receiveGoods = async (req, res) => {
       // 4. Create StockTransaction audit log
       await tx.stockTransaction.create({
         data: {
-          productId,
+          productId: product.id,
           transactionType: 'PRODUCTION_RECEIPT',
           quantity: qty,
           referenceType: 'GoodsReceived',
@@ -250,25 +286,24 @@ const receiveGoods = async (req, res) => {
 
       // 5. Update or Create Inventory
       const existingInventory = await tx.inventory.findUnique({
-        where: { productId }
+        where: { productId: product.id }
       });
 
       let updatedInventory;
       if (existingInventory) {
         updatedInventory = await tx.inventory.update({
-          where: { productId },
+          where: { productId: product.id },
           data: {
             quantity: { increment: qty }
           }
         });
       } else {
-        const product = await tx.product.findUnique({ where: { id: productId } });
         updatedInventory = await tx.inventory.create({
           data: {
-            productId,
+            productId: product.id,
             quantity: qty,
             reservedQuantity: 0,
-            reorderLevel: product ? product.minimumStock : 0
+            reorderLevel: product.minimumStock || 0
           }
         });
       }
@@ -276,13 +311,14 @@ const receiveGoods = async (req, res) => {
       // 6. Auto-update production status to COMPLETED if fully received
       if (alreadyReceived + qty >= production.quantity) {
         await tx.production.update({
-          where: { id: productionId },
+          where: { id: production.id },
           data: { status: 'COMPLETED' }
         });
       }
 
       return {
         goodsReceived,
+        data: goodsReceived,
         inventory: updatedInventory
       };
     });
@@ -339,17 +375,22 @@ const createStockTransaction = async (req, res) => {
       return sendError(res, 'Authenticated user context required', 401);
     }
 
+    const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
     const result = await prisma.$transaction(async (tx) => {
-      const product = await tx.product.findUnique({ where: { id: productId } });
+      const product = isUuid(productId)
+        ? await tx.product.findUnique({ where: { id: productId } })
+        : await tx.product.findFirst({ where: { OR: [{ sku: productId }, { name: productId }] } });
+
       if (!product) {
         throw new Error('PRODUCT_NOT_FOUND');
       }
 
-      let inventory = await tx.inventory.findUnique({ where: { productId } });
+      let inventory = await tx.inventory.findUnique({ where: { productId: product.id } });
       if (!inventory) {
         inventory = await tx.inventory.create({
           data: {
-            productId,
+            productId: product.id,
             quantity: 0,
             reservedQuantity: 0,
             reorderLevel: product.minimumStock
@@ -363,15 +404,30 @@ const createStockTransaction = async (req, res) => {
         throw new Error(`INSUFFICIENT_STOCK:${inventory.quantity}`);
       }
 
+      let validReferenceUuid = null;
+      let resolvedRemarks = remarks || '';
+
+      if (referenceId) {
+        if (isUuid(referenceId)) {
+          validReferenceUuid = referenceId;
+        } else {
+          // If referenceId is a human-readable identifier (e.g. "PO-2026-0901", "2026", "REQ-2026-0812"),
+          // embed it in remarks matching frontend regex: tx.remarks?.match(/\[Ref:\s*([^\]]+)\]/)?.[1]
+          if (!resolvedRemarks.includes(`[Ref: ${referenceId}]`)) {
+            resolvedRemarks = resolvedRemarks ? `[Ref: ${referenceId}] ${resolvedRemarks}` : `[Ref: ${referenceId}]`;
+          }
+        }
+      }
+
       // Record transaction log
       const transaction = await tx.stockTransaction.create({
         data: {
-          productId,
+          productId: product.id,
           transactionType,
           quantity: qty,
           referenceType,
-          referenceId,
-          remarks,
+          referenceId: validReferenceUuid,
+          remarks: resolvedRemarks,
           createdBy: userId
         }
       });
@@ -379,14 +435,20 @@ const createStockTransaction = async (req, res) => {
       // Update inventory quantity
       const delta = isDecreasing ? -qty : qty;
       const updatedInventory = await tx.inventory.update({
-        where: { productId },
+        where: { productId: product.id },
         data: {
           quantity: { increment: delta }
         }
       });
 
+      const responseTx = {
+        ...transaction,
+        referenceId: referenceId || transaction.referenceId
+      };
+
       return {
-        transaction,
+        transaction: responseTx,
+        data: responseTx,
         inventory: updatedInventory
       };
     });
@@ -407,10 +469,62 @@ const createStockTransaction = async (req, res) => {
   }
 };
 
+const getGoodsReceived = async (req, res) => {
+  try {
+    const { page = 1, limit = 50, productId, productionId, search } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    const where = {};
+    if (productId) where.productId = productId;
+    if (productionId) where.productionId = productionId;
+    if (search) {
+      where.OR = [
+        { grnNumber: { contains: search, mode: 'insensitive' } },
+        { product: { name: { contains: search, mode: 'insensitive' } } },
+        { product: { sku: { contains: search, mode: 'insensitive' } } },
+        { remarks: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    const [goodsReceived, total] = await Promise.all([
+      prisma.goodsReceived.findMany({
+        where,
+        skip,
+        take,
+        include: {
+          product: true,
+          production: true,
+          receiver: {
+            select: { id: true, firstName: true, lastName: true, username: true }
+          }
+        },
+        orderBy: { receivedDate: 'desc' }
+      }),
+      prisma.goodsReceived.count({ where })
+    ]);
+
+    return sendSuccess(res, {
+      goodsReceived,
+      data: goodsReceived,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / take)
+      }
+    }, 'Goods received records retrieved successfully');
+  } catch (error) {
+    console.error('getGoodsReceived error:', error);
+    return sendError(res, 'Failed to retrieve goods received records', 500);
+  }
+};
+
 module.exports = {
   getInventory,
   getLowStockAlerts,
   getStockTransactions,
   receiveGoods,
+  getGoodsReceived,
   createStockTransaction
 };

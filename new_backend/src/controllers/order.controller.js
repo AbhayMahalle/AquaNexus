@@ -34,7 +34,7 @@ const getOrders = async (req, res) => {
       orderBy: { orderDate: "desc" },
     });
 
-    return sendSuccess(res, { orders }, "Orders retrieved successfully");
+    return sendSuccess(res, { orders, data: orders }, "Orders retrieved successfully");
   } catch (error) {
     console.error("getOrders error:", error);
     return sendError(res, "Failed to retrieve orders", 500);

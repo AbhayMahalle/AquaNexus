@@ -86,9 +86,26 @@ const deleteManagerAssignment = async (req, res) => {
   }
 };
 
+const getAllManagerAssignments = async (req, res) => {
+  try {
+    const assignments = await prisma.managerAssignment.findMany({
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, username: true, email: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return sendSuccess(res, { assignments, data: assignments }, 'All manager assignments retrieved successfully');
+  } catch (error) {
+    console.error('getAllManagerAssignments error:', error);
+    return sendError(res, 'Failed to retrieve manager assignments', 500);
+  }
+};
+
 module.exports = {
   assignManagerArea,
   getManagerAssignments,
+  getAllManagerAssignments,
   updateManagerAssignment,
   deleteManagerAssignment
 };

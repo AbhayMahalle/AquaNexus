@@ -2,6 +2,7 @@ const express = require('express');
 const { 
   assignManagerArea, 
   getManagerAssignments,
+  getAllManagerAssignments,
   updateManagerAssignment,
   deleteManagerAssignment
 } = require('../controllers/managerAssignment.controller');
@@ -18,12 +19,14 @@ const { validate } = require('../utils/validate');
 const router = express.Router();
 
 router.use(requireAuth);
+// Allow ADMIN to list all manager assignments
+router.get('/', requireRole(['ADMIN']), getAllManagerAssignments);
 // Allow only ADMIN to create assignments
 router.post('/', requireRole(['ADMIN']), validateAssignArea, validate, assignManagerArea);
 router.patch('/:id', requireRole(['ADMIN']), validateUpdateArea, validate, updateManagerAssignment);
 router.delete('/:id', requireRole(['ADMIN']), validateIdParam, validate, deleteManagerAssignment);
 
-// Allow ADMIN, or the specific user themselves (handled partially by generic access, but we'll restrict to authenticated for now)
+// Allow ADMIN, or the specific user themselves
 router.get('/:userId', validateUserIdParam, validate, getManagerAssignments);
 
 module.exports = router;

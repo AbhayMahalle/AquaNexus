@@ -19,7 +19,7 @@ const getSales = async (req, res) => {
       },
       orderBy: { saleDate: "desc" },
     });
-    return sendSuccess(res, { sales }, "Sales retrieved successfully");
+    return sendSuccess(res, { sales, data: sales }, "Sales retrieved successfully");
   } catch (error) {
     console.error("getSales error:", error);
     return sendError(res, "Failed to retrieve sales", 500);
@@ -39,9 +39,15 @@ const createSale = async (req, res) => {
       discount = 0,
       tax = 0,
     } = req.body;
+    let targetDistributorId = distributorId;
+    const ids = getAccessibleDistributorIds(req);
+    if (!targetDistributorId && ids && ids.length > 0) {
+      targetDistributorId = ids[0];
+    }
+
     if (
       !saleNumber ||
-      !distributorId ||
+      !targetDistributorId ||
       !saleDate ||
       !Array.isArray(items) ||
       items.length === 0
@@ -52,8 +58,7 @@ const createSale = async (req, res) => {
         400,
       );
     }
-    const ids = getAccessibleDistributorIds(req);
-    if (ids !== null && !ids.includes(distributorId))
+    if (ids !== null && !ids.includes(targetDistributorId))
       return sendError(
         res,
         "You cannot create a sale for this distributor",
@@ -101,7 +106,7 @@ const createSale = async (req, res) => {
         const stock = await transaction.distributorStock.findUnique({
           where: {
             distributorId_productId: {
-              distributorId,
+              distributorId: targetDistributorId,
               productId: item.productId,
             },
           },
@@ -117,7 +122,7 @@ const createSale = async (req, res) => {
       const created = await transaction.sale.create({
         data: {
           saleNumber,
-          distributorId,
+          distributorId: targetDistributorId,
           orderId,
           dispatchId,
           saleDate: new Date(saleDate),
@@ -169,7 +174,7 @@ const getReturns = async (req, res) => {
       },
       orderBy: { returnDate: "desc" },
     });
-    return sendSuccess(res, { returns }, "Returns retrieved successfully");
+    return sendSuccess(res, { returns, data: returns }, "Returns retrieved successfully");
   } catch (error) {
     console.error("getReturns error:", error);
     return sendError(res, "Failed to retrieve returns", 500);
@@ -180,9 +185,15 @@ const createReturn = async (req, res) => {
   try {
     const { returnNumber, distributorId, saleId, returnDate, reason, items } =
       req.body;
+    let targetDistributorId = distributorId;
+    const ids = getAccessibleDistributorIds(req);
+    if (!targetDistributorId && ids && ids.length > 0) {
+      targetDistributorId = ids[0];
+    }
+
     if (
       !returnNumber ||
-      !distributorId ||
+      !targetDistributorId ||
       !returnDate ||
       !Array.isArray(items) ||
       items.length === 0
@@ -192,8 +203,7 @@ const createReturn = async (req, res) => {
         "Return number, distributor, date, and items are required",
         400,
       );
-    const ids = getAccessibleDistributorIds(req);
-    if (ids !== null && !ids.includes(distributorId))
+    if (ids !== null && !ids.includes(targetDistributorId))
       return sendError(
         res,
         "You cannot create a return for this distributor",
@@ -218,7 +228,7 @@ const createReturn = async (req, res) => {
         const sale = await transaction.sale.findUnique({
           where: { id: saleId },
         });
-        if (!sale || sale.distributorId !== distributorId) {
+        if (!sale || sale.distributorId !== targetDistributorId) {
           const error = new Error("Sale does not belong to this distributor");
           error.statusCode = 400;
           throw error;
@@ -227,7 +237,7 @@ const createReturn = async (req, res) => {
       const record = await transaction.return.create({
         data: {
           returnNumber,
-          distributorId,
+          distributorId: targetDistributorId,
           saleId,
           returnDate: new Date(returnDate),
           reason,
