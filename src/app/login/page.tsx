@@ -11,11 +11,13 @@ import { getDashboardRoute } from '@/lib/navigation';
 import { Droplets, Lock, Mail, ShieldAlert, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const ROLE_EMAILS: Record<UserRole, string> = {
+  super_admin: 'superadmin@aquanexus.com',
   admin: 'admin@aquanexus.com',
   manager: 'manager@aquanexus.com',
   store_manager: 'store@aquanexus.com',
   accountant: 'accountant@aquanexus.com',
   distributor: 'distributor@aquanexus.com',
+  supplier: 'vendor@aquanexus.com',
   employee: 'employee@aquanexus.com',
 };
 
@@ -23,7 +25,7 @@ export default function LoginPage() {
   const { login, isLoading } = useAuth();
 
   const [email, setEmail] = useState('admin@aquanexus.com');
-  const [password, setPassword] = useState('Abhay@123');
+  const [password, setPassword] = useState('Password@123');
   const [roleOverride, setRoleOverride] = useState<UserRole>('admin');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,24 +45,9 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      // Determine the effective role from the selected roleOverride or entered email
-      let effectiveRole = roleOverride;
-      const lowerEmail = email.toLowerCase().trim();
-      if (lowerEmail.includes('admin')) effectiveRole = 'admin';
-      else if (lowerEmail.includes('manager') && !lowerEmail.includes('store')) effectiveRole = 'manager';
-      else if (lowerEmail.includes('store')) effectiveRole = 'store_manager';
-      else if (lowerEmail.includes('finance') || lowerEmail.includes('accountant')) effectiveRole = 'accountant';
-      else if (lowerEmail.includes('distributor')) effectiveRole = 'distributor';
-      else if (lowerEmail.includes('employee')) effectiveRole = 'employee';
-
-      // Always open the proper dashboard dedicated to the role
-      const targetDashboard = getDashboardRoute(effectiveRole);
-
       await login({
         email,
         password,
-        roleOverride: effectiveRole,
-        redirectTo: targetDashboard,
       });
     } catch (err: any) {
       setError(err?.message || 'Authentication failed. Please verify credentials.');
@@ -129,17 +116,19 @@ export default function LoginPage() {
                 const r = e.target.value as UserRole;
                 setRoleOverride(r);
                 setEmail(ROLE_EMAILS[r] || `${r}@aquanexus.com`);
-                setPassword('Abhay@123');
+                setPassword('Password@123');
               }}
               options={[
+                { label: 'SuperAdmin (AquaNexus Platform)', value: 'super_admin' },
                 { label: 'Admin (System Lead)', value: 'admin' },
                 { label: 'Operations Manager', value: 'manager' },
                 { label: 'Store & Inventory Manager', value: 'store_manager' },
+                { label: 'Vendor / Supplier (PackageMart)', value: 'supplier' },
                 { label: 'Chief Accountant', value: 'accountant' },
                 { label: 'Distributor Agency', value: 'distributor' },
                 { label: 'Employee Portal', value: 'employee' },
               ]}
-              helperText="Auto-populates credentials and role-specific permissions"
+              helperText="Demo accounts populate credentials only; role & tenant context are strictly authenticated by the backend"
             />
           </CardContent>
 

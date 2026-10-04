@@ -2,16 +2,19 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { Menu, User as UserIcon, LogOut, Building2, Bell } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
+import {
+  Menu,
+  User as UserIcon,
+  LogOut,
+  Building2,
+  Shield,
+} from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
 
 interface TopbarProps {
   onMobileToggle?: () => void;
   theme?: 'default' | 'sample';
 }
-
-import { NotificationBell } from './NotificationBell';
 
 export function Topbar({ onMobileToggle }: TopbarProps) {
   const { user, logout } = useAuth();
@@ -30,13 +33,24 @@ export function Topbar({ onMobileToggle }: TopbarProps) {
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white border-gray-200 shadow-xs">
-          <Building2 className="w-4 h-4 text-orange-600" />
-          <span className="text-xs font-semibold text-black">
-            {user?.plantName || 'AquaNexus Unit #1'}
-          </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-success" />
-        </div>
+        {user?.isSuperAdmin ? (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-amber-50/70 border-amber-200 shadow-xs">
+              <Shield className="w-3.5 h-3.5 text-amber-700" />
+              <span className="text-xs font-bold text-amber-900">
+                Platform SuperAdmin
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white border-gray-200 shadow-xs">
+            <Building2 className="w-4 h-4 text-orange-600" />
+            <span className="text-xs font-semibold text-black">
+              {user?.organizationName || user?.plantName || 'AquaNexus Primary Plant'}
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-success" />
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">

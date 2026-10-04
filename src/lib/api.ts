@@ -12,6 +12,7 @@ export async function apiRequest<T>(
   const normalizedEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
   const url = `${API_BASE}${normalizedEndpoint}`;
   const token = getAuthToken();
+  const selectedOrgId = typeof window !== 'undefined' ? localStorage.getItem('aqua_nexus_selected_org_id') : null;
 
   try {
     const res = await fetch(url, {
@@ -19,6 +20,7 @@ export async function apiRequest<T>(
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(selectedOrgId ? { 'X-Organization-Id': selectedOrgId } : {}),
         ...options.headers,
       },
     });
@@ -34,7 +36,9 @@ export async function apiRequest<T>(
       const parsed = JSON.parse(errorBody);
       if (parsed.message) errorMessage = parsed.message;
       else if (parsed.error) errorMessage = parsed.error;
-    } catch {}
+    } catch (_ignore) {
+      // ignore json parse error
+    }
     return {
       ok: false,
       error: errorMessage || `Request failed with status ${res.status}`,

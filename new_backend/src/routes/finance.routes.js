@@ -11,61 +11,63 @@ const {
   updatePayroll,
 } = require("../controllers/finance.controller");
 const { requireAuth } = require("../middleware/auth.middleware");
+const { requireTenantContext } = require("../middleware/tenant.middleware");
 const { requireRole } = require("../middleware/rbac.middleware");
 
 const router = express.Router();
+const financeGuards = [requireAuth, requireTenantContext];
 
 router.get(
   "/invoices",
-  requireAuth,
+  financeGuards,
   requireRole(["ADMIN", "MANAGER", "ACCOUNTANT", "DISTRIBUTOR"]),
   getInvoices,
 );
 router.post(
   "/invoices",
-  requireAuth,
+  financeGuards,
   requireRole(["ADMIN", "MANAGER", "ACCOUNTANT"]),
   createInvoice,
 );
 router.get(
   "/payments",
-  requireAuth,
+  financeGuards,
   requireRole(["ADMIN", "MANAGER", "ACCOUNTANT", "DISTRIBUTOR"]),
   getPayments,
 );
 router.post(
   "/payments",
-  requireAuth,
+  financeGuards,
   requireRole(["ADMIN", "ACCOUNTANT"]),
   createPayment,
 );
 router.get(
   "/expenses",
-  requireAuth,
+  financeGuards,
   requireRole(["ADMIN", "ACCOUNTANT"]),
   getExpenses,
 );
 router.post(
   "/expenses",
-  requireAuth,
+  financeGuards,
   requireRole(["ADMIN", "ACCOUNTANT"]),
   createExpense,
 );
 router.get(
   "/payroll",
-  requireAuth,
+  financeGuards,
   requireRole(["ADMIN", "ACCOUNTANT"]),
   getPayroll,
 );
 router.post(
   "/payroll",
-  requireAuth,
+  financeGuards,
   requireRole(["ADMIN", "ACCOUNTANT"]),
   createPayroll,
 );
 router.patch(
   "/payroll/:id",
-  requireAuth,
+  financeGuards,
   requireRole(["ADMIN", "ACCOUNTANT"]),
   updatePayroll,
 );

@@ -7,6 +7,7 @@ const {
   deleteManagerAssignment
 } = require('../controllers/managerAssignment.controller');
 const { requireAuth } = require('../middleware/auth.middleware');
+const { requireTenantContext } = require('../middleware/tenant.middleware');
 const { requireRole } = require('../middleware/rbac.middleware');
 const { 
   validateAssignArea, 
@@ -19,6 +20,7 @@ const { validate } = require('../utils/validate');
 const router = express.Router();
 
 router.use(requireAuth);
+router.use(requireTenantContext);
 // Allow ADMIN to list all manager assignments
 router.get('/', requireRole(['ADMIN']), getAllManagerAssignments);
 // Allow only ADMIN to create assignments

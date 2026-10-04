@@ -9,18 +9,42 @@ const bcrypt = require("bcryptjs");
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
+
 async function main() {
   console.log("🌊 AquaNexus — Seeding database...\n");
+
+  // ============================================================
+  // 0. DEFAULT CUSTOMER ORGANIZATION
+  // ============================================================
+  const defaultOrg = await prisma.organization.upsert({
+    where: { slug: "aquanexus-primary" },
+    update: {},
+    create: {
+      id: "d0000000-0000-4000-8000-000000000001",
+      name: "AquaNexus Primary Plant",
+      slug: "aquanexus-primary",
+      status: "ACTIVE",
+    },
+  });
+  console.log(`✅ Organization: ${defaultOrg.name} (${defaultOrg.id})`);
 
   // ============================================================
   // 1. ROLES
   // ============================================================
   const roleData = [
-    { name: "ADMIN", description: "Full system access" },
+    {
+      name: "SUPER_ADMIN",
+      description: "Global access across all customer organizations",
+    },
+    {
+      name: "ADMIN",
+      description: "Full access within the customer's organization",
+    },
     { name: "MANAGER", description: "Operational management" },
     { name: "STORE_MANAGER", description: "Store and inventory management" },
     { name: "ACCOUNTANT", description: "Finance and accounting" },
     { name: "DISTRIBUTOR", description: "Distributor portal access" },
+    { name: "EMPLOYEE", description: "Employee access" },
   ];
 
   const roles = {};
@@ -95,7 +119,6 @@ async function main() {
   // ============================================================
   // 3. ROLE-PERMISSION MAPPINGS
   // ============================================================
-  // Admin gets all permissions
   const allPermIds = Object.values(permissions).map((p) => p.id);
   for (const pid of allPermIds) {
     await prisma.rolePermission.upsert({
@@ -105,112 +128,87 @@ async function main() {
       update: {},
       create: { roleId: roles.ADMIN.id, permissionId: pid },
     });
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: { roleId: roles.SUPER_ADMIN.id, permissionId: pid },
+      },
+      update: {},
+      create: { roleId: roles.SUPER_ADMIN.id, permissionId: pid },
+    });
   }
 
-  // Manager gets operational permissions
   const managerPerms = [
-    "employee.view",
-    "employee.create",
-    "employee.update",
-    "attendance.view",
-    "attendance.create",
-    "attendance.update",
-    "production.view",
-    "production.create",
-    "production.update",
-    "inventory.view",
-    "inventory.manage",
-    "order.view",
-    "order.create",
-    "order.update",
-    "dispatch.view",
-    "dispatch.create",
+    "employee.view", "employee.create", "employee.update",
+    "attendance.view", "attendance.create", "attendance.update",
+    "production.view", "production.create", "production.update",
+    "inventory.view", "inventory.manage",
+    "order.view", "order.create", "order.update",
+    "dispatch.view", "dispatch.create",
     "report.view",
   ];
   for (const code of managerPerms) {
     const pid = permissions[code].id;
     await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId: { roleId: roles.MANAGER.id, permissionId: pid },
-      },
+      where: { roleId_permissionId: { roleId: roles.MANAGER.id, permissionId: pid } },
       update: {},
       create: { roleId: roles.MANAGER.id, permissionId: pid },
     });
   }
 
-  // Store Manager gets store-related permissions
   const storeManagerPerms = [
-    "inventory.view",
-    "inventory.manage",
-    "production.view",
-    "dispatch.view",
-    "dispatch.create",
-    "order.view",
-    "report.view",
+    "inventory.view", "inventory.manage",
+    "production.view", "dispatch.view", "dispatch.create",
+    "order.view", "report.view",
   ];
   for (const code of storeManagerPerms) {
     const pid = permissions[code].id;
     await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId: {
-          roleId: roles.STORE_MANAGER.id,
-          permissionId: pid,
-        },
-      },
+      where: { roleId_permissionId: { roleId: roles.STORE_MANAGER.id, permissionId: pid } },
       update: {},
       create: { roleId: roles.STORE_MANAGER.id, permissionId: pid },
     });
   }
 
-  // Accountant gets finance permissions
   const accountantPerms = [
-    "invoice.view",
-    "invoice.create",
-    "payment.view",
-    "payment.manage",
-    "payroll.view",
-    "payroll.manage",
-    "expense.view",
-    "expense.manage",
-    "report.view",
-    "employee.view",
+    "invoice.view", "invoice.create",
+    "payment.view", "payment.manage",
+    "payroll.view", "payroll.manage",
+    "expense.view", "expense.manage",
+    "report.view", "employee.view",
   ];
   for (const code of accountantPerms) {
     const pid = permissions[code].id;
     await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId: {
-          roleId: roles.ACCOUNTANT.id,
-          permissionId: pid,
-        },
-      },
+      where: { roleId_permissionId: { roleId: roles.ACCOUNTANT.id, permissionId: pid } },
       update: {},
       create: { roleId: roles.ACCOUNTANT.id, permissionId: pid },
     });
   }
 
-  // Distributor gets distributor-facing permissions
   const distributorPerms = [
-    "order.view",
-    "order.create",
-    "sales.view",
-    "sales.create",
-    "return.view",
-    "return.create",
-    "invoice.view",
-    "payment.view",
+    "order.view", "order.create",
+    "sales.view", "sales.create",
+    "return.view", "return.create",
+    "invoice.view", "payment.view",
   ];
   for (const code of distributorPerms) {
     const pid = permissions[code].id;
     await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId: {
-          roleId: roles.DISTRIBUTOR.id,
-          permissionId: pid,
-        },
-      },
+      where: { roleId_permissionId: { roleId: roles.DISTRIBUTOR.id, permissionId: pid } },
       update: {},
       create: { roleId: roles.DISTRIBUTOR.id, permissionId: pid },
+    });
+  }
+
+  const employeePerms = [
+    "attendance.view", "attendance.create", "attendance.update",
+  ];
+  for (const code of employeePerms) {
+    const pid = permissions[code].id;
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: roles.EMPLOYEE.id, permissionId: pid } },
+      update: {},
+      create: { roleId: roles.EMPLOYEE.id, permissionId: pid },
     });
   }
   console.log("✅ Role-Permission mappings assigned");
@@ -221,6 +219,13 @@ async function main() {
   const passwordHash = await bcrypt.hash("Password@123", 10);
 
   const usersData = [
+    {
+      username: "superadmin",
+      email: "superadmin@aquanexus.com",
+      firstName: "AquaNexus",
+      lastName: "SuperAdmin",
+      roleName: "SUPER_ADMIN",
+    },
     {
       username: "admin",
       email: "admin@aquanexus.com",
@@ -256,24 +261,48 @@ async function main() {
       lastName: "Verma",
       roleName: "DISTRIBUTOR",
     },
+    {
+      username: "employee",
+      email: "employee@aquanexus.com",
+      firstName: "Aniket",
+      lastName: "Sharma",
+      roleName: "EMPLOYEE",
+    },
   ];
 
   const users = {};
   for (const u of usersData) {
+    const isSuper = u.roleName === "SUPER_ADMIN";
+    if (isSuper) {
+      const existingSuperAdmin = await prisma.user.findFirst({
+        where: { isSuperAdmin: true },
+      });
+      if (existingSuperAdmin) {
+        users.SUPER_ADMIN = existingSuperAdmin;
+        continue;
+      }
+    }
+
     const user = await prisma.user.upsert({
       where: { email: u.email },
-      update: {},
+      update: {
+        isSuperAdmin: isSuper,
+        superAdminSlot: isSuper ? "SUPER_ADMIN" : null,
+        organizationId: isSuper ? null : defaultOrg.id,
+      },
       create: {
         username: u.username,
         email: u.email,
         passwordHash,
         firstName: u.firstName,
         lastName: u.lastName,
+        isSuperAdmin: isSuper,
+        superAdminSlot: isSuper ? "SUPER_ADMIN" : null,
+        organizationId: isSuper ? null : defaultOrg.id,
       },
     });
     users[u.roleName] = user;
 
-    // Assign role
     await prisma.userRole.upsert({
       where: {
         userId_roleId: { userId: user.id, roleId: roles[u.roleName].id },
@@ -288,25 +317,23 @@ async function main() {
   // 5. MANAGER ASSIGNMENTS
   // ============================================================
   const managerUser = users.MANAGER;
-  const managerAreas = ["PRODUCTION", "STORE", "DISTRIBUTION"];
-  for (const area of managerAreas) {
-    await prisma.managerAssignment.upsert({
-      where: {
-        userId_area: { userId: managerUser.id, area },
-      },
-      update: {},
-      create: { userId: managerUser.id, area },
-    });
+  if (managerUser) {
+    for (const area of ["PRODUCTION", "STORE", "DISTRIBUTION"]) {
+      await prisma.managerAssignment.upsert({
+        where: { userId_area: { userId: managerUser.id, area } },
+        update: {},
+        create: { userId: managerUser.id, area },
+      });
+    }
   }
 
-  // Store manager gets STORE area assignment
-  await prisma.managerAssignment.upsert({
-    where: {
-      userId_area: { userId: users.STORE_MANAGER.id, area: "STORE" },
-    },
-    update: {},
-    create: { userId: users.STORE_MANAGER.id, area: "STORE" },
-  });
+  if (users.STORE_MANAGER) {
+    await prisma.managerAssignment.upsert({
+      where: { userId_area: { userId: users.STORE_MANAGER.id, area: "STORE" } },
+      update: {},
+      create: { userId: users.STORE_MANAGER.id, area: "STORE" },
+    });
+  }
   console.log("✅ Manager assignments created");
 
   // ============================================================
@@ -314,35 +341,21 @@ async function main() {
   // ============================================================
   const deptData = [
     { name: "Production", code: "PROD", description: "Production department" },
-    {
-      name: "Store",
-      code: "STORE",
-      description: "Store and inventory department",
-    },
-    {
-      name: "Distribution",
-      code: "DIST",
-      description: "Distribution department",
-    },
-    {
-      name: "Finance",
-      code: "FIN",
-      description: "Finance and accounting department",
-    },
+    { name: "Store", code: "STORE", description: "Store and inventory department" },
+    { name: "Distribution", code: "DIST", description: "Distribution department" },
+    { name: "Finance", code: "FIN", description: "Finance and accounting department" },
     { name: "HR", code: "HR", description: "Human resources department" },
-    {
-      name: "Administration",
-      code: "ADMIN",
-      description: "Administration department",
-    },
+    { name: "Administration", code: "ADMIN", description: "Administration department" },
   ];
 
   const departments = {};
   for (const d of deptData) {
     departments[d.code] = await prisma.department.upsert({
-      where: { code: d.code },
+      where: {
+        organizationId_code: { organizationId: defaultOrg.id, code: d.code },
+      },
       update: {},
-      create: d,
+      create: { ...d, organizationId: defaultOrg.id },
     });
   }
   console.log(`✅ Departments: ${deptData.map((d) => d.name).join(", ")}`);
@@ -411,9 +424,15 @@ async function main() {
   const employees = {};
   for (const e of employeesData) {
     employees[e.employeeCode] = await prisma.employee.upsert({
-      where: { employeeCode: e.employeeCode },
+      where: {
+        organizationId_employeeCode: {
+          organizationId: defaultOrg.id,
+          employeeCode: e.employeeCode,
+        },
+      },
       update: {},
       create: {
+        organizationId: defaultOrg.id,
         employeeCode: e.employeeCode,
         firstName: e.firstName,
         lastName: e.lastName,
@@ -467,9 +486,11 @@ async function main() {
   const products = {};
   for (const p of productsData) {
     products[p.sku] = await prisma.product.upsert({
-      where: { sku: p.sku },
+      where: {
+        organizationId_sku: { organizationId: defaultOrg.id, sku: p.sku },
+      },
       update: {},
-      create: p,
+      create: { ...p, organizationId: defaultOrg.id },
     });
   }
   console.log(`✅ Products: ${productsData.length} created`);
@@ -480,8 +501,9 @@ async function main() {
   for (const sku of Object.keys(products)) {
     await prisma.inventory.upsert({
       where: { productId: products[sku].id },
-      update: {},
+      update: { organizationId: defaultOrg.id },
       create: {
+        organizationId: defaultOrg.id,
         productId: products[sku].id,
         quantity: 500,
         reservedQuantity: 0,
@@ -495,9 +517,15 @@ async function main() {
   // 10. PRODUCTION
   // ============================================================
   const production1 = await prisma.production.upsert({
-    where: { productionNumber: "PRD-2024-001" },
+    where: {
+      organizationId_productionNumber: {
+        organizationId: defaultOrg.id,
+        productionNumber: "PRD-2024-001",
+      },
+    },
     update: {},
     create: {
+      organizationId: defaultOrg.id,
       productionNumber: "PRD-2024-001",
       productId: products["WB-20L"].id,
       quantity: 200,
@@ -509,10 +537,16 @@ async function main() {
     },
   });
 
-  const production2 = await prisma.production.upsert({
-    where: { productionNumber: "PRD-2024-002" },
+  await prisma.production.upsert({
+    where: {
+      organizationId_productionNumber: {
+        organizationId: defaultOrg.id,
+        productionNumber: "PRD-2024-002",
+      },
+    },
     update: {},
     create: {
+      organizationId: defaultOrg.id,
       productionNumber: "PRD-2024-002",
       productId: products["WB-1L"].id,
       quantity: 500,
@@ -527,11 +561,16 @@ async function main() {
   // ============================================================
   // 11. GOODS RECEIVED
   // ============================================================
-  // GRN for production 1
   await prisma.goodsReceived.upsert({
-    where: { grnNumber: "GRN-2024-001" },
+    where: {
+      organizationId_grnNumber: {
+        organizationId: defaultOrg.id,
+        grnNumber: "GRN-2024-001",
+      },
+    },
     update: {},
     create: {
+      organizationId: defaultOrg.id,
       grnNumber: "GRN-2024-001",
       productId: products["WB-20L"].id,
       productionId: production1.id,
@@ -544,22 +583,7 @@ async function main() {
   console.log("✅ Goods received records created");
 
   // ============================================================
-  // 12. STOCK TRANSACTIONS
-  // ============================================================
-  await prisma.stockTransaction.create({
-    data: {
-      productId: products["WB-20L"].id,
-      transactionType: "PRODUCTION_RECEIPT",
-      quantity: 200,
-      referenceType: "GoodsReceived",
-      remarks: "GRN-2024-001 receipt",
-      createdBy: users.STORE_MANAGER.id,
-    },
-  });
-  console.log("✅ Stock transactions created");
-
-  // ============================================================
-  // 13. SALES AREAS
+  // 12. SALES AREAS
   // ============================================================
   const areasData = [
     { name: "North Zone", code: "NZ", description: "Northern sales region" },
@@ -569,15 +593,17 @@ async function main() {
   const salesAreas = {};
   for (const a of areasData) {
     salesAreas[a.code] = await prisma.salesArea.upsert({
-      where: { code: a.code },
+      where: {
+        organizationId_code: { organizationId: defaultOrg.id, code: a.code },
+      },
       update: {},
-      create: a,
+      create: { ...a, organizationId: defaultOrg.id },
     });
   }
   console.log("✅ Sales areas created");
 
   // ============================================================
-  // 14. DISTRIBUTORS
+  // 13. DISTRIBUTORS
   // ============================================================
   const distData = [
     {
@@ -603,9 +629,15 @@ async function main() {
   const distributors = {};
   for (const d of distData) {
     distributors[d.distributorCode] = await prisma.distributor.upsert({
-      where: { distributorCode: d.distributorCode },
+      where: {
+        organizationId_distributorCode: {
+          organizationId: defaultOrg.id,
+          distributorCode: d.distributorCode,
+        },
+      },
       update: {},
       create: {
+        organizationId: defaultOrg.id,
         distributorCode: d.distributorCode,
         name: d.name,
         email: d.email,
@@ -618,199 +650,35 @@ async function main() {
   }
   console.log("✅ Distributors created");
 
-  // Link distributor user to first distributor
-  await prisma.userDistributor.upsert({
-    where: {
-      userId_distributorId: {
-        userId: users.DISTRIBUTOR.id,
-        distributorId: distributors["DIST001"].id,
-      },
-    },
-    update: {},
-    create: {
-      userId: users.DISTRIBUTOR.id,
-      distributorId: distributors["DIST001"].id,
-    },
-  });
-  console.log("✅ User-Distributor link created");
-
-  // ============================================================
-  // 15. DISTRIBUTOR STOCK
-  // ============================================================
-  for (const sku of Object.keys(products)) {
-    await prisma.distributorStock.upsert({
+  if (users.DISTRIBUTOR) {
+    await prisma.userDistributor.upsert({
       where: {
-        distributorId_productId: {
+        userId_distributorId: {
+          userId: users.DISTRIBUTOR.id,
           distributorId: distributors["DIST001"].id,
-          productId: products[sku].id,
         },
       },
       update: {},
       create: {
+        userId: users.DISTRIBUTOR.id,
         distributorId: distributors["DIST001"].id,
-        productId: products[sku].id,
-        quantity: 50,
       },
     });
   }
-  console.log("✅ Distributor stock initialized");
 
   // ============================================================
-  // 16. ORDERS
+  // 14. SUPPLIERS
   // ============================================================
-  const order1 = await prisma.order.upsert({
-    where: { orderNumber: "ORD-2024-001" },
-    update: {},
-    create: {
-      orderNumber: "ORD-2024-001",
-      distributorId: distributors["DIST001"].id,
-      orderDate: new Date("2024-06-10"),
-      status: "DELIVERED",
-      subtotal: 4000.0,
-      discount: 200.0,
-      tax: 684.0,
-      totalAmount: 4484.0,
-      notes: "First order",
-      createdBy: users.DISTRIBUTOR.id,
-    },
-  });
-
-  // Order items
-  await prisma.orderItem.upsert({
+  await prisma.supplier.upsert({
     where: {
-      orderId_productId: {
-        orderId: order1.id,
-        productId: products["WB-20L"].id,
+      organizationId_supplierCode: {
+        organizationId: defaultOrg.id,
+        supplierCode: "SUP001",
       },
     },
     update: {},
     create: {
-      orderId: order1.id,
-      productId: products["WB-20L"].id,
-      quantity: 100,
-      unitPrice: 40.0,
-      discount: 200.0,
-      tax: 684.0,
-      total: 4484.0,
-    },
-  });
-  console.log("✅ Orders and order items created");
-
-  // ============================================================
-  // 17. DISPATCHES
-  // ============================================================
-  const dispatch1 = await prisma.dispatch.upsert({
-    where: { dispatchNumber: "DSP-2024-001" },
-    update: {},
-    create: {
-      dispatchNumber: "DSP-2024-001",
-      orderId: order1.id,
-      distributorId: distributors["DIST001"].id,
-      dispatchDate: new Date("2024-06-11"),
-      status: "DELIVERED",
-      createdBy: users.STORE_MANAGER.id,
-      remarks: "Dispatched via truck",
-    },
-  });
-
-  await prisma.dispatchItem.upsert({
-    where: {
-      dispatchId_productId: {
-        dispatchId: dispatch1.id,
-        productId: products["WB-20L"].id,
-      },
-    },
-    update: {},
-    create: {
-      dispatchId: dispatch1.id,
-      productId: products["WB-20L"].id,
-      quantity: 100,
-    },
-  });
-  console.log("✅ Dispatches and dispatch items created");
-
-  // ============================================================
-  // 18. SALES
-  // ============================================================
-  const sale1 = await prisma.sale.upsert({
-    where: { saleNumber: "SAL-2024-001" },
-    update: {},
-    create: {
-      saleNumber: "SAL-2024-001",
-      distributorId: distributors["DIST001"].id,
-      saleDate: new Date("2024-06-15"),
-      customerReference: "CUST-101",
-      subtotal: 2000.0,
-      discount: 100.0,
-      tax: 342.0,
-      totalAmount: 2242.0,
-      status: "COMPLETED",
-      createdBy: users.DISTRIBUTOR.id,
-    },
-  });
-
-  await prisma.saleItem.upsert({
-    where: {
-      saleId_productId: {
-        saleId: sale1.id,
-        productId: products["WB-20L"].id,
-      },
-    },
-    update: {},
-    create: {
-      saleId: sale1.id,
-      productId: products["WB-20L"].id,
-      quantity: 50,
-      unitPrice: 40.0,
-      discount: 100.0,
-      tax: 342.0,
-      total: 2242.0,
-    },
-  });
-  console.log("✅ Sales and sale items created");
-
-  // ============================================================
-  // 19. RETURNS
-  // ============================================================
-  const return1 = await prisma.return.upsert({
-    where: { returnNumber: "RET-2024-001" },
-    update: {},
-    create: {
-      returnNumber: "RET-2024-001",
-      distributorId: distributors["DIST001"].id,
-      saleId: sale1.id,
-      returnDate: new Date("2024-06-20"),
-      reason: "Damaged in transit",
-      status: "RECEIVED",
-      createdBy: users.DISTRIBUTOR.id,
-    },
-  });
-
-  await prisma.returnItem.upsert({
-    where: {
-      returnId_productId: {
-        returnId: return1.id,
-        productId: products["WB-20L"].id,
-      },
-    },
-    update: {},
-    create: {
-      returnId: return1.id,
-      productId: products["WB-20L"].id,
-      quantity: 5,
-      condition: "DAMAGED",
-      remarks: "Bottles cracked during transit",
-    },
-  });
-  console.log("✅ Returns and return items created");
-
-  // ============================================================
-  // 20. SUPPLIERS
-  // ============================================================
-  const supplier1 = await prisma.supplier.upsert({
-    where: { supplierCode: "SUP001" },
-    update: {},
-    create: {
+      organizationId: defaultOrg.id,
       supplierCode: "SUP001",
       name: "PackageMart Pvt Ltd",
       email: "info@packagemart.com",
@@ -820,151 +688,9 @@ async function main() {
   });
   console.log("✅ Suppliers created");
 
-  // ============================================================
-  // 21. INVOICES
-  // ============================================================
-  const invoice1 = await prisma.invoice.upsert({
-    where: { invoiceNumber: "INV-2024-001" },
-    update: {},
-    create: {
-      invoiceNumber: "INV-2024-001",
-      distributorId: distributors["DIST001"].id,
-      orderId: order1.id,
-      invoiceDate: new Date("2024-06-12"),
-      dueDate: new Date("2024-07-12"),
-      subtotal: 4000.0,
-      discount: 200.0,
-      tax: 684.0,
-      totalAmount: 4484.0,
-      status: "PARTIALLY_PAID",
-    },
-  });
-  console.log("✅ Invoices created");
-
-  // ============================================================
-  // 22. PAYMENTS
-  // ============================================================
-  await prisma.payment.upsert({
-    where: { paymentNumber: "PAY-2024-001" },
-    update: {},
-    create: {
-      paymentNumber: "PAY-2024-001",
-      invoiceId: invoice1.id,
-      amount: 2000.0,
-      paymentDate: new Date("2024-06-20"),
-      paymentMethod: "BANK_TRANSFER",
-      referenceNumber: "TXN-987654",
-      status: "COMPLETED",
-      remarks: "Partial payment",
-      createdBy: users.ACCOUNTANT.id,
-    },
-  });
-  console.log("✅ Payments created");
-
-  // ============================================================
-  // 23. EXPENSES
-  // ============================================================
-  await prisma.expense.upsert({
-    where: { expenseNumber: "EXP-2024-001" },
-    update: {},
-    create: {
-      expenseNumber: "EXP-2024-001",
-      category: "Packaging Materials",
-      amount: 15000.0,
-      expenseDate: new Date("2024-06-05"),
-      description: "Monthly packaging material purchase",
-      supplierId: supplier1.id,
-      status: "PAID",
-      createdBy: users.ACCOUNTANT.id,
-      approvedBy: users.ADMIN.id,
-      approvedAt: new Date("2024-06-04"),
-    },
-  });
-  console.log("✅ Expenses created");
-
-  // ============================================================
-  // 24. PAYROLL
-  // ============================================================
-  const payrollData = {
-    employeeId: employees["EMP001"].id,
-    payPeriodStart: new Date("2024-06-01"),
-    payPeriodEnd: new Date("2024-06-30"),
-    basicSalary: 25000.0,
-    overtimeAmount: 3000.0,
-    deductions: 2000.0,
-    netSalary: 26000.0, // 25000 + 3000 - 2000
-    status: "PAID",
-    processedBy: users.ACCOUNTANT.id,
-    processedAt: new Date("2024-07-05"),
-  };
-  const existingPayroll = await prisma.payroll.findFirst({
-    where: {
-      employeeId: payrollData.employeeId,
-      payPeriodStart: payrollData.payPeriodStart,
-      payPeriodEnd: payrollData.payPeriodEnd,
-    },
-  });
-  if (existingPayroll) {
-    await prisma.payroll.update({
-      where: { id: existingPayroll.id },
-      data: payrollData,
-    });
-  } else {
-    await prisma.payroll.create({ data: payrollData });
-  }
-  console.log("✅ Payroll records created");
-
-  // ============================================================
-  // 25. ATTENDANCE (sample)
-  // ============================================================
-  await prisma.attendance.upsert({
-    where: {
-      employeeId_attendanceDate: {
-        employeeId: employees["EMP001"].id,
-        attendanceDate: new Date("2024-06-03"),
-      },
-    },
-    update: {},
-    create: {
-      employeeId: employees["EMP001"].id,
-      attendanceDate: new Date("2024-06-03"),
-      status: "PRESENT",
-      checkIn: new Date("2024-06-03T09:00:00Z"),
-      checkOut: new Date("2024-06-03T18:00:00Z"),
-    },
-  });
-  console.log("✅ Attendance records created");
-
-  // ============================================================
-  // 26. NOTIFICATIONS (sample)
-  // ============================================================
-  await prisma.notification.create({
-    data: {
-      userId: users.ADMIN.id,
-      title: "System Initialized",
-      message: "AquaNexus database has been seeded successfully.",
-      type: "SUCCESS",
-    },
-  });
-  console.log("✅ Notifications created");
-
-  // ============================================================
-  // 27. AUDIT LOG (sample)
-  // ============================================================
-  await prisma.auditLog.create({
-    data: {
-      userId: users.ADMIN.id,
-      action: "SEED",
-      entityType: "SYSTEM",
-      entityId: "database",
-      newValues: { event: "Database seeded" },
-      ipAddress: "127.0.0.1",
-    },
-  });
-  console.log("✅ Audit log records created");
-
   console.log("\n🎉 AquaNexus database seeding completed successfully!");
-  console.log("   Default login: admin@aquanexus.com / Password@123");
+  console.log("   SuperAdmin: superadmin@aquanexus.com / Password@123");
+  console.log("   Admin: admin@aquanexus.com / Password@123");
 }
 
 main()

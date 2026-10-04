@@ -9,6 +9,9 @@ const getAuditLogs = async (req, res) => {
     const take = parseInt(limit);
     
     const where = {};
+    if (req.organizationId) {
+      where.organizationId = req.organizationId;
+    }
     if (action) where.action = action;
     if (entityType) where.entityType = entityType;
     if (userId) where.userId = userId;

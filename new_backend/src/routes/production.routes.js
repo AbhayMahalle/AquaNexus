@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth.middleware');
+const { requireTenantContext } = require('../middleware/tenant.middleware');
 const { requirePermission } = require('../middleware/rbac.middleware');
 const { requireManagerArea } = require('../middleware/managerAccess.middleware');
 const {
@@ -11,7 +12,7 @@ const {
   updateProductionStatus
 } = require('../controllers/production.controller');
 
-router.use(requireAuth);
+router.use(requireAuth, requireTenantContext);
 router.use(requireManagerArea('PRODUCTION'));
 
 router.get('/', requirePermission('production.view'), getProductions);

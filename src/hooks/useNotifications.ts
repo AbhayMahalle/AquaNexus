@@ -103,8 +103,31 @@ export function useNotifications() {
     } catch { /* demo ids — no-op */ }
   }, []);
 
-  const markAllAsRead = useCallback(() => {
+  const markAsUnread = useCallback(async (id: string) => {
+    // Optimistic update
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, isRead: false } : n)
+    );
+    try {
+      await apiClient.markNotificationAsUnread(id);
+    } catch { /* demo ids — no-op */ }
+  }, []);
+
+  const toggleRead = useCallback(async (id: string) => {
+    const item = notifications.find(n => n.id === id);
+    if (!item) return;
+    if (item.isRead) {
+      await markAsUnread(id);
+    } else {
+      await markAsRead(id);
+    }
+  }, [notifications, markAsRead, markAsUnread]);
+
+  const markAllAsRead = useCallback(async () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    try {
+      await apiClient.markAllNotificationsAsRead();
+    } catch { /* demo ids — no-op */ }
   }, []);
 
   useEffect(() => {
@@ -116,5 +139,14 @@ export function useNotifications() {
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const notificationsWithTime = notifications.map(n => ({ ...n, timeAgo: timeAgo(n.createdAt) }));
 
-  return { notifications: notificationsWithTime, unreadCount, isLoading, markAsRead, markAllAsRead, reload: load };
+  return {
+    notifications: notificationsWithTime,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAsUnread,
+    toggleRead,
+    markAllAsRead,
+    reload: load
+  };
 }

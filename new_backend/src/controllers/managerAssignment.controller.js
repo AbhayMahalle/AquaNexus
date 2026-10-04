@@ -9,6 +9,13 @@ const assignManagerArea = async (req, res) => {
       return sendError(res, 'User ID and area are required', 400);
     }
 
+    const targetUser = await prisma.user.findFirst({
+      where: { id: userId, organizationId: req.organizationId },
+    });
+    if (!targetUser) {
+      return sendError(res, 'User not found in your organization', 404);
+    }
+
     const assignment = await prisma.managerAssignment.create({
       data: {
         userId,
@@ -30,6 +37,13 @@ const getManagerAssignments = async (req, res) => {
   try {
     const { userId } = req.params;
 
+    const targetUser = await prisma.user.findFirst({
+      where: { id: userId, organizationId: req.organizationId },
+    });
+    if (!targetUser) {
+      return sendError(res, 'User not found in your organization', 404);
+    }
+
     const assignments = await prisma.managerAssignment.findMany({
       where: { userId }
     });
@@ -48,6 +62,13 @@ const updateManagerAssignment = async (req, res) => {
 
     if (!area) {
       return sendError(res, 'Area is required', 400);
+    }
+
+    const existing = await prisma.managerAssignment.findFirst({
+      where: { id, user: { organizationId: req.organizationId } },
+    });
+    if (!existing) {
+      return sendError(res, 'Assignment not found in your organization', 404);
     }
 
     const assignment = await prisma.managerAssignment.update({
@@ -72,6 +93,13 @@ const deleteManagerAssignment = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const existing = await prisma.managerAssignment.findFirst({
+      where: { id, user: { organizationId: req.organizationId } },
+    });
+    if (!existing) {
+      return sendError(res, 'Assignment not found in your organization', 404);
+    }
+
     await prisma.managerAssignment.delete({
       where: { id }
     });
@@ -89,6 +117,9 @@ const deleteManagerAssignment = async (req, res) => {
 const getAllManagerAssignments = async (req, res) => {
   try {
     const assignments = await prisma.managerAssignment.findMany({
+      where: {
+        user: { organizationId: req.organizationId },
+      },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, username: true, email: true } }
       },

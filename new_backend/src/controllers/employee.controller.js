@@ -18,7 +18,9 @@ const getEmployees = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    const where = {};
+    const where = {
+      organizationId: req.organizationId,
+    };
 
     if (req.user && req.user.role?.name === 'EMPLOYEE') {
       if (!req.user.employee || !req.user.employee.id) {
@@ -40,12 +42,16 @@ const getEmployees = async (req, res) => {
     }
 
     if (search) {
-      where.OR = [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { employeeCode: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { designation: { contains: search, mode: 'insensitive' } }
+      where.AND = [
+        {
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { employeeCode: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { designation: { contains: search, mode: 'insensitive' } }
+          ]
+        }
       ];
     }
 
@@ -96,7 +102,7 @@ const getEmployeeById = async (req, res) => {
       if (!req.user.employee || !req.user.employee.id) {
         return sendError(res, 'Employee profile not found for this user', 403);
       }
-      if (req.user.employee.id !== id) {
+      if (req.user.employee.id !== id && id !== 'me') {
         return sendError(res, 'Access denied to other employee profiles', 403);
       }
     }
@@ -111,9 +117,12 @@ const getEmployeeById = async (req, res) => {
     }
 
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-    const where = isUuid
-      ? { OR: [{ id: targetId }, { employeeCode: targetId }] }
-      : { employeeCode: targetId };
+    const where = {
+      organizationId: req.organizationId,
+      ...(isUuid
+        ? { OR: [{ id: targetId }, { employeeCode: targetId }] }
+        : { employeeCode: targetId })
+    };
 
     const employee = await prisma.employee.findFirst({
       where,
@@ -168,46 +177,59 @@ const createEmployee = async (req, res) => {
       return sendError(res, 'First name and last name are required', 400);
     }
 
-    // Resolve department: by ID, by Name, or fallback to first active department
+    // Resolve department inside caller's organization
     let targetDept = null;
     if (departmentId) {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(departmentId);
       if (isUuid) {
-        targetDept = await prisma.department.findUnique({ where: { id: departmentId } });
+        targetDept = await prisma.department.findFirst({
+          where: { id: departmentId, organizationId: req.organizationId }
+        });
       }
     }
     if (!targetDept && departmentName) {
       targetDept = await prisma.department.findFirst({
-        where: { name: { equals: departmentName, mode: 'insensitive' } }
+        where: {
+          organizationId: req.organizationId,
+          name: { equals: departmentName, mode: 'insensitive' }
+        }
       });
     }
     if (!targetDept) {
-      targetDept = await prisma.department.findFirst({ where: { status: 'ACTIVE' } });
+      targetDept = await prisma.department.findFirst({
+        where: { organizationId: req.organizationId, status: 'ACTIVE' }
+      });
     }
 
     if (!targetDept) {
-      return sendError(res, 'No active department found to assign employee to', 400);
+      return sendError(res, 'No active department found in your organization to assign employee to', 400);
     }
 
     // Generate code if not provided
     let code = employeeCode;
     if (!code) {
-      const count = await prisma.employee.count();
+      const count = await prisma.employee.count({
+        where: { organizationId: req.organizationId }
+      });
       code = `EMP${String(count + 1).padStart(3, '0')}`;
     }
 
-    // Check if code exists
-    const existingCode = await prisma.employee.findUnique({
-      where: { employeeCode: code }
+    // Check if code exists within the organization
+    const existingCode = await prisma.employee.findFirst({
+      where: {
+        organizationId: req.organizationId,
+        employeeCode: code
+      }
     });
     if (existingCode) {
-      return sendError(res, `Employee code '${code}' already exists`, 400);
+      return sendError(res, `Employee code '${code}' already exists in your organization`, 400);
     }
 
     const resolvedJoiningDate = joiningDate ? new Date(joiningDate) : new Date();
 
     const newEmployee = await prisma.employee.create({
       data: {
+        organizationId: req.organizationId,
         employeeCode: code,
         firstName,
         lastName,
@@ -249,15 +271,19 @@ const updateEmployee = async (req, res) => {
       status
     } = req.body;
 
-    const existing = await prisma.employee.findUnique({ where: { id } });
+    const existing = await prisma.employee.findFirst({
+      where: { id, organizationId: req.organizationId }
+    });
     if (!existing) {
       return sendError(res, 'Employee not found', 404);
     }
 
     if (departmentId) {
-      const deptExists = await prisma.department.findUnique({ where: { id: departmentId } });
+      const deptExists = await prisma.department.findFirst({
+        where: { id: departmentId, organizationId: req.organizationId }
+      });
       if (!deptExists) {
-        return sendError(res, 'Invalid department ID', 400);
+        return sendError(res, 'Invalid department ID for your organization', 400);
       }
     }
 
@@ -292,6 +318,7 @@ const updateEmployee = async (req, res) => {
 const getDepartments = async (req, res) => {
   try {
     const departments = await prisma.department.findMany({
+      where: { organizationId: req.organizationId },
       orderBy: { name: 'asc' }
     });
 
@@ -310,7 +337,10 @@ const deleteEmployee = async (req, res) => {
     const { id } = req.params;
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     const existing = await prisma.employee.findFirst({
-      where: isUuid ? { OR: [{ id }, { employeeCode: id }] } : { employeeCode: id }
+      where: {
+        organizationId: req.organizationId,
+        ...(isUuid ? { OR: [{ id }, { employeeCode: id }] } : { employeeCode: id })
+      }
     });
 
     if (!existing) {

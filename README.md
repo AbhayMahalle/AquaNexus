@@ -36,7 +36,7 @@ Aqua Nexus provides an integrated platform for managing all operational aspects 
 
 - **Centralized Application:** Single unified application serving multiple operational roles
 - **Module-Based Architecture:** Organized, scalable system with clear separation of concerns
-- **Role-Based Access Control:** Five distinct application roles with granular permission management
+- **Role-Based Access Control:** Six application roles with granular permission management
 - **Employee-Centric Design:** Employees are operational records, not application users
 - **Real-time Inventory:** Track water production, storage, and distribution
 - **Financial Integration:** Payments, invoicing, and expense management integrated into workflows
@@ -156,15 +156,18 @@ To build a world-class water plant management system that:
 
 ## User Roles
 
-Aqua Nexus supports 5 distinct application roles:
+Aqua Nexus supports six application roles:
 
-| Role | Responsibilities | Key Permissions |
-|------|------------------|-----------------|
-| **Admin** | System administration and configuration | Full system access, user management, role assignment, system settings |
-| **Manager** | Operational oversight and area management | Manage assigned areas, view reports, approve workflows, employee management |
-| **Store Manager** | Inventory and warehouse operations | Inventory management, warehouse operations, stock tracking, order fulfillment |
-| **Accountant** | Financial operations and reporting | Payment processing, invoice management, expense recording, financial reports |
-| **Distributor** | Sales and delivery operations | Order management, delivery tracking, customer information, sales reporting |
+| Role              | Responsibilities                          | Key Permissions                                                                                 |
+| ----------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **SuperAdmin**    | Aqua Nexus platform operator              | Global access across customer organizations; platform and customer administration               |
+| **Admin**         | Customer/company administrator            | Full system access within their own company, user management, role assignment, company settings |
+| **Manager**       | Operational oversight and area management | Manage assigned areas, view reports, approve workflows, employee management                     |
+| **Store Manager** | Inventory and warehouse operations        | Inventory management, warehouse operations, stock tracking, order fulfillment                   |
+| **Accountant**    | Financial operations and reporting        | Payment processing, invoice management, expense recording, financial reports                    |
+| **Distributor**   | Sales and delivery operations             | Order management, delivery tracking, customer information, sales reporting                      |
+
+Each customer company is an independent organization managed by one or more company Admin accounts (no global single-Admin limit). There is exactly one platform-level SuperAdmin account for the AquaNexus platform with global governance, customer organization provisioning, activation/suspension controls, and audited cross-tenant ERP access via `X-Organization-Id`. Multi-tenant business data isolation is enforced end-to-end across database foreign keys, composite unique constraints, middleware, and controllers.
 
 ---
 
@@ -173,6 +176,7 @@ Aqua Nexus supports 5 distinct application roles:
 ### Employee (Operational Record)
 
 Employees are operational records in the system:
+
 - Represent actual workers at the water plant
 - Have employment details: name, ID, designation, department, salary
 - Track attendance, leave, overtime, payroll history
@@ -182,8 +186,9 @@ Employees are operational records in the system:
 ### Application User (System Account)
 
 Application users are accounts that can access Aqua Nexus:
+
 - Have username, password, and authentication credentials
-- Assigned one of the 5 roles (Admin, Manager, Store Manager, Accountant, Distributor)
+- Assigned one of the 5 operational roles (Admin, Manager, Store Manager, Accountant, Distributor); SuperAdmin is a platform role
 - May or may not correspond to an employee record
 - Perform operations based on role-based permissions
 - Can manage employee records
@@ -263,15 +268,16 @@ Managers can be assigned to one or more operational areas, restricting their acc
 
 ### Operational Areas
 
-| Area | Responsibilities |
-|------|------------------|
-| **Production** | Production scheduling, resource allocation, quality monitoring |
-| **Store** | Inventory management, warehouse operations, stock control |
-| **Distribution** | Delivery logistics, distributor management, route planning |
+| Area             | Responsibilities                                               |
+| ---------------- | -------------------------------------------------------------- |
+| **Production**   | Production scheduling, resource allocation, quality monitoring |
+| **Store**        | Inventory management, warehouse operations, stock control      |
+| **Distribution** | Delivery logistics, distributor management, route planning     |
 
 ### Permission Scoping
 
 When a Manager is assigned to an area:
+
 - Can only view/manage data for that specific area
 - Restricted to area-specific employees, resources, and operations
 - Cannot access data from other operational areas
@@ -285,55 +291,55 @@ Aqua Nexus is organized into 23 core modules:
 
 ### Employee & HR Management
 
-| Module | Purpose |
-|--------|---------|
-| **auth** | Authentication, login, JWT token management |
-| **users** | Application user management and role assignment |
-| **employees** | Employee master records, profiles, and employment details |
-| **attendance** | Attendance tracking and management |
-| **leave** | Leave request, approval, and tracking |
-| **overtime** | Overtime tracking and approval |
-| **payroll** | Salary calculation and payroll processing |
+| Module         | Purpose                                                   |
+| -------------- | --------------------------------------------------------- |
+| **auth**       | Authentication, login, JWT token management               |
+| **users**      | Application user management and role assignment           |
+| **employees**  | Employee master records, profiles, and employment details |
+| **attendance** | Attendance tracking and management                        |
+| **leave**      | Leave request, approval, and tracking                     |
+| **overtime**   | Overtime tracking and approval                            |
+| **payroll**    | Salary calculation and payroll processing                 |
 
 ### Operations Management
 
-| Module | Purpose |
-|--------|---------|
-| **production** | Production scheduling, tracking, and quality control |
-| **inventory** | Stock management, warehouse operations |
-| **distributors** | Distributor master records and management |
-| **distribution** | Distribution planning and logistics |
+| Module           | Purpose                                              |
+| ---------------- | ---------------------------------------------------- |
+| **production**   | Production scheduling, tracking, and quality control |
+| **inventory**    | Stock management, warehouse operations               |
+| **distributors** | Distributor master records and management            |
+| **distribution** | Distribution planning and logistics                  |
 
 ### Sales & Orders
 
-| Module | Purpose |
-|--------|---------|
-| **orders** | Sales order creation and management |
-| **sales** | Sales tracking and reporting |
-| **returns** | Return management and processing |
+| Module      | Purpose                             |
+| ----------- | ----------------------------------- |
+| **orders**  | Sales order creation and management |
+| **sales**   | Sales tracking and reporting        |
+| **returns** | Return management and processing    |
 
 ### Financial Management
 
-| Module | Purpose |
-|--------|---------|
-| **invoices** | Invoice creation and management |
-| **payments** | Payment processing and tracking |
+| Module       | Purpose                              |
+| ------------ | ------------------------------------ |
+| **invoices** | Invoice creation and management      |
+| **payments** | Payment processing and tracking      |
 | **expenses** | Expense recording and categorization |
 
 ### Procurement & Supply Chain
 
-| Module | Purpose |
-|--------|---------|
-| **suppliers** | Supplier master records |
+| Module        | Purpose                                   |
+| ------------- | ----------------------------------------- |
+| **suppliers** | Supplier master records                   |
 | **purchases** | Purchase order and procurement management |
 
 ### Cross-Cutting Concerns
 
-| Module | Purpose |
-|--------|---------|
-| **reports** | Analytics, dashboards, and reporting |
-| **notifications** | Email, SMS, and system notifications |
-| **audit** | Audit logging and compliance tracking |
+| Module            | Purpose                               |
+| ----------------- | ------------------------------------- |
+| **reports**       | Analytics, dashboards, and reporting  |
+| **notifications** | Email, SMS, and system notifications  |
+| **audit**         | Audit logging and compliance tracking |
 
 ---
 
@@ -525,45 +531,45 @@ AquaNexus/
 
 ### Frontend
 
-| Technology | Purpose |
-|-----------|---------|
-| **React** | UI library and component framework |
-| **TypeScript** | Static type checking for JavaScript |
-| **Redux/Context API** | State management |
-| **React Router** | Client-side routing |
-| **Axios** | HTTP client |
-| **Tailwind CSS** | Utility-first CSS framework |
-| **React Hook Form** | Form state management |
-| **Zod/Yup** | Data validation |
+| Technology            | Purpose                             |
+| --------------------- | ----------------------------------- |
+| **React**             | UI library and component framework  |
+| **TypeScript**        | Static type checking for JavaScript |
+| **Redux/Context API** | State management                    |
+| **React Router**      | Client-side routing                 |
+| **Axios**             | HTTP client                         |
+| **Tailwind CSS**      | Utility-first CSS framework         |
+| **React Hook Form**   | Form state management               |
+| **Zod/Yup**           | Data validation                     |
 
 ### Backend
 
-| Technology | Purpose |
-|-----------|---------|
-| **Node.js** | JavaScript runtime |
-| **Express.js** | Web framework |
-| **TypeScript** | Static type checking |
-| **Prisma** | ORM and database toolkit |
-| **JWT** | Token-based authentication |
-| **Joi/Zod** | Request validation |
-| **Winston** | Logging |
-| **Swagger/OpenAPI** | API documentation |
+| Technology          | Purpose                    |
+| ------------------- | -------------------------- |
+| **Node.js**         | JavaScript runtime         |
+| **Express.js**      | Web framework              |
+| **TypeScript**      | Static type checking       |
+| **Prisma**          | ORM and database toolkit   |
+| **JWT**             | Token-based authentication |
+| **Joi/Zod**         | Request validation         |
+| **Winston**         | Logging                    |
+| **Swagger/OpenAPI** | API documentation          |
 
 ### Database
 
-| Technology | Purpose |
-|-----------|---------|
-| **PostgreSQL** | Relational database |
-| **pgAdmin** | Database administration tool (optional) |
+| Technology     | Purpose                                 |
+| -------------- | --------------------------------------- |
+| **PostgreSQL** | Relational database                     |
+| **pgAdmin**    | Database administration tool (optional) |
 
 ### DevOps & Deployment (Future)
 
-| Technology | Purpose |
-|-----------|---------|
-| **Docker** | Containerization |
-| **Docker Compose** | Local development environment |
-| **GitHub Actions** | CI/CD automation |
-| **AWS/GCP/Azure** | Cloud deployment (to be decided) |
+| Technology         | Purpose                          |
+| ------------------ | -------------------------------- |
+| **Docker**         | Containerization                 |
+| **Docker Compose** | Local development environment    |
+| **GitHub Actions** | CI/CD automation                 |
+| **AWS/GCP/Azure**  | Cloud deployment (to be decided) |
 
 ---
 
@@ -625,11 +631,13 @@ AquaNexus/
 ### Pre-built Reports
 
 #### Operational Reports
+
 - Production Summary (units produced, efficiency, downtime)
 - Inventory Status (stock levels, turnover rate, aged inventory)
 - Distribution Performance (deliveries, on-time rate, routes)
 
 #### Financial Reports
+
 - Profit & Loss Statement
 - Cash Flow Analysis
 - Balance Sheet Summary
@@ -637,6 +645,7 @@ AquaNexus/
 - Revenue by Customer/Region
 
 #### HR Reports
+
 - Attendance Summary
 - Leave Balance Status
 - Overtime Tracking

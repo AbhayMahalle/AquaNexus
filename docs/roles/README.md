@@ -16,41 +16,49 @@ Complete role and permission documentation including:
 - Role-based UI rendering
 - API authorization rules
 
-### The Five Roles
+### The Six Roles
 
-1. **Admin**
-   - Full system access
+1. **SuperAdmin**
+   - The single AquaNexus platform operator with global access across customer organizations
+   - Customer organization and platform administration
+   - Only SuperAdmin can assign the SuperAdmin role
+
+2. **Admin**
+   - Full system access within their own customer organization
    - User and role management
-   - System configuration
+   - Company configuration
    - Audit log access
 
-2. **Manager**
+3. **Manager**
    - Team employee management
    - Operational area oversight
    - Approval authority
    - Performance reporting
 
-3. **Store Manager**
+4. **Store Manager**
    - Inventory and warehouse operations
    - Stock tracking
    - Order fulfillment
    - Warehouse resource management
 
-4. **Accountant**
+5. **Accountant**
    - Financial transaction processing
    - Invoice and payment management
    - Expense tracking
    - Financial reporting
 
-5. **Distributor**
+6. **Distributor**
    - Sales order management
    - Delivery operations
    - Customer interaction
    - Sales reporting
 
+Customer organizations require tenant-scoped business data. The current schema and API do not yet enforce this boundary, so multi-customer production use must wait until tenant isolation is implemented.
+
 ### Permission Model
 
 Permission structure:
+
 - **Resource:** What (users, employees, inventory, etc.)
 - **Action:** What can be done (create, read, update, delete, approve, etc.)
 - **Scope:** How much data access (own, team, area, all)
@@ -62,6 +70,7 @@ Example: `employees:update:team`, `invoices:read:all`, `orders:delete:own`
 ### Role-Permission Matrix
 
 Comprehensive matrix showing:
+
 - Each role (rows)
 - Each module (columns)
 - Permissions granted (cells)
@@ -69,6 +78,7 @@ Comprehensive matrix showing:
 ### Area Assignment for Managers
 
 Managers can be assigned to:
+
 - **Production** - Production scheduling and resource management
 - **Store** - Inventory and warehouse operations
 - **Distribution** - Delivery and logistics
@@ -78,6 +88,7 @@ Each area assignment grants specific permissions for that area only.
 ### Data Visibility and Scoping
 
 Data access controlled by:
+
 - User role and permissions
 - Assigned area (for managers)
 - Team/department membership
@@ -87,11 +98,13 @@ Data access controlled by:
 ## Files to Be Added
 
 ### Core Documentation
+
 - `role-definitions.md` - Detailed role descriptions and responsibilities
 - `permission-matrix.md` - Complete permission matrix by role and module
 - `permission-model.md` - Permission structure and scoping rules
 
 ### Role-Specific Documentation
+
 - `admin-role.md` - Admin user capabilities and access
 - `manager-role.md` - Manager responsibilities and area assignment
 - `store-manager-role.md` - Store Manager warehouse operations
@@ -99,12 +112,14 @@ Data access controlled by:
 - `distributor-role.md` - Distributor sales and delivery operations
 
 ### Access Control
+
 - `area-assignment.md` - Manager area assignment mechanism
 - `permission-scoping.md` - Data visibility and filtering rules
 - `role-based-ui.md` - UI rendering based on permissions
 - `api-authorization.md` - API-level permission checking
 
 ### Management
+
 - `role-management.md` - Creating and modifying roles
 - `permission-management.md` - Managing permissions
 - `audit-access-control.md` - Auditing role and permission changes
@@ -112,45 +127,55 @@ Data access controlled by:
 ## Permission Categories
 
 ### User & Role Management
+
 - `users:create`, `users:read`, `users:update`, `users:delete`
 - `roles:read`, `roles:create`, `roles:update` (Admin only)
 
 ### Employee Management
+
 - `employees:read:all`, `employees:read:team`
 - `employees:update:team`, `employees:delete:own`
 - `employees:approve:leave`, `employees:approve:overtime`
 
 ### Attendance & Leave
+
 - `attendance:read:team`, `attendance:create:own`
 - `leave:read:team`, `leave:create:own`, `leave:approve:team`
 
 ### Production
+
 - `production:read:area`, `production:create:run`
 - `production:update:area`
 
 ### Inventory
+
 - `inventory:read:all`, `inventory:create:movement`
 - `inventory:update:stock`, `inventory:delete:obsolete`
 
 ### Orders & Sales
+
 - `orders:create:all`, `orders:read:assigned`
 - `orders:update:status`, `orders:delete:own`
 
 ### Financial
+
 - `invoices:create:all`, `invoices:read:all`
 - `payments:process:all`, `payments:read:all`
 
 ### Reporting
+
 - `reports:read:own`, `reports:read:team`
 - `reports:read:area`, `reports:read:all`
 
 ### System
+
 - `system:configure` (Admin only)
 - `audit:read:all` (Admin, Manager)
 
 ## Role-Based Features
 
 ### Admin Features
+
 - User management dashboard
 - System configuration panel
 - Audit log viewer
@@ -158,6 +183,7 @@ Data access controlled by:
 - Database administration tools
 
 ### Manager Features
+
 - Employee management
 - Team performance dashboard
 - Leave and overtime approvals
@@ -165,6 +191,7 @@ Data access controlled by:
 - Team-level reporting
 
 ### Store Manager Features
+
 - Inventory dashboard
 - Stock level monitoring
 - Warehouse operations
@@ -172,6 +199,7 @@ Data access controlled by:
 - Inventory reconciliation tools
 
 ### Accountant Features
+
 - Financial dashboard
 - Invoice management
 - Payment processing
@@ -179,6 +207,7 @@ Data access controlled by:
 - Financial reports and analysis
 
 ### Distributor Features
+
 - Order management
 - Delivery tracking
 - Customer management
@@ -188,12 +217,14 @@ Data access controlled by:
 ## Permission Checking
 
 ### Frontend
+
 - Components check user permissions before rendering
 - Buttons/forms disabled for insufficient permissions
 - Navigation restricted to accessible pages
 - Error messages for permission denied
 
 ### Backend
+
 - Middleware verifies JWT token
 - RBAC middleware checks required permissions
 - Repository queries filter by data access rules
@@ -209,6 +240,7 @@ Data access controlled by:
 ## Examples
 
 ### Manager with Production Area
+
 ```
 User: John Manager
 Role: Manager
@@ -227,6 +259,7 @@ Cannot:
 ```
 
 ### Store Manager
+
 ```
 User: Sarah Warehouse
 Role: Store Manager

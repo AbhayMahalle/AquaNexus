@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/Button';
 import { Table, Column } from '@/components/ui/Table';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AuthGuard } from '@/components/auth/AuthGuard';
-import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 import {
   Package,
   ArrowDownToLine,
@@ -601,8 +600,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-
-        <NotificationsPanel maxItems={4} />
       </DashboardLayout>
     </AuthGuard>
   );

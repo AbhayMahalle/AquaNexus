@@ -8,10 +8,12 @@ const {
 const getSalesAreas = async (req, res) => {
   try {
     const distributorIds = getAccessibleDistributorIds(req);
-    const where =
-      distributorIds === null
+    const where = {
+      organizationId: req.organizationId,
+      ...(distributorIds === null
         ? {}
-        : { distributors: { some: { id: { in: distributorIds } } } };
+        : { distributors: { some: { id: { in: distributorIds } } } }),
+    };
 
     const salesAreas = await prisma.salesArea.findMany({
       where,
@@ -38,7 +40,7 @@ const createSalesArea = async (req, res) => {
     }
 
     const salesArea = await prisma.salesArea.create({
-      data: { name, code, description },
+      data: { name, code, description, organizationId: req.organizationId },
     });
 
     return sendSuccess(
@@ -51,7 +53,7 @@ const createSalesArea = async (req, res) => {
     if (error.code === "P2002") {
       return sendError(
         res,
-        "A sales area with this name or code already exists",
+        "A sales area with this name or code already exists in your organization",
         409,
       );
     }
@@ -63,7 +65,10 @@ const createSalesArea = async (req, res) => {
 const getDistributors = async (req, res) => {
   try {
     const distributorIds = getAccessibleDistributorIds(req);
-    const where = distributorIds === null ? {} : { id: { in: distributorIds } };
+    const where = {
+      organizationId: req.organizationId,
+      ...(distributorIds === null ? {} : { id: { in: distributorIds } }),
+    };
 
     const distributors = await prisma.distributor.findMany({
       where,
@@ -98,11 +103,11 @@ const createDistributor = async (req, res) => {
     }
 
     if (salesAreaId) {
-      const salesArea = await prisma.salesArea.findUnique({
-        where: { id: salesAreaId },
+      const salesArea = await prisma.salesArea.findFirst({
+        where: { id: salesAreaId, organizationId: req.organizationId },
       });
       if (!salesArea) {
-        return sendError(res, "Sales area not found", 400);
+        return sendError(res, "Sales area not found in your organization", 400);
       }
     }
 
@@ -115,6 +120,7 @@ const createDistributor = async (req, res) => {
         address,
         salesAreaId,
         creditLimit,
+        organizationId: req.organizationId,
       },
       include: { salesArea: true },
     });
@@ -127,7 +133,7 @@ const createDistributor = async (req, res) => {
     );
   } catch (error) {
     if (error.code === "P2002") {
-      return sendError(res, "A distributor with this code already exists", 409);
+      return sendError(res, "A distributor with this code already exists in your organization", 409);
     }
     console.error("createDistributor error:", error);
     return sendError(res, "Failed to create distributor", 500);
@@ -137,8 +143,10 @@ const createDistributor = async (req, res) => {
 const getDistributorStock = async (req, res) => {
   try {
     const distributorIds = getAccessibleDistributorIds(req);
-    const where =
-      distributorIds === null ? {} : { distributorId: { in: distributorIds } };
+    const where = {
+      distributor: { organizationId: req.organizationId },
+      ...(distributorIds === null ? {} : { distributorId: { in: distributorIds } }),
+    };
     const stock = await prisma.distributorStock.findMany({
       where,
       include: { product: true, distributor: true },

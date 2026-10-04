@@ -6,15 +6,22 @@ const { createAuditLog } = require("../services/audit.service");
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const identifier = (req.body.email || req.body.username || "").trim();
+    const { password } = req.body;
 
-    if (!email || !password) {
-      return sendError(res, "Email and password are required", 400);
+    if (!identifier || !password) {
+      return sendError(res, "Email or username and password are required", 400);
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: { equals: identifier, mode: "insensitive" } },
+          { username: { equals: identifier, mode: "insensitive" } },
+        ],
+      },
       include: {
+        organization: true,
         userRoles: {
           include: {
             role: {
@@ -53,17 +60,42 @@ const login = async (req, res) => {
       return sendError(res, "User role not configured", 403);
     }
 
+    const isSuperAdmin =
+      Boolean(user.isSuperAdmin) || primaryRole.name === "SUPER_ADMIN";
+
+    // Non-superadmin users belong to a tenant organization; check status
+    if (!isSuperAdmin && user.organization) {
+      if (user.organization.status === "SUSPENDED") {
+        return sendError(
+          res,
+          "Organization is suspended. Login is denied.",
+          403,
+        );
+      }
+      if (user.organization.status !== "ACTIVE") {
+        return sendError(res, "Organization is inactive", 403);
+      }
+    }
+
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: primaryRole?.name },
+      {
+        id: user.id,
+        email: user.email,
+        role: primaryRole?.name,
+        organizationId: user.organizationId,
+        isSuperAdmin,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
 
     const { passwordHash: _, ...userWithoutPassword } = user;
     userWithoutPassword.role = primaryRole;
+    userWithoutPassword.isSuperAdmin = isSuperAdmin;
 
     await createAuditLog({
       userId: user.id,
+      organizationId: user.organizationId,
       action: "LOGIN",
       entityType: "USER",
       entityId: user.id,
@@ -101,8 +133,6 @@ const me = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    // With JWT, logout is mostly handled client-side by deleting the token.
-    // We can just return success here.
     return sendSuccess(res, null, "Logged out successfully");
   } catch (error) {
     console.error("Logout error:", error);

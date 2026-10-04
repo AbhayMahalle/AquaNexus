@@ -24,6 +24,8 @@ const supplierRoutes = require("./routes/supplier.routes");
 const salesRoutes = require("./routes/sales.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const auditRoutes = require("./routes/audit.routes");
+const organizationRoutes = require("./routes/organization.routes");
+const p2pRoutes = require("./routes/p2p.routes");
 
 const app = express();
 
@@ -38,6 +40,8 @@ app.get("/api", (req, res) => {
 
 // Register routes
 app.use("/api/auth", authRoutes);
+app.use("/api/platform", organizationRoutes);
+app.use("/api", organizationRoutes);
 app.use("/api", adminRoutes); // Includes /api/users, /api/roles, /api/permissions
 app.use("/api/manager-assignments", managerAssignmentRoutes);
 app.use("/api/employees", employeeRoutes);
@@ -56,6 +60,7 @@ app.use("/api/audit-logs", auditRoutes);
 app.use("/api", financeRoutes);
 app.use("/api", salesRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/p2p", p2pRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -70,6 +75,10 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test' && require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

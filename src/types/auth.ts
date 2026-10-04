@@ -1,9 +1,11 @@
 export type UserRole =
+  | 'super_admin'
   | 'admin'
   | 'manager'
   | 'store_manager'
   | 'accountant'
   | 'distributor'
+  | 'supplier'
   | 'employee';
 
 export type ManagerAssignment =
@@ -35,6 +37,12 @@ export interface User {
   assignments?: ManagerAssignment[];
   plantId?: string;
   plantName?: string;
+  isSuperAdmin?: boolean;
+  organizationId?: string | null;
+  organizationName?: string | null;
+  organizationSlug?: string | null;
+  selectedOrganizationId?: string | null;
+  selectedOrganizationName?: string | null;
 }
 
 export interface LoginCredentials {

@@ -25,7 +25,6 @@ import { apiClient } from '@/lib/api-client';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Order, DistributorStock, Sale, Invoice } from '@/types/business';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 
 export const DistributorDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -351,8 +350,6 @@ export const DistributorDashboard: React.FC = () => {
           )}
         </CardContent>
       </Card>
-
-      <NotificationsPanel maxItems={4} />
       </div>
     </AuthGuard>
   );

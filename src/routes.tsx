@@ -15,6 +15,7 @@ import { EmployeeNotificationsPage } from '@/pages/employee/EmployeeNotification
 import AdminUsersPage from '@/app/(dashboard)/admin/users/page';
 import AdminRolesPage from '@/app/(dashboard)/admin/roles/page';
 import AdminPermissionsPage from '@/app/(dashboard)/admin/permissions/page';
+import SuperAdminOrganizationsPage from '@/app/(dashboard)/superadmin/organizations/page';
 import AdminStoreManagerDashboardPage from '@/app/(dashboard)/admin/store-manager-oversight/dashboard/page';
 
 import AdminManagerDashboardPage from '@/app/(dashboard)/admin/manager-dashboard/page';
@@ -35,6 +36,13 @@ import StoreStockTransactionsPage from '@/app/(dashboard)/store/stock-transactio
 import DistributorDispatchPage from '@/app/(dashboard)/distributor/dispatch/page';
 
 import AccountantSuppliersPage from '@/app/(dashboard)/accountant/suppliers/page';
+
+// P2P Pages
+import AdminP2PPage from '@/app/(dashboard)/admin/p2p/page';
+import ManagerP2PPage from '@/app/(dashboard)/manager/p2p/page';
+import StoreP2PPage from '@/app/(dashboard)/store/p2p/page';
+import SupplierP2PPage from '@/app/(dashboard)/supplier/p2p/page';
+import AccountantP2PPage from '@/app/(dashboard)/accountant/p2p/page';
 
 // Accountant Pages
 import AccountantDashboardPage from '@/app/(dashboard)/accountant/dashboard/page';
@@ -113,9 +121,24 @@ export function AppRoutes() {
           </AuthGuard>
         }
       >
-        {/* Admin */}
-        <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+        {/* SuperAdmin Only */}
+        <Route
+          path="/superadmin"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <Navigate to="/superadmin/organizations" replace />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/superadmin/organizations"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <SuperAdminOrganizationsPage />
+            </AuthGuard>
+          }
+        />
+        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/roles" element={<AdminRolesPage />} />
         <Route path="/admin/permissions" element={<AdminPermissionsPage />} />
@@ -231,8 +254,16 @@ export function AppRoutes() {
         <Route path="/manager/departments" element={<ManagerDepartmentsPage />} />
         <Route path="/store/products" element={<StoreProductsPage />} />
         <Route path="/store/stock-transactions" element={<StoreStockTransactionsPage />} />
-        <Route path="/distributor/dispatch" element={<DistributorDispatchPage />} />
         <Route path="/accountant/suppliers" element={<AccountantSuppliersPage />} />
+        
+        {/* P2P Procurement-to-Pay Routes */}
+        <Route path="/admin/p2p" element={<AdminP2PPage />} />
+        <Route path="/manager/p2p" element={<ManagerP2PPage />} />
+        <Route path="/store/p2p" element={<StoreP2PPage />} />
+        <Route path="/supplier/p2p" element={<SupplierP2PPage />} />
+        <Route path="/vendor/p2p" element={<SupplierP2PPage />} />
+        <Route path="/accountant/p2p" element={<AccountantP2PPage />} />
+
 
       </Route>
 

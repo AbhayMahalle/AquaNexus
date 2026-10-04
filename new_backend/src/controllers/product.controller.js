@@ -17,7 +17,9 @@ const getProducts = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    const where = {};
+    const where = {
+      organizationId: req.organizationId,
+    };
 
     if (status) {
       where.status = status;
@@ -28,10 +30,14 @@ const getProducts = async (req, res) => {
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { sku: { contains: search, mode: 'insensitive' } },
-        { category: { contains: search, mode: 'insensitive' } }
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { sku: { contains: search, mode: 'insensitive' } },
+            { category: { contains: search, mode: 'insensitive' } }
+          ]
+        }
       ];
     }
 
@@ -78,8 +84,8 @@ const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const product = await prisma.product.findUnique({
-      where: { id },
+    const product = await prisma.product.findFirst({
+      where: { id, organizationId: req.organizationId },
       include: {
         inventory: true,
         productions: {
@@ -121,14 +127,20 @@ const createProduct = async (req, res) => {
       return sendError(res, 'SKU, name, sellingPrice, and costPrice are required', 400);
     }
 
-    const existingSKU = await prisma.product.findUnique({ where: { sku } });
+    const existingSKU = await prisma.product.findFirst({
+      where: {
+        organizationId: req.organizationId,
+        sku
+      }
+    });
     if (existingSKU) {
-      return sendError(res, `Product with SKU '${sku}' already exists`, 400);
+      return sendError(res, `Product with SKU '${sku}' already exists in your organization`, 400);
     }
 
     const product = await prisma.$transaction(async (tx) => {
       const newProduct = await tx.product.create({
         data: {
+          organizationId: req.organizationId,
           sku,
           name,
           description,
@@ -141,9 +153,10 @@ const createProduct = async (req, res) => {
         }
       });
 
-      // Initialize inventory record
+      // Initialize inventory record for this product and organization
       await tx.inventory.create({
         data: {
+          organizationId: req.organizationId,
           productId: newProduct.id,
           quantity: 0,
           reservedQuantity: 0,
@@ -181,7 +194,9 @@ const updateProduct = async (req, res) => {
       status
     } = req.body;
 
-    const existingProduct = await prisma.product.findUnique({ where: { id } });
+    const existingProduct = await prisma.product.findFirst({
+      where: { id, organizationId: req.organizationId }
+    });
     if (!existingProduct) {
       return sendError(res, 'Product not found', 404);
     }
@@ -206,7 +221,7 @@ const updateProduct = async (req, res) => {
     // Also update inventory reorder level if minimum stock changed
     if (minimumStock !== undefined) {
       await prisma.inventory.updateMany({
-        where: { productId: id },
+        where: { productId: id, organizationId: req.organizationId },
         data: { reorderLevel: parseInt(minimumStock) }
       });
     }

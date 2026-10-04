@@ -14,9 +14,11 @@ export async function fetchApi<T>(
   const url = `${API_BASE_URL}${normalizedEndpoint}`;
 
   const token = getAuthToken();
+  const selectedOrgId = typeof window !== 'undefined' ? localStorage.getItem('aqua_nexus_selected_org_id') : null;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(selectedOrgId ? { 'X-Organization-Id': selectedOrgId } : {}),
     ...(options.headers as Record<string, string>),
   };
 

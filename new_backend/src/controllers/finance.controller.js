@@ -4,12 +4,13 @@ const { getAccessibleDistributorIds } = require("../utils/distributorAccess");
 
 const getInvoiceWhere = (req) => {
   const distributorIds = getAccessibleDistributorIds(req);
+  const base = { organizationId: req.organizationId };
   if (distributorIds === null) {
     return req.query.distributorId
-      ? { distributorId: req.query.distributorId }
-      : {};
+      ? { ...base, distributorId: req.query.distributorId }
+      : base;
   }
-  return { distributorId: { in: distributorIds } };
+  return { ...base, distributorId: { in: distributorIds } };
 };
 
 const formatInvoice = (invoice) => {
@@ -102,9 +103,35 @@ const createInvoice = async (req, res) => {
       );
     }
 
+    const distributor = await prisma.distributor.findFirst({
+      where: { id: distributorId, organizationId: req.organizationId },
+    });
+    if (!distributor) {
+      return sendError(res, "Distributor not found in your organization", 400);
+    }
+
+    if (orderId) {
+      const order = await prisma.order.findFirst({
+        where: { id: orderId, organizationId: req.organizationId },
+      });
+      if (!order) {
+        return sendError(res, "Order not found in your organization", 400);
+      }
+    }
+
+    if (saleId) {
+      const sale = await prisma.sale.findFirst({
+        where: { id: saleId, organizationId: req.organizationId },
+      });
+      if (!sale) {
+        return sendError(res, "Sale not found in your organization", 400);
+      }
+    }
+
     const invoice = await prisma.invoice.create({
       data: {
         invoiceNumber,
+        organizationId: req.organizationId,
         distributorId,
         orderId,
         saleId,
@@ -138,7 +165,7 @@ const getPayments = async (req, res) => {
   try {
     const invoiceWhere = getInvoiceWhere(req);
     const payments = await prisma.payment.findMany({
-      where: { invoice: invoiceWhere },
+      where: { organizationId: req.organizationId, invoice: invoiceWhere },
       include: { invoice: true },
       orderBy: { paymentDate: "desc" },
     });
@@ -180,12 +207,12 @@ const createPayment = async (req, res) => {
     }
 
     const payment = await prisma.$transaction(async (transaction) => {
-      const invoice = await transaction.invoice.findUnique({
-        where: { id: invoiceId },
+      const invoice = await transaction.invoice.findFirst({
+        where: { id: invoiceId, organizationId: req.organizationId },
         include: { payments: true },
       });
       if (!invoice) {
-        const error = new Error("Invoice not found");
+        const error = new Error("Invoice not found in your organization");
         error.statusCode = 404;
         throw error;
       }
@@ -218,6 +245,7 @@ const createPayment = async (req, res) => {
       const createdPayment = await transaction.payment.create({
         data: {
           paymentNumber,
+          organizationId: req.organizationId,
           invoiceId,
           amount: Number(amount),
           paymentDate: new Date(paymentDate),
@@ -260,6 +288,7 @@ const createPayment = async (req, res) => {
 const getExpenses = async (req, res) => {
   try {
     const expenses = await prisma.expense.findMany({
+      where: { organizationId: req.organizationId },
       include: { supplier: true, creator: true, approver: true },
       orderBy: { expenseDate: "desc" },
     });
@@ -295,9 +324,19 @@ const createExpense = async (req, res) => {
       return sendError(res, "Expense date is invalid", 400);
     }
 
+    if (supplierId) {
+      const supplier = await prisma.supplier.findFirst({
+        where: { id: supplierId, organizationId: req.organizationId },
+      });
+      if (!supplier) {
+        return sendError(res, "Supplier not found in your organization", 400);
+      }
+    }
+
     const expense = await prisma.expense.create({
       data: {
         expenseNumber,
+        organizationId: req.organizationId,
         category,
         amount: Number(amount),
         expenseDate: parsedDate,
@@ -319,6 +358,7 @@ const createExpense = async (req, res) => {
 const getPayroll = async (req, res) => {
   try {
     const payroll = await prisma.payroll.findMany({
+      where: { organizationId: req.organizationId },
       include: { employee: true, processor: true },
       orderBy: { payPeriodStart: "desc" },
     });
@@ -373,13 +413,19 @@ const createPayroll = async (req, res) => {
 
     let empId = employeeId;
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
-    if (!isUuid) {
-      const emp = await prisma.employee.findUnique({ where: { employeeCode: employeeId } });
-      if (emp) empId = emp.id;
+    const emp = await prisma.employee.findFirst({
+      where: isUuid
+        ? { OR: [{ id: employeeId }, { employeeCode: employeeId }], organizationId: req.organizationId }
+        : { employeeCode: employeeId, organizationId: req.organizationId },
+    });
+    if (!emp) {
+      return sendError(res, "Employee not found in your organization", 404);
     }
+    empId = emp.id;
 
     const payroll = await prisma.payroll.create({
       data: {
+        organizationId: req.organizationId,
         employeeId: empId,
         payPeriodStart: start,
         payPeriodEnd: end,
@@ -409,9 +455,11 @@ const updatePayroll = async (req, res) => {
     const { id } = req.params;
     const { status, basicSalary, overtimeAmount, deductions } = req.body;
 
-    const existing = await prisma.payroll.findUnique({ where: { id } });
+    const existing = await prisma.payroll.findFirst({
+      where: { id, organizationId: req.organizationId },
+    });
     if (!existing) {
-      return sendError(res, "Payroll record not found", 404);
+      return sendError(res, "Payroll record not found in your organization", 404);
     }
 
     const data = {};

@@ -26,7 +26,6 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { apiClient } from '@/lib/api-client';
 import { Expense, PayrollRecord, Payment, Invoice } from '@/types/business';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 
 // AquaNexus Brand Color Palette
 const THEME_PALETTE = ['#F97316', '#1F2937', '#EA580C', '#4B5563', '#FB923C', '#374151', '#F59E0B'];
@@ -316,8 +315,6 @@ export const AccountantDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-
-      <NotificationsPanel maxItems={4} />
       </div>
     </AuthGuard>
   );

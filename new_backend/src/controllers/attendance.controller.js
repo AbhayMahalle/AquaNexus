@@ -19,7 +19,9 @@ const getAttendance = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    const where = {};
+    const where = {
+      organizationId: req.organizationId,
+    };
 
     // RBAC: Data scoping for employees
     if (req.user && req.user.role?.name === 'EMPLOYEE') {
@@ -147,10 +149,15 @@ const recordAttendance = async (req, res) => {
         empId = req.user.employee.id;
       } else {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.employeeId);
-        if (!isUuid) {
-          const emp = await prisma.employee.findUnique({ where: { employeeCode: item.employeeId } });
-          if (emp) empId = emp.id;
+        const emp = await prisma.employee.findFirst({
+          where: isUuid
+            ? { OR: [{ id: item.employeeId }, { employeeCode: item.employeeId }], organizationId: req.organizationId }
+            : { employeeCode: item.employeeId, organizationId: req.organizationId },
+        });
+        if (!emp) {
+          return sendError(res, `Employee ${item.employeeId} not found in your organization`, 404);
         }
+        empId = emp.id;
       }
 
       const parsedCheckIn = parseDateTime(item.checkIn, dateObj);
@@ -170,6 +177,7 @@ const recordAttendance = async (req, res) => {
           ...(item.remarks !== undefined && { remarks: item.remarks })
         },
         create: {
+          organizationId: req.organizationId,
           employeeId: empId,
           attendanceDate: dateObj,
           status: item.status,

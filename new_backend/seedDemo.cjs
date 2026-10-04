@@ -3,10 +3,22 @@ const prisma = require('./src/config/db.js');
 const bcrypt = require('bcryptjs');
 
 async function main() {
-  console.log('Starting demo seed process...');
+  console.log('Starting reconciled demo seed process...');
+
+  // 0. Default Organization
+  const defaultOrg = await prisma.organization.upsert({
+    where: { slug: 'aquanexus-primary' },
+    update: {},
+    create: {
+      id: 'd0000000-0000-4000-8000-000000000001',
+      name: 'AquaNexus Primary Plant',
+      slug: 'aquanexus-primary',
+      status: 'ACTIVE'
+    }
+  });
 
   // 1. Roles
-  const rolesData = ['ADMIN', 'MANAGER', 'STORE_MANAGER', 'DISTRIBUTOR', 'ACCOUNTANT', 'EMPLOYEE'];
+  const rolesData = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STORE_MANAGER', 'DISTRIBUTOR', 'ACCOUNTANT', 'EMPLOYEE'];
   for (const roleName of rolesData) {
     await prisma.role.upsert({
       where: { name: roleName },
@@ -27,7 +39,7 @@ async function main() {
     { username: 'emp_demo', email: 'employee@aquanexus.com', firstName: 'Employee', lastName: 'User', role: 'EMPLOYEE' },
   ];
 
-  const passwordHash = await bcrypt.hash('Abhay@123', 10);
+  const passwordHash = await bcrypt.hash('Password@123', 10);
 
   const createdUsers = {};
   for (const u of usersToCreate) {
@@ -40,6 +52,7 @@ async function main() {
           firstName: u.firstName,
           lastName: u.lastName,
           passwordHash,
+          organizationId: defaultOrg.id,
           userRoles: {
             create: { roleId: getRole(u.role).id }
           }
@@ -47,9 +60,35 @@ async function main() {
       });
       console.log(`Created user: ${u.username}`);
     } else {
-      console.log(`User ${u.email} already exists.`);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { organizationId: defaultOrg.id }
+      });
     }
     createdUsers[u.role] = user;
+  }
+
+  // Ensure singleton SuperAdmin exists
+  let superAdminUser = await prisma.user.findFirst({
+    where: { isSuperAdmin: true }
+  });
+  if (!superAdminUser) {
+    superAdminUser = await prisma.user.create({
+      data: {
+        username: 'superadmin',
+        email: 'superadmin@aquanexus.com',
+        firstName: 'AquaNexus',
+        lastName: 'SuperAdmin',
+        passwordHash,
+        isSuperAdmin: true,
+        superAdminSlot: 'SUPER_ADMIN',
+        organizationId: null,
+        userRoles: {
+          create: { roleId: getRole('SUPER_ADMIN').id }
+        }
+      }
+    });
+    console.log('Created singleton SuperAdmin user');
   }
 
   // 3. Manager Assignment
@@ -57,15 +96,11 @@ async function main() {
   if (managerUser) {
     const areas = ['PRODUCTION', 'STORE', 'DISTRIBUTION'];
     for (const area of areas) {
-      const existing = await prisma.managerAssignment.findUnique({
-        where: { userId_area: { userId: managerUser.id, area } }
+      await prisma.managerAssignment.upsert({
+        where: { userId_area: { userId: managerUser.id, area } },
+        update: {},
+        create: { userId: managerUser.id, area }
       });
-      if (!existing) {
-        await prisma.managerAssignment.create({
-          data: { userId: managerUser.id, area }
-        });
-        console.log(`Assigned ManagerArea ${area} to manager_demo`);
-      }
     }
   }
 
@@ -76,9 +111,13 @@ async function main() {
   ];
   let firstDept = null;
   for (const d of deps) {
-    let dept = await prisma.department.findUnique({ where: { code: d.code } });
+    let dept = await prisma.department.findUnique({
+      where: { organizationId_code: { organizationId: defaultOrg.id, code: d.code } }
+    });
     if (!dept) {
-      dept = await prisma.department.create({ data: d });
+      dept = await prisma.department.create({
+        data: { ...d, organizationId: defaultOrg.id }
+      });
       console.log(`Created department: ${d.name}`);
     }
     if (!firstDept) firstDept = dept;
@@ -91,6 +130,7 @@ async function main() {
     if (!emp) {
       emp = await prisma.employee.create({
         data: {
+          organizationId: defaultOrg.id,
           employeeCode: 'EMP-999',
           userId: empUser.id,
           firstName: empUser.firstName,
@@ -102,47 +142,17 @@ async function main() {
         }
       });
       console.log('Created employee profile for emp_demo');
-
-      // Attendance
-      await prisma.attendance.create({
-        data: {
-          employeeId: emp.id,
-          attendanceDate: new Date(),
-          status: 'PRESENT',
-          checkIn: new Date()
-        }
-      });
-
-      // Leave
-      await prisma.leave.create({
-        data: {
-          employeeId: emp.id,
-          leaveType: 'SICK',
-          startDate: new Date(),
-          endDate: new Date(),
-          reason: 'Fever',
-          status: 'PENDING'
-        }
-      });
-
-      // Overtime
-      await prisma.overtime.create({
-        data: {
-          employeeId: emp.id,
-          overtimeDate: new Date(),
-          hours: 2.5,
-          reason: 'Machine Repair',
-          status: 'PENDING'
-        }
-      });
     }
   }
 
   // 6. Product & Inventory
-  let product = await prisma.product.findUnique({ where: { sku: 'AQ-1L-BOT' } });
+  let product = await prisma.product.findUnique({
+    where: { organizationId_sku: { organizationId: defaultOrg.id, sku: 'AQ-1L-BOT' } }
+  });
   if (!product) {
     product = await prisma.product.create({
       data: {
+        organizationId: defaultOrg.id,
         sku: 'AQ-1L-BOT',
         name: 'AquaNexus 1L Bottle',
         category: 'BOTTLE',
@@ -151,74 +161,18 @@ async function main() {
         costPrice: 80,
         minimumStock: 50,
         inventory: {
-          create: { quantity: 500, reorderLevel: 50 }
+          create: {
+            organizationId: defaultOrg.id,
+            quantity: 500,
+            reorderLevel: 50
+          }
         }
       }
     });
     console.log('Created demo product and inventory');
   }
 
-  // 7. Sales Area & Distributor
-  let salesArea = await prisma.salesArea.findUnique({ where: { code: 'SA-NORTH' } });
-  if (!salesArea) {
-    salesArea = await prisma.salesArea.create({
-      data: { name: 'North Region', code: 'SA-NORTH' }
-    });
-  }
-
-  const distUser = createdUsers['DISTRIBUTOR'];
-  let distributor = await prisma.distributor.findUnique({ where: { distributorCode: 'DIST-001' } });
-  if (!distributor) {
-    distributor = await prisma.distributor.create({
-      data: {
-        distributorCode: 'DIST-001',
-        name: 'NorthWest Suppliers',
-        email: distUser.email,
-        salesAreaId: salesArea.id,
-        userDistributors: {
-          create: { userId: distUser.id }
-        }
-      }
-    });
-    console.log('Created demo distributor and linked to dist_demo');
-  }
-
-  // 8. Supplier
-  let supplier = await prisma.supplier.findUnique({ where: { supplierCode: 'SUP-001' } });
-  if (!supplier) {
-    supplier = await prisma.supplier.create({
-      data: { supplierCode: 'SUP-001', name: 'Raw Materials Co', email: 'raw@example.com' }
-    });
-    console.log('Created demo supplier');
-  }
-
-  // 9. Demo Audit Log
-  const adminUser = createdUsers['ADMIN'];
-  await prisma.auditLog.create({
-    data: {
-      user: { connect: { id: adminUser.id } },
-      action: 'SYSTEM_SEED',
-      entityType: 'SYSTEM',
-      entityId: '0',
-      oldValues: {},
-      newValues: { message: 'Seed executed successfully' },
-      ipAddress: '127.0.0.1'
-    }
-  });
-
-  // 10. Notification for everyone
-  for (const role in createdUsers) {
-    await prisma.notification.create({
-      data: {
-        user: { connect: { id: createdUsers[role].id } },
-        title: 'Welcome to AquaNexus',
-        message: 'This is a demo notification generated by the seed script.',
-        type: 'INFO'
-      }
-    });
-  }
-
-  console.log('Seed completed successfully!');
+  console.log('Demo seed completed successfully!');
 }
 
 main()

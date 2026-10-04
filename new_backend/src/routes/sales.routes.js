@@ -8,31 +8,33 @@ const {
 const { requireAuth } = require("../middleware/auth.middleware");
 const { requireRole } = require("../middleware/rbac.middleware");
 
+const { requireTenantContext } = require("../middleware/tenant.middleware");
 const { requireManagerArea } = require("../middleware/managerAccess.middleware");
 
 const router = express.Router();
-router.use(requireManagerArea("DISTRIBUTION"));
+const salesGuards = [requireAuth, requireTenantContext, requireManagerArea("DISTRIBUTION")];
+
 router.get(
   "/sales",
-  requireAuth,
+  salesGuards,
   requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "ACCOUNTANT"]),
   getSales,
 );
 router.post(
   "/sales",
-  requireAuth,
+  salesGuards,
   requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR"]),
   createSale,
 );
 router.get(
   "/returns",
-  requireAuth,
+  salesGuards,
   requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "STORE_MANAGER"]),
   getReturns,
 );
 router.post(
   "/returns",
-  requireAuth,
+  salesGuards,
   requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "STORE_MANAGER"]),
   createReturn,
 );

@@ -5,7 +5,6 @@ import { apiClient } from '@/lib/api-client';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 
 export function EmployeeDashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -156,8 +155,6 @@ export function EmployeeDashboardPage() {
             </CardContent>
           </Card>
         </div>
-
-        <NotificationsPanel maxItems={4} />
       </div>
     );
   };

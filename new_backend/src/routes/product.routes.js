@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth.middleware');
+const { requireTenantContext } = require('../middleware/tenant.middleware');
 const { requirePermission } = require('../middleware/rbac.middleware');
 const {
   getProducts,
@@ -9,9 +10,11 @@ const {
   updateProduct
 } = require('../controllers/product.controller');
 
-router.get('/', requireAuth, getProducts);
-router.get('/:id', requireAuth, getProductById);
-router.post('/', requireAuth, requirePermission('inventory.manage'), createProduct);
-router.patch('/:id', requireAuth, requirePermission('inventory.manage'), updateProduct);
+router.use(requireAuth, requireTenantContext);
+
+router.get('/', getProducts);
+router.get('/:id', getProductById);
+router.post('/', requirePermission('inventory.manage'), createProduct);
+router.patch('/:id', requirePermission('inventory.manage'), updateProduct);
 
 module.exports = router;

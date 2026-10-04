@@ -18,7 +18,9 @@ const getOvertime = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    const where = {};
+    const where = {
+      organizationId: req.organizationId,
+    };
 
     // RBAC: Data scoping for employees
     if (req.user && req.user.role?.name === 'EMPLOYEE') {
@@ -124,10 +126,12 @@ const createOvertime = async (req, res) => {
     if (req.user?.role?.name !== 'EMPLOYEE') {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
       const employee = await prisma.employee.findFirst({
-        where: isUuid ? { OR: [{ id: employeeId }, { employeeCode: employeeId }] } : { employeeCode: employeeId }
+        where: isUuid
+          ? { OR: [{ id: employeeId }, { employeeCode: employeeId }], organizationId: req.organizationId }
+          : { employeeCode: employeeId, organizationId: req.organizationId }
       });
       if (!employee) {
-        return sendError(res, 'Employee not found', 404);
+        return sendError(res, 'Employee not found in your organization', 404);
       }
       empId = employee.id;
     }
@@ -146,6 +150,7 @@ const createOvertime = async (req, res) => {
 
     const newOvertime = await prisma.overtime.create({
       data: {
+        organizationId: req.organizationId,
         employeeId: empId,
         overtimeDate: new Date(overtimeDate),
         hours: numHours,
@@ -184,9 +189,11 @@ const updateOvertimeStatus = async (req, res) => {
       return sendError(res, 'Invalid overtime status', 400);
     }
 
-    const existingOvertime = await prisma.overtime.findUnique({ where: { id } });
+    const existingOvertime = await prisma.overtime.findFirst({
+      where: { id, organizationId: req.organizationId },
+    });
     if (!existingOvertime) {
-      return sendError(res, 'Overtime record not found', 404);
+      return sendError(res, 'Overtime record not found in your organization', 404);
     }
 
     if (req.user && req.user.role?.name === 'EMPLOYEE') {

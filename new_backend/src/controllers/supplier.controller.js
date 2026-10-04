@@ -5,6 +5,7 @@ const auditService = require('../services/audit.service');
 const getSuppliers = async (req, res) => {
   try {
     const suppliers = await prisma.supplier.findMany({
+      where: { organizationId: req.organizationId },
       orderBy: { createdAt: 'desc' }
     });
     return sendSuccess(res, { suppliers, data: suppliers }, 'Suppliers fetched successfully');
@@ -24,7 +25,8 @@ const createSupplier = async (req, res) => {
         email,
         phone,
         address,
-        status: status || 'ACTIVE'
+        status: status || 'ACTIVE',
+        organizationId: req.organizationId,
       }
     });
 
@@ -32,6 +34,9 @@ const createSupplier = async (req, res) => {
 
     return sendSuccess(res, { supplier: newSupplier, data: newSupplier }, 'Supplier created successfully', 201);
   } catch (error) {
+    if (error.code === 'P2002') {
+      return sendError(res, 'A supplier with this code already exists in your organization', 409);
+    }
     console.error('Error creating supplier:', error);
     return sendError(res, 'Failed to create supplier', 500);
   }
@@ -42,8 +47,10 @@ const updateSupplier = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     
-    const oldSupplier = await prisma.supplier.findUnique({ where: { id } });
-    if (!oldSupplier) return sendError(res, 'Supplier not found', 404);
+    const oldSupplier = await prisma.supplier.findFirst({
+      where: { id, organizationId: req.organizationId },
+    });
+    if (!oldSupplier) return sendError(res, 'Supplier not found in your organization', 404);
 
     const updatedSupplier = await prisma.supplier.update({
       where: { id },
@@ -62,8 +69,10 @@ const updateSupplier = async (req, res) => {
 const deleteSupplier = async (req, res) => {
   try {
     const { id } = req.params;
-    const oldSupplier = await prisma.supplier.findUnique({ where: { id } });
-    if (!oldSupplier) return sendError(res, 'Supplier not found', 404);
+    const oldSupplier = await prisma.supplier.findFirst({
+      where: { id, organizationId: req.organizationId },
+    });
+    if (!oldSupplier) return sendError(res, 'Supplier not found in your organization', 404);
     
     await prisma.supplier.delete({ where: { id } });
     

@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { formatCurrency, formatNumber } from '@/lib/utils';
-import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 import {
   Factory,
   Package,
@@ -305,9 +304,6 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
               </div>
-
-              {/* Notifications */}
-              <NotificationsPanel maxItems={4} />
             </div>
           </div>
 

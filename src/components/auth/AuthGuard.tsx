@@ -20,8 +20,20 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     if (!isLoading) {
       if (!isAuthenticated) {
         navigate(`/login?redirect=${pathname}`, { replace: true });
-      } else if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-        navigate(getDashboardRoute(user.role), { replace: true });
+      } else if (user) {
+        if (user.role === 'super_admin') {
+          // SuperAdmin is strictly isolated to platform governance and cannot view tenant ERP
+          const isAllowedSuperAdminRoute =
+            pathname.startsWith('/superadmin') || pathname === '/profile';
+          if (!isAllowedSuperAdminRoute) {
+            navigate('/superadmin/organizations', { replace: true });
+          }
+        } else if (pathname.startsWith('/superadmin')) {
+          // Tenant users cannot access superadmin platform governance
+          navigate(getDashboardRoute(user.role), { replace: true });
+        } else if (allowedRoles && !allowedRoles.includes(user.role)) {
+          navigate(getDashboardRoute(user.role), { replace: true });
+        }
       }
     }
   }, [isAuthenticated, isLoading, user, allowedRoles, navigate, pathname]);
@@ -38,7 +50,24 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     );
   }
 
-  if (!isAuthenticated || (allowedRoles && user && !allowedRoles.includes(user.role))) {
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  if (user.role === 'super_admin') {
+    const isAllowedSuperAdminRoute =
+      pathname.startsWith('/superadmin') || pathname === '/profile';
+    if (!isAllowedSuperAdminRoute) {
+      return null;
+    }
+    return <>{children}</>;
+  }
+
+  if (pathname.startsWith('/superadmin')) {
+    return null;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
     return null;
   }
 

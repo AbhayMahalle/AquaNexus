@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Pagination } from '@/components/ui/Pagination';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types/auth';
 import { showToast, exportToCSV } from '@/lib/api';
 import { UserPlus, Search, Shield, Mail, Edit, Trash2, Eye, Download, X, Filter } from 'lucide-react';
@@ -42,24 +43,27 @@ const INITIAL_USERS: UserRecord[] = [
 const ITEMS_PER_PAGE = 5;
 
 const ROLE_OPTIONS = [
-  { label: '👑 System Administrator', value: 'admin' },
   { label: '👔 Operations Manager', value: 'manager' },
   { label: '📦 Store & Inventory Manager (RAM)', value: 'store_manager' },
   { label: '💼 Accountant (YASH)', value: 'accountant' },
   { label: '🚚 Distributor (NIRANJAN)', value: 'distributor' },
-  { label: '⚙️ Line Operator', value: 'operator' },
+  { label: '🏭 Vendor / Supplier', value: 'supplier' },
+  { label: '⚙️ Line Operator / Plant Staff', value: 'employee' },
 ];
 
 const ROLE_VARIANTS: Record<UserRole, 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'neutral'> = {
+  super_admin: 'warning',
   admin: 'primary',
   manager: 'secondary',
   store_manager: 'success',
   accountant: 'info',
   distributor: 'warning',
+  supplier: 'warning',
   employee: 'neutral',
 };
 
 export default function UserManagementPage() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -86,7 +90,8 @@ export default function UserManagementPage() {
         const mapped: UserRecord[] = raw.map((u: any) => {
           const roleName = (u.role?.name || u.userRoles?.[0]?.role?.name || '').toLowerCase();
           let mappedRole: UserRole = 'employee';
-          if (roleName === 'admin') mappedRole = 'admin';
+          if (roleName === 'super_admin') mappedRole = 'super_admin';
+          else if (roleName === 'admin') mappedRole = 'admin';
           else if (roleName === 'manager') mappedRole = 'manager';
           else if (roleName === 'store_manager') mappedRole = 'store_manager';
           else if (roleName === 'accountant') mappedRole = 'accountant';
@@ -164,6 +169,7 @@ export default function UserManagementPage() {
     store_manager: 'c2dcdbe3-2766-4f86-b8d3-adf1005b6827',
     accountant: 'bae5fff7-59b5-47c6-9d7f-73bfc0dfa773',
     distributor: '8af0c503-111a-465d-a8d2-91f0c95b5e14',
+    employee: '4f4d72be-c828-4759-abc8-f1e341bb16ca',
   };
 
   // Create user
@@ -174,7 +180,7 @@ export default function UserManagementPage() {
       const names = formData.name.trim().split(/\s+/);
       const firstName = names[0] || 'User';
       const lastName = names.slice(1).join(' ') || firstName;
-      const roleId = roleMap[formData.role] || roleMap.admin;
+      const roleName = formData.role.toUpperCase();
 
       const payload = {
         username: (formData.email.split('@')[0] + Date.now().toString().slice(-4)).toLowerCase(),
@@ -183,7 +189,7 @@ export default function UserManagementPage() {
         firstName,
         lastName,
         phone: formData.phone || '9876543210',
-        roleId,
+        roleId: roleName,
       };
 
       const res = await fetchApi<any>('/users', {
@@ -348,7 +354,7 @@ export default function UserManagementPage() {
       <Input label="Full Name" placeholder="e.g. Aniket Sharma" required value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))} error={formErrors.name} />
       <Input label="Email Address" type="email" placeholder="e.g. aniket@aquanexus.com" required value={formData.email} onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))} error={formErrors.email} />
       <Input label="Phone Number" type="tel" placeholder="+91 98765 43210" value={formData.phone} onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))} />
-      <Select label="Assigned System Role" value={formData.role} onChange={(e) => setFormData(f => ({ ...f, role: e.target.value as UserRole }))} options={ROLE_OPTIONS} />
+      <Select label="Assigned System Role" value={formData.role} onChange={(e) => setFormData(f => ({ ...f, role: e.target.value as UserRole }))} options={ROLE_OPTIONS.filter((option) => currentUser?.role === 'super_admin' || option.value !== 'super_admin')} />
       <Input label="Plant Location" value={formData.plant} onChange={(e) => setFormData(f => ({ ...f, plant: e.target.value }))} />
     </div>
   );

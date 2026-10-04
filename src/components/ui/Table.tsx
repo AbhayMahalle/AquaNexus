@@ -131,29 +131,32 @@ export function Table<T>({
       <table className="w-full text-left border-collapse min-w-full">
         <thead>
           <tr className="bg-gray-100 border-b border-border">
-            {columns.map((col) => (
-              <th
-                key={String(col.key ?? col.accessorKey ?? col.accessor?.toString() ?? col.header?.toString() ?? '')}
-                style={{ width: col.width }}
-                className={cn(
-                  'px-4 py-3 text-xs font-bold uppercase tracking-wider text-black whitespace-nowrap align-middle',
-                  getAlignmentClass(col.align),
-                  col.className
-                )}
-              >
-                {col.header}
-              </th>
-            ))}
+            {columns.map((col, cIdx) => {
+              const headerKey = col.key ?? (col.accessorKey as string) ?? (typeof col.header === 'string' ? col.header : `col-${cIdx}`);
+              return (
+                <th
+                  key={`th-${headerKey}-${cIdx}`}
+                  style={{ width: col.width }}
+                  className={cn(
+                    'px-4 py-3 text-xs font-bold uppercase tracking-wider text-black whitespace-nowrap align-middle',
+                    getAlignmentClass(col.align),
+                    col.className
+                  )}
+                >
+                  {col.header}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody className="divide-y divide-border text-sm">
           {busy ? (
             Array.from({ length: 4 }).map((_, rIdx) => (
               <tr key={`skel-row-${rIdx}`} className="animate-pulse">
-                {columns.map((col) => {
-                  const k = col.key ?? col.accessorKey?.toString() ?? `c${rIdx}`;
+                {columns.map((col, cIdx) => {
+                  const colKey = col.key ?? (col.accessorKey as string) ?? `col-${cIdx}`;
                   return (
-                    <td key={`skel-cell-${k}`} className="px-4 py-3.5 align-middle">
+                    <td key={`skel-cell-r${rIdx}-c${cIdx}-${colKey}`} className="px-4 py-3.5 align-middle">
                       <Skeleton className="h-4 w-3/4 rounded" />
                     </td>
                   );
@@ -172,18 +175,18 @@ export function Table<T>({
             </tr>
           ) : (
             visibleData.map((row, rIdx) => {
-              const key = getRowKey(row, 'row', rIdx, keyExtractor);
+              const rowKey = getRowKey(row, 'row', rIdx, keyExtractor);
               return (
                 <tr
-                  key={key}
+                  key={rowKey}
                   onClick={() => onRowClick && onRowClick(row, rIdx)}
                   className={cn('transition-colors hover:bg-gray-100', onRowClick && 'cursor-pointer')}
                 >
-                  {columns.map((col) => {
-                    const k = col.key ?? col.accessorKey?.toString() ?? col.accessor?.toString() ?? 'cell';
+                  {columns.map((col, cIdx) => {
+                    const colKey = col.key ?? (col.accessorKey as string) ?? `col-${cIdx}`;
                     return (
                       <td
-                        key={`${key}-${k}`}
+                        key={`${rowKey}-c${cIdx}-${colKey}`}
                         className={cn(
                           'px-4 py-3.5 text-black align-middle whitespace-nowrap',
                           getAlignmentClass(col.align),

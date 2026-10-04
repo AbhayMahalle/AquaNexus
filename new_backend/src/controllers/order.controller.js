@@ -18,12 +18,14 @@ const getRequestedDistributorId = (req, requestedId) => {
 const getOrders = async (req, res) => {
   try {
     const distributorIds = getAccessibleDistributorIds(req);
-    const where =
-      distributorIds === null
+    const where = {
+      organizationId: req.organizationId,
+      ...(distributorIds === null
         ? req.query.distributorId
           ? { distributorId: req.query.distributorId }
           : {}
-        : { distributorId: { in: distributorIds } };
+        : { distributorId: { in: distributorIds } })
+    };
 
     const orders = await prisma.order.findMany({
       where,
@@ -43,8 +45,8 @@ const getOrders = async (req, res) => {
 
 const getOrderById = async (req, res) => {
   try {
-    const order = await prisma.order.findUnique({
-      where: { id: req.params.id },
+    const order = await prisma.order.findFirst({
+      where: { id: req.params.id, organizationId: req.organizationId },
       include: {
         distributor: true,
         orderItems: { include: { product: true } },
@@ -98,6 +100,14 @@ const createOrder = async (req, res) => {
       );
     }
 
+    // Verify distributor belongs to organization
+    const distributor = await prisma.distributor.findFirst({
+      where: { id: distributorId, organizationId: req.organizationId }
+    });
+    if (!distributor) {
+      return sendError(res, "Distributor not found in your organization", 400);
+    }
+
     const productIds = items.map((item) => item.productId);
     if (new Set(productIds).size !== productIds.length) {
       return sendError(res, "A product may only appear once in an order", 400);
@@ -119,12 +129,16 @@ const createOrder = async (req, res) => {
     }
 
     const products = await prisma.product.findMany({
-      where: { id: { in: productIds }, status: "ACTIVE" },
+      where: {
+        id: { in: productIds },
+        organizationId: req.organizationId,
+        status: "ACTIVE"
+      },
     });
     if (products.length !== productIds.length) {
       return sendError(
         res,
-        "One or more products were not found or are inactive",
+        "One or more products were not found or are inactive in your organization",
         400,
       );
     }
@@ -153,10 +167,13 @@ const createOrder = async (req, res) => {
       );
     }
 
+    const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
     const order = await prisma.$transaction(async (transaction) =>
       transaction.order.create({
         data: {
-          orderNumber: `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          organizationId: req.organizationId,
+          orderNumber,
           distributorId,
           orderDate: new Date(orderDate),
           subtotal,

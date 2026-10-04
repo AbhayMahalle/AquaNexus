@@ -31,18 +31,30 @@ import {
   Bell,
   Wallet,
   MinusCircle,
+  Building2,
   X,
   ChevronRight,
+  UserCheck,
+  Users2,
+  User,
+  CalendarOff,
+  Clock,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
+  Building2: <Building2 className="w-5 h-5" />,
   LayoutDashboard: <LayoutDashboard className="w-5 h-5" />,
   Activity: <Activity className="w-5 h-5" />,
   Layers: <Layers className="w-5 h-5" />,
   Users: <Users className="w-5 h-5" />,
+  Users2: <Users2 className="w-5 h-5" />,
+  UserCheck: <UserCheck className="w-5 h-5" />,
+  User: <User className="w-5 h-5" />,
   ShieldCheck: <ShieldCheck className="w-5 h-5" />,
   Lock: <Lock className="w-5 h-5" />,
   CalendarCheck: <CalendarCheck className="w-5 h-5" />,
+  CalendarOff: <CalendarOff className="w-5 h-5" />,
+  Clock: <Clock className="w-5 h-5" />,
   Factory: <Factory className="w-5 h-5" />,
   Package: <Package className="w-5 h-5" />,
   PackagePlus: <PackagePlus className="w-5 h-5" />,
@@ -69,11 +81,61 @@ interface SidebarProps {
   theme?: 'default' | 'sample';
 }
 
+// Persist sidebar scroll position across route changes and component remounts
+let cachedSidebarScroll = 0;
+
 export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const location = useLocation();
   const pathname = location.pathname;
   const { user } = useAuth();
   const navSections = getNavigationForUser(user);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Restore scroll position whenever pathname changes or component mounts
+  React.useLayoutEffect(() => {
+    let savedScroll = cachedSidebarScroll;
+    try {
+      const stored = sessionStorage.getItem('aquanexus_sidebar_scroll');
+      if (stored !== null) {
+        const parsed = parseInt(stored, 10);
+        if (!isNaN(parsed)) savedScroll = parsed;
+      }
+    } catch {}
+
+    const applyScroll = () => {
+      if (scrollContainerRef.current && savedScroll > 0) {
+        scrollContainerRef.current.scrollTop = savedScroll;
+      }
+    };
+
+    applyScroll();
+    const rafId = requestAnimationFrame(applyScroll);
+    const timer = setTimeout(applyScroll, 50);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
+    };
+  }, [pathname]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const top = e.currentTarget.scrollTop;
+    cachedSidebarScroll = top;
+    try {
+      sessionStorage.setItem('aquanexus_sidebar_scroll', String(top));
+    } catch {}
+  };
+
+  const handleLinkClick = () => {
+    if (scrollContainerRef.current) {
+      const top = scrollContainerRef.current.scrollTop;
+      cachedSidebarScroll = top;
+      try {
+        sessionStorage.setItem('aquanexus_sidebar_scroll', String(top));
+      } catch {}
+    }
+    onMobileClose?.();
+  };
 
   return (
     <>
@@ -116,7 +178,11 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto px-3 py-2 space-y-4"
+        >
           {navSections.map((section, sIdx) => (
             <div key={sIdx} className="space-y-0.5">
               {section.sectionTitle && (
@@ -140,7 +206,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={onMobileClose}
+                    onClick={handleLinkClick}
                     className={cn(
                       'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-150 group border',
                       isActive

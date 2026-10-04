@@ -11,7 +11,9 @@ const getInventory = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    const productWhere = {};
+    const productWhere = {
+      organizationId: req.organizationId,
+    };
     if (category) productWhere.category = category;
     if (search) {
       productWhere.OR = [
@@ -22,6 +24,7 @@ const getInventory = async (req, res) => {
 
     const inventoryList = await prisma.inventory.findMany({
       where: {
+        organizationId: req.organizationId,
         product: productWhere
       },
       include: {
@@ -75,6 +78,9 @@ const getInventory = async (req, res) => {
 const getLowStockAlerts = async (req, res) => {
   try {
     const inventoryList = await prisma.inventory.findMany({
+      where: {
+        organizationId: req.organizationId
+      },
       include: {
         product: {
           select: {
@@ -121,7 +127,9 @@ const getStockTransactions = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    const where = {};
+    const where = {
+      organizationId: req.organizationId
+    };
 
     if (productId) where.productId = productId;
     if (transactionType) where.transactionType = transactionType;
@@ -205,14 +213,17 @@ const receiveGoods = async (req, res) => {
     const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Verify production batch
+      // 1. Verify production batch belongs to caller's organization
       const production = isUuid(productionId)
-        ? await tx.production.findUnique({
-            where: { id: productionId },
+        ? await tx.production.findFirst({
+            where: { id: productionId, organizationId: req.organizationId },
             include: { goodsReceived: true }
           })
         : await tx.production.findFirst({
-            where: { OR: [{ batchNumber: productionId }, { productionNumber: productionId }] },
+            where: {
+              organizationId: req.organizationId,
+              OR: [{ batchNumber: productionId }, { productionNumber: productionId }]
+            },
             include: { goodsReceived: true }
           });
 
@@ -220,15 +231,21 @@ const receiveGoods = async (req, res) => {
         throw new Error('PRODUCTION_NOT_FOUND');
       }
 
-      // Resolve product: if productId provided, look up; otherwise default to production's linked product
       let product = null;
       if (productId) {
         product = isUuid(productId)
-          ? await tx.product.findUnique({ where: { id: productId } })
-          : await tx.product.findFirst({ where: { OR: [{ sku: productId }, { name: productId }] } });
+          ? await tx.product.findFirst({ where: { id: productId, organizationId: req.organizationId } })
+          : await tx.product.findFirst({
+              where: {
+                organizationId: req.organizationId,
+                OR: [{ sku: productId }, { name: productId }]
+              }
+            });
       }
       if (!product && production.productId) {
-        product = await tx.product.findUnique({ where: { id: production.productId } });
+        product = await tx.product.findFirst({
+          where: { id: production.productId, organizationId: req.organizationId }
+        });
       }
 
       if (!product) {
@@ -246,21 +263,24 @@ const receiveGoods = async (req, res) => {
         throw new Error(`OVER_RECEIPT_EXCEEDED:${remainingAllowed}`);
       }
 
-      // 2. Auto-generate GRN number if not provided or ensure uniqueness
+      // 2. Auto-generate GRN number if not provided or ensure uniqueness within organization
       let grnNum = grnNumber;
       if (!grnNum) {
         const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const count = await tx.goodsReceived.count();
+        const count = await tx.goodsReceived.count({ where: { organizationId: req.organizationId } });
         grnNum = `GRN-${dateStr}-${String(count + 1).padStart(3, '0')}`;
       }
-      const existingGrn = await tx.goodsReceived.findFirst({ where: { grnNumber: grnNum } });
+      const existingGrn = await tx.goodsReceived.findFirst({
+        where: { organizationId: req.organizationId, grnNumber: grnNum }
+      });
       if (existingGrn) {
         grnNum = `${grnNum}-${Math.floor(Math.random() * 900 + 100)}`;
       }
 
-      // 3. Create GoodsReceived record
+      // 3. Create GoodsReceived record with organizationId
       const goodsReceived = await tx.goodsReceived.create({
         data: {
+          organizationId: req.organizationId,
           grnNumber: grnNum,
           productId: product.id,
           productionId: production.id,
@@ -271,9 +291,10 @@ const receiveGoods = async (req, res) => {
         }
       });
 
-      // 4. Create StockTransaction audit log
+      // 4. Create StockTransaction audit log with organizationId
       await tx.stockTransaction.create({
         data: {
+          organizationId: req.organizationId,
           productId: product.id,
           transactionType: 'PRODUCTION_RECEIPT',
           quantity: qty,
@@ -300,6 +321,7 @@ const receiveGoods = async (req, res) => {
       } else {
         updatedInventory = await tx.inventory.create({
           data: {
+            organizationId: req.organizationId,
             productId: product.id,
             quantity: qty,
             reservedQuantity: 0,
@@ -379,8 +401,13 @@ const createStockTransaction = async (req, res) => {
 
     const result = await prisma.$transaction(async (tx) => {
       const product = isUuid(productId)
-        ? await tx.product.findUnique({ where: { id: productId } })
-        : await tx.product.findFirst({ where: { OR: [{ sku: productId }, { name: productId }] } });
+        ? await tx.product.findFirst({ where: { id: productId, organizationId: req.organizationId } })
+        : await tx.product.findFirst({
+            where: {
+              organizationId: req.organizationId,
+              OR: [{ sku: productId }, { name: productId }]
+            }
+          });
 
       if (!product) {
         throw new Error('PRODUCT_NOT_FOUND');
@@ -390,6 +417,7 @@ const createStockTransaction = async (req, res) => {
       if (!inventory) {
         inventory = await tx.inventory.create({
           data: {
+            organizationId: req.organizationId,
             productId: product.id,
             quantity: 0,
             reservedQuantity: 0,
@@ -411,17 +439,16 @@ const createStockTransaction = async (req, res) => {
         if (isUuid(referenceId)) {
           validReferenceUuid = referenceId;
         } else {
-          // If referenceId is a human-readable identifier (e.g. "PO-2026-0901", "2026", "REQ-2026-0812"),
-          // embed it in remarks matching frontend regex: tx.remarks?.match(/\[Ref:\s*([^\]]+)\]/)?.[1]
           if (!resolvedRemarks.includes(`[Ref: ${referenceId}]`)) {
             resolvedRemarks = resolvedRemarks ? `[Ref: ${referenceId}] ${resolvedRemarks}` : `[Ref: ${referenceId}]`;
           }
         }
       }
 
-      // Record transaction log
+      // Record transaction log with organizationId
       const transaction = await tx.stockTransaction.create({
         data: {
+          organizationId: req.organizationId,
           productId: product.id,
           transactionType,
           quantity: qty,
@@ -458,7 +485,7 @@ const createStockTransaction = async (req, res) => {
     console.error('createStockTransaction error:', error);
 
     if (error.message === 'PRODUCT_NOT_FOUND') {
-      return sendError(res, 'Product not found', 404);
+      return sendError(res, 'Product not found in your organization', 404);
     }
     if (error.message.startsWith('INSUFFICIENT_STOCK:')) {
       const current = error.message.split(':')[1];
@@ -475,15 +502,21 @@ const getGoodsReceived = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    const where = {};
+    const where = {
+      organizationId: req.organizationId
+    };
     if (productId) where.productId = productId;
     if (productionId) where.productionId = productionId;
     if (search) {
-      where.OR = [
-        { grnNumber: { contains: search, mode: 'insensitive' } },
-        { product: { name: { contains: search, mode: 'insensitive' } } },
-        { product: { sku: { contains: search, mode: 'insensitive' } } },
-        { remarks: { contains: search, mode: 'insensitive' } }
+      where.AND = [
+        {
+          OR: [
+            { grnNumber: { contains: search, mode: 'insensitive' } },
+            { product: { name: { contains: search, mode: 'insensitive' } } },
+            { product: { sku: { contains: search, mode: 'insensitive' } } },
+            { remarks: { contains: search, mode: 'insensitive' } }
+          ]
+        }
       ];
     }
 

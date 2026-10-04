@@ -10,7 +10,10 @@ const scopedDistributorWhere = (req) => {
 const getSales = async (req, res) => {
   try {
     const sales = await prisma.sale.findMany({
-      where: scopedDistributorWhere(req),
+      where: {
+        organizationId: req.organizationId,
+        ...scopedDistributorWhere(req),
+      },
       include: {
         distributor: true,
         saleItems: { include: { product: true } },
@@ -81,7 +84,7 @@ const createSale = async (req, res) => {
       );
     }
     const products = await prisma.product.findMany({
-      where: { id: { in: productIds }, status: "ACTIVE" },
+      where: { id: { in: productIds }, status: "ACTIVE", organizationId: req.organizationId },
     });
     if (products.length !== productIds.length)
       return sendError(
@@ -102,6 +105,26 @@ const createSale = async (req, res) => {
       return sendError(res, "Sale values produce an invalid total", 400);
 
     const sale = await prisma.$transaction(async (transaction) => {
+      const distributor = await transaction.distributor.findFirst({
+        where: { id: targetDistributorId, organizationId: req.organizationId },
+      });
+      if (!distributor) {
+        const error = new Error("Distributor not found in your organization");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (orderId) {
+        const order = await transaction.order.findFirst({
+          where: { id: orderId, organizationId: req.organizationId },
+        });
+        if (!order) {
+          const error = new Error("Order not found in your organization");
+          error.statusCode = 400;
+          throw error;
+        }
+      }
+
       for (const item of saleItems) {
         const stock = await transaction.distributorStock.findUnique({
           where: {
@@ -122,6 +145,7 @@ const createSale = async (req, res) => {
       const created = await transaction.sale.create({
         data: {
           saleNumber,
+          organizationId: req.organizationId,
           distributorId: targetDistributorId,
           orderId,
           dispatchId,
@@ -143,7 +167,7 @@ const createSale = async (req, res) => {
         await transaction.distributorStock.update({
           where: {
             distributorId_productId: {
-              distributorId,
+              distributorId: targetDistributorId,
               productId: item.productId,
             },
           },
@@ -166,7 +190,10 @@ const createSale = async (req, res) => {
 const getReturns = async (req, res) => {
   try {
     const returns = await prisma.return.findMany({
-      where: scopedDistributorWhere(req),
+      where: {
+        organizationId: req.organizationId,
+        ...scopedDistributorWhere(req),
+      },
       include: {
         distributor: true,
         sale: true,
@@ -224,12 +251,21 @@ const createReturn = async (req, res) => {
         400,
       );
     const createdReturn = await prisma.$transaction(async (transaction) => {
+      const distributor = await transaction.distributor.findFirst({
+        where: { id: targetDistributorId, organizationId: req.organizationId },
+      });
+      if (!distributor) {
+        const error = new Error("Distributor not found in your organization");
+        error.statusCode = 400;
+        throw error;
+      }
+
       if (saleId) {
-        const sale = await transaction.sale.findUnique({
-          where: { id: saleId },
+        const sale = await transaction.sale.findFirst({
+          where: { id: saleId, organizationId: req.organizationId },
         });
         if (!sale || sale.distributorId !== targetDistributorId) {
-          const error = new Error("Sale does not belong to this distributor");
+          const error = new Error("Sale does not belong to this distributor or organization");
           error.statusCode = 400;
           throw error;
         }
@@ -237,6 +273,7 @@ const createReturn = async (req, res) => {
       const record = await transaction.return.create({
         data: {
           returnNumber,
+          organizationId: req.organizationId,
           distributorId: targetDistributorId,
           saleId,
           returnDate: new Date(returnDate),
@@ -250,13 +287,13 @@ const createReturn = async (req, res) => {
         await transaction.distributorStock.upsert({
           where: {
             distributorId_productId: {
-              distributorId,
+              distributorId: targetDistributorId,
               productId: item.productId,
             },
           },
           update: { quantity: { increment: item.quantity } },
           create: {
-            distributorId,
+            distributorId: targetDistributorId,
             productId: item.productId,
             quantity: item.quantity,
           },

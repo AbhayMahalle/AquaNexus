@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
-import { NotificationsPanel } from '@/components/layout/NotificationsPanel';
 import { 
   Factory, 
   Package, 
@@ -144,8 +143,6 @@ export default function ManagerDashboardPage() {
             </div>
           </CardContent>
         </Card>
-
-        <NotificationsPanel maxItems={4} />
       </DashboardLayout>
     </AuthGuard>
   );

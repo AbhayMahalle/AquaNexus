@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth.middleware');
+const { requireTenantContext } = require('../middleware/tenant.middleware');
 const { requirePermission } = require('../middleware/rbac.middleware');
 const {
   getOvertime,
@@ -8,9 +9,12 @@ const {
   updateOvertimeStatus
 } = require('../controllers/overtime.controller');
 
-router.get('/', requireAuth, requirePermission('attendance.view'), getOvertime);
-router.post('/', requireAuth, requirePermission('attendance.create'), createOvertime);
-router.patch('/:id', requireAuth, requirePermission('attendance.update'), updateOvertimeStatus);
-router.patch('/:id/status', requireAuth, requirePermission('attendance.update'), updateOvertimeStatus);
+router.use(requireAuth);
+router.use(requireTenantContext);
+
+router.get('/', requirePermission('attendance.view'), getOvertime);
+router.post('/', requirePermission('attendance.create'), createOvertime);
+router.patch('/:id', requirePermission('attendance.update'), updateOvertimeStatus);
+router.patch('/:id/status', requirePermission('attendance.update'), updateOvertimeStatus);
 
 module.exports = router;

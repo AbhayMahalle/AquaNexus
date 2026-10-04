@@ -36,12 +36,19 @@ export async function loginApi(credentials: LoginCredentials): Promise<AuthRespo
       if (backendUser) {
         const rawRole = (backendUser.role?.name || backendUser.userRoles?.[0]?.role?.name || '').toLowerCase();
         let mappedRole: UserRole = 'admin';
-        if (rawRole === 'manager') mappedRole = 'manager';
+        if (rawRole === 'super_admin') mappedRole = 'super_admin';
+        else if (rawRole === 'manager') mappedRole = 'manager';
         else if (rawRole === 'store_manager') mappedRole = 'store_manager';
         else if (rawRole === 'accountant') mappedRole = 'accountant';
         else if (rawRole === 'distributor') mappedRole = 'distributor';
+        else if (rawRole === 'supplier' || rawRole === 'vendor') mappedRole = 'supplier';
         else if (rawRole === 'employee') mappedRole = 'employee';
         else if (rawRole === 'admin') mappedRole = 'admin';
+
+        const isSuperAdmin = Boolean(backendUser.isSuperAdmin || mappedRole === 'super_admin');
+        if (isSuperAdmin) {
+          mappedRole = 'super_admin';
+        }
 
         const permissions = backendUser.userRoles?.[0]?.role?.rolePermissions
           ? backendUser.userRoles[0].role.rolePermissions.map((rp: any) => rp.permission?.code).filter(Boolean)
@@ -51,18 +58,28 @@ export async function loginApi(credentials: LoginCredentials): Promise<AuthRespo
           ? backendUser.managerAssignments.map((ma: any) => ma.area.toLowerCase())
           : [];
 
+        const org = backendUser.organization;
+        const savedSelectedOrgId = typeof window !== 'undefined' ? localStorage.getItem('aqua_nexus_selected_org_id') : null;
+        const savedSelectedOrgName = typeof window !== 'undefined' ? localStorage.getItem('aqua_nexus_selected_org_name') : null;
+
         const authUser: User = {
           id: backendUser.id,
           name: `${backendUser.firstName || ''} ${backendUser.lastName || ''}`.trim() || backendUser.username || backendUser.email,
           email: backendUser.email,
           username: backendUser.username || backendUser.email,
           role: mappedRole,
-          roleTitle: backendUser.role?.description || backendUser.role?.name || mappedRole,
+          roleTitle: isSuperAdmin ? 'Platform SuperAdmin' : (backendUser.role?.description || backendUser.role?.name || mappedRole),
           avatar: (backendUser.firstName?.[0] || backendUser.username?.[0] || 'U').toUpperCase(),
           permissions,
           assignments,
-          plantId: 'PLANT-001',
-          plantName: 'AquaNexus Main Unit - Pune',
+          plantId: org?.slug || 'PLANT-001',
+          plantName: isSuperAdmin ? (savedSelectedOrgName || 'AquaNexus Platform') : (org?.name || 'AquaNexus Primary Plant'),
+          isSuperAdmin,
+          organizationId: backendUser.organizationId || org?.id || null,
+          organizationName: org?.name || (isSuperAdmin ? 'AquaNexus Platform' : 'AquaNexus Primary Plant'),
+          organizationSlug: org?.slug || null,
+          selectedOrganizationId: isSuperAdmin ? savedSelectedOrgId : (backendUser.organizationId || org?.id || null),
+          selectedOrganizationName: isSuperAdmin ? savedSelectedOrgName : (org?.name || null),
         };
 
         if (typeof window !== 'undefined') {
@@ -101,5 +118,26 @@ export function setCurrentUserSync(user: User | null): void {
   } else {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+export function setSelectedOrganization(orgId: string | null, orgName?: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (orgId) {
+    localStorage.setItem('aqua_nexus_selected_org_id', orgId);
+    if (orgName) localStorage.setItem('aqua_nexus_selected_org_name', orgName);
+  } else {
+    localStorage.removeItem('aqua_nexus_selected_org_id');
+    localStorage.removeItem('aqua_nexus_selected_org_name');
+  }
+
+  const currentUser = getCurrentUserSync();
+  if (currentUser) {
+    currentUser.selectedOrganizationId = orgId;
+    currentUser.selectedOrganizationName = orgName || null;
+    if (currentUser.isSuperAdmin) {
+      currentUser.plantName = orgName || 'AquaNexus Platform';
+    }
+    setCurrentUserSync(currentUser);
   }
 }

@@ -681,6 +681,14 @@ export const apiClient = {
     return fetchApi(`/notifications/${id}/read`, { method: 'PATCH' });
   },
 
+  async markNotificationAsUnread(id: string): Promise<ApiResponse<any>> {
+    return fetchApi(`/notifications/${id}/unread`, { method: 'PATCH' });
+  },
+
+  async markAllNotificationsAsRead(): Promise<ApiResponse<any>> {
+    return fetchApi('/notifications/read-all', { method: 'PATCH' });
+  },
+
   async getMyProfile(): Promise<ApiResponse<any>> {
     // We fetch a list of employees to find ourselves, or we need a /me route.
     // For now, since employees list is restricted, we'll try fetching it anyway or maybe just use local storage data.
@@ -709,5 +717,193 @@ export const apiClient = {
 
   async get(endpoint: string): Promise<ApiResponse<any>> {
     return fetchApi<any>(endpoint);
+  },
+
+  // ==========================================
+  // PROCUREMENT-TO-PAY (P2P) CYCLE API METHODS
+  // ==========================================
+
+  async getP2PDashboardStats(): Promise<ApiResponse<any>> {
+    return fetchApi<any>('/p2p/dashboard-stats');
+  },
+
+  async getP2PTracker(id: string): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/tracker/${id}`);
+  },
+
+  async getP2PRequisitions(params?: Record<string, string>): Promise<ApiResponse<{ requisitions: any[]; pagination: any }>> {
+    const q = params ? '?' + new URLSearchParams(params).toString() : '';
+    return fetchApi<{ requisitions: any[]; pagination: any }>(`/p2p/requisitions${q}`);
+  },
+
+  async getP2PRequisitionById(id: string): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/requisitions/${id}`);
+  },
+
+  async createP2PRequisition(data: {
+    title: string;
+    priority?: string;
+    requiredByDate?: string;
+    notes?: string;
+    items: Array<{
+      productId?: string | null;
+      itemName: string;
+      requestedQuantity: number;
+      unit: string;
+      targetRate?: number | null;
+      notes?: string;
+    }>;
+  }): Promise<ApiResponse<any>> {
+    return fetchApi<any>('/p2p/requisitions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async finalizeP2PRates(id: string, data: {
+    supplierId?: string;
+    rateApprovalRemarks?: string;
+    items: Array<{ id: string; finalizedRate: number }>;
+  }): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/requisitions/${id}/finalize-rates`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async rejectP2PRequisition(id: string, rejectionReason: string): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/requisitions/${id}/reject-rates`, {
+      method: 'POST',
+      body: JSON.stringify({ rejectionReason }),
+    });
+  },
+
+  async generateP2POrder(id: string, data: {
+    supplierId?: string;
+    expectedDeliveryDate?: string;
+    paymentTerms?: string;
+    deliveryTerms?: string;
+    taxRate?: number;
+    notes?: string;
+  }): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/requisitions/${id}/generate-po`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getP2POrders(params?: Record<string, string>): Promise<ApiResponse<{ orders: any[]; pagination: any }>> {
+    const q = params ? '?' + new URLSearchParams(params).toString() : '';
+    return fetchApi<{ orders: any[]; pagination: any }>(`/p2p/orders${q}`);
+  },
+
+  async getP2POrderById(id: string): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/orders/${id}`);
+  },
+
+  async vendorAcceptP2POrder(id: string): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/orders/${id}/vendor-accept`, {
+      method: 'POST',
+    });
+  },
+
+  async vendorRejectP2POrder(id: string, reason: string): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/orders/${id}/vendor-reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  async createP2PChallan(orderId: string, data: {
+    dispatchDate?: string;
+    vehicleNumber?: string;
+    driverName?: string;
+    driverPhone?: string;
+    transporterName?: string;
+    trackingNumber?: string;
+    notes?: string;
+    markOutForDelivery?: boolean;
+    items?: Array<{
+      itemName: string;
+      dispatchedQuantity: number;
+      unit: string;
+      remarks?: string;
+    }>;
+  }): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/orders/${orderId}/create-challan`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async dispatchP2PChallan(challanId: string): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/challans/${challanId}/dispatch`, {
+      method: 'POST',
+    });
+  },
+
+  async processP2PGoodsReceived(orderId: string, data: {
+    challanId?: string;
+    receivedDate?: string;
+    inspectionRemarks?: string;
+    isAccepted: boolean;
+    rejectionReason?: string;
+    items?: Array<{
+      productId?: string | null;
+      itemName: string;
+      orderedQuantity?: number;
+      dispatchedQuantity?: number;
+      receivedQuantity: number;
+      acceptedQuantity: number;
+      rejectedQuantity?: number;
+      unit: string;
+      condition?: string;
+      remarks?: string;
+    }>;
+  }): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/orders/${orderId}/goods-received`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async submitP2PVendorInvoice(orderId: string, data: {
+    invoiceNumber: string;
+    invoiceDate?: string;
+    dueDate?: string;
+    subtotal?: number;
+    taxAmount?: number;
+    totalAmount: number;
+    grnId?: string;
+    accountantRemarks?: string;
+  }): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/orders/${orderId}/invoices`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async reviewP2PVendorInvoice(invoiceId: string, data: {
+    action: 'APPROVE' | 'REJECT';
+    remarks?: string;
+    rejectionReason?: string;
+  }): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/invoices/${invoiceId}/review`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async recordP2PPayment(invoiceId: string, data: {
+    amount: number;
+    paymentDate?: string;
+    paymentMethod?: string;
+    referenceNumber?: string;
+    remarks?: string;
+  }): Promise<ApiResponse<any>> {
+    return fetchApi<any>(`/p2p/invoices/${invoiceId}/payment`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 };

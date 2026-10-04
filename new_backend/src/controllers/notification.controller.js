@@ -13,7 +13,7 @@ const getMyNotifications = async (req, res) => {
 const markAsRead = async (req, res) => {
   try {
     const notificationId = req.params.id;
-    const notification = await notificationService.markNotificationAsRead(notificationId);
+    const notification = await notificationService.markNotificationAsRead(notificationId, req.user?.id);
     if (!notification) {
       return sendError(res, 'Notification not found or error updating', 404);
     }
@@ -23,7 +23,31 @@ const markAsRead = async (req, res) => {
   }
 };
 
+const markAsUnread = async (req, res) => {
+  try {
+    const notificationId = req.params.id;
+    const notification = await notificationService.markNotificationAsUnread(notificationId, req.user?.id);
+    if (!notification) {
+      return sendError(res, 'Notification not found or error updating', 404);
+    }
+    return sendSuccess(res, notification, 'Notification marked as unread');
+  } catch (error) {
+    return sendError(res, error.message, 500);
+  }
+};
+
+const markAllRead = async (req, res) => {
+  try {
+    await notificationService.markAllNotificationsAsRead(req.user?.id);
+    return sendSuccess(res, null, 'All notifications marked as read');
+  } catch (error) {
+    return sendError(res, error.message, 500);
+  }
+};
+
 module.exports = {
   getMyNotifications,
-  markAsRead
+  markAsRead,
+  markAsUnread,
+  markAllRead
 };

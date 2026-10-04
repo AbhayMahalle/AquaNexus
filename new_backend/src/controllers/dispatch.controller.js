@@ -5,8 +5,10 @@ const { getAccessibleDistributorIds } = require("../utils/distributorAccess");
 const getDispatches = async (req, res) => {
   try {
     const distributorIds = getAccessibleDistributorIds(req);
-    const where =
-      distributorIds === null ? {} : { distributorId: { in: distributorIds } };
+    const where = {
+      organizationId: req.organizationId,
+      ...(distributorIds === null ? {} : { distributorId: { in: distributorIds } })
+    };
 
     const dispatches = await prisma.dispatch.findMany({
       where,
@@ -75,21 +77,21 @@ const createDispatch = async (req, res) => {
     }
 
     const dispatch = await prisma.$transaction(async (transaction) => {
-      const distributor = await transaction.distributor.findUnique({
-        where: { id: distributorId },
+      const distributor = await transaction.distributor.findFirst({
+        where: { id: distributorId, organizationId: req.organizationId },
       });
       if (!distributor) {
-        const error = new Error("Distributor not found");
+        const error = new Error("Distributor not found in your organization");
         error.statusCode = 400;
         throw error;
       }
 
       if (orderId) {
-        const order = await transaction.order.findUnique({
-          where: { id: orderId },
+        const order = await transaction.order.findFirst({
+          where: { id: orderId, organizationId: req.organizationId },
         });
         if (!order || order.distributorId !== distributorId) {
-          const error = new Error("Order does not belong to this distributor");
+          const error = new Error("Order does not belong to this distributor or organization");
           error.statusCode = 400;
           throw error;
         }
@@ -101,7 +103,7 @@ const createDispatch = async (req, res) => {
       }
 
       const inventories = await transaction.inventory.findMany({
-        where: { productId: { in: productIds } },
+        where: { productId: { in: productIds }, organizationId: req.organizationId },
       });
       const inventoryByProductId = new Map(
         inventories.map((inventory) => [inventory.productId, inventory]),
@@ -123,6 +125,7 @@ const createDispatch = async (req, res) => {
 
       const createdDispatch = await transaction.dispatch.create({
         data: {
+          organizationId: req.organizationId,
           dispatchNumber: `DSP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           orderId,
           distributorId,
@@ -162,6 +165,7 @@ const createDispatch = async (req, res) => {
 
         await transaction.stockTransaction.create({
           data: {
+            organizationId: req.organizationId,
             productId: item.productId,
             transactionType: "DISPATCH",
             quantity: item.quantity,

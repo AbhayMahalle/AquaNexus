@@ -7,6 +7,7 @@ const {
 } = require("../controllers/user.controller");
 const { getRoles, getPermissions } = require("../controllers/role.controller");
 const { requireAuth } = require("../middleware/auth.middleware");
+const { requireTenantContext } = require("../middleware/tenant.middleware");
 const { requireRole } = require("../middleware/rbac.middleware");
 const { 
   validateCreateUser, 
@@ -17,7 +18,7 @@ const { validate } = require("../utils/validate");
 
 const router = express.Router();
 
-const adminOnly = [requireAuth, requireRole(["ADMIN"])];
+const adminOnly = [requireAuth, requireTenantContext, requireRole(["ADMIN"])];
 
 // Users
 router.get("/users", ...adminOnly, getUsers);

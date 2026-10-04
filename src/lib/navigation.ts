@@ -2,12 +2,13 @@ import { User, UserRole } from '@/types/auth';
 import { NavSection } from '@/types/navigation';
 
 export const ROLE_ROUTES: Record<UserRole, string> = {
+  super_admin: '/superadmin/organizations',
   admin: '/admin/dashboard',
   manager: '/manager/dashboard',
   store_manager: '/store/dashboard',
   accountant: '/accountant/dashboard',
   distributor: '/distributor/dashboard',
-  
+  supplier: '/supplier/p2p',
   employee: '/employee/dashboard',
 };
 
@@ -16,6 +17,12 @@ export function getDashboardRoute(role: UserRole): string {
 }
 
 export const ALL_NAV_SECTIONS: NavSection[] = [
+  {
+    sectionTitle: 'PLATFORM GOVERNANCE',
+    items: [
+      { title: 'Customer Organizations', href: '/superadmin/organizations', iconName: 'Building2', roles: ['super_admin'] },
+    ],
+  },
   {
     sectionTitle: 'OVERVIEW',
     items: [
@@ -51,6 +58,16 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    sectionTitle: 'PROCUREMENT (P2P)',
+    items: [
+      { title: 'P2P Command Center', href: '/admin/p2p', iconName: 'Layers', roles: ['admin', 'super_admin'] },
+      { title: 'Rate Finalisation & Approval', href: '/manager/p2p', iconName: 'ShieldCheck', roles: ['manager'] },
+      { title: 'Requisitions & Goods Received', href: '/store/p2p', iconName: 'PackageCheck', roles: ['store_manager'] },
+      { title: 'Vendor Portal & Dispatch', href: '/supplier/p2p', iconName: 'Truck', roles: ['supplier'] },
+      { title: 'Invoices & Payments (P2P)', href: '/accountant/p2p', iconName: 'CreditCard', roles: ['accountant'] },
+    ],
+  },
+  {
     sectionTitle: 'EMPLOYEE PORTAL',
     items: [
       { title: 'My Profile', href: '/employee/profile', iconName: 'User', roles: ['employee'] },
@@ -63,40 +80,40 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
   {
     sectionTitle: 'STORE',
     items: [
-      { title: 'Inventory', href: '/store/inventory', iconName: 'Package', roles: ['store_manager'] },
-      { title: 'Stock In', href: '/store/stock-in', iconName: 'PackagePlus', roles: ['store_manager'] },
-      { title: 'Goods Received', href: '/store/goods-received', iconName: 'PackageCheck', roles: ['store_manager'] },
-      { title: 'Stock Out', href: '/store/stock-out', iconName: 'PackageMinus', roles: ['store_manager'] },
-      { title: 'Dispatch', href: '/store/dispatch', iconName: 'Truck', roles: ['store_manager'] },
-      { title: 'Returns', href: '/store/returns', iconName: 'RotateCcw', roles: ['store_manager'] },
-      { title: 'Damaged Goods', href: '/store/damaged', iconName: 'AlertTriangle', roles: ['store_manager'] },
-      { title: 'Low Stock Alerts', href: '/store/low-stock', iconName: 'Bell', roles: ['store_manager'] },
-      { title: 'Reports', href: '/store/reports', iconName: 'BarChart3', roles: ['store_manager'] },
+      { title: 'Inventory', href: '/store/inventory', iconName: 'Package', roles: ['admin', 'store_manager'] },
+      { title: 'Stock In', href: '/store/stock-in', iconName: 'PackagePlus', roles: ['admin', 'store_manager'] },
+      { title: 'Goods Received', href: '/store/goods-received', iconName: 'PackageCheck', roles: ['admin', 'store_manager'] },
+      { title: 'Stock Out', href: '/store/stock-out', iconName: 'PackageMinus', roles: ['admin', 'store_manager'] },
+      { title: 'Dispatch', href: '/store/dispatch', iconName: 'Truck', roles: ['admin', 'store_manager'] },
+      { title: 'Returns', href: '/store/returns', iconName: 'RotateCcw', roles: ['admin', 'store_manager'] },
+      { title: 'Damaged Goods', href: '/store/damaged', iconName: 'AlertTriangle', roles: ['admin', 'store_manager'] },
+      { title: 'Low Stock Alerts', href: '/store/low-stock', iconName: 'Bell', roles: ['admin', 'store_manager'] },
+      { title: 'Reports', href: '/store/reports', iconName: 'BarChart3', roles: ['admin', 'store_manager'] },
     ],
   },
   {
     sectionTitle: 'DISTRIBUTOR',
     items: [
-      { title: 'My Products', href: '/distributor/products', iconName: 'Package', roles: ['distributor'] },
-      { title: 'My Orders', href: '/distributor/orders', iconName: 'ShoppingCart', roles: ['distributor'] },
-      { title: 'My Stock', href: '/distributor/stock', iconName: 'PackageCheck', roles: ['distributor'] },
-      { title: 'My Sales', href: '/distributor/sales', iconName: 'TrendingUp', roles: ['distributor'] },
-      { title: 'Returns', href: '/distributor/returns', iconName: 'RotateCcw', roles: ['distributor'] },
-      { title: 'Invoices', href: '/distributor/invoices', iconName: 'FileText', roles: ['distributor'] },
-      { title: 'Payments', href: '/distributor/payments', iconName: 'CreditCard', roles: ['distributor'] },
-      { title: 'Outstanding', href: '/distributor/outstanding', iconName: 'AlertCircle', roles: ['distributor'] },
+      { title: 'Products', href: '/distributor/products', iconName: 'Package', roles: ['admin', 'distributor'] },
+      { title: 'Orders', href: '/distributor/orders', iconName: 'ShoppingCart', roles: ['admin', 'distributor'] },
+      { title: 'Stock', href: '/distributor/stock', iconName: 'PackageCheck', roles: ['admin', 'distributor'] },
+      { title: 'Sales', href: '/distributor/sales', iconName: 'TrendingUp', roles: ['admin', 'distributor'] },
+      { title: 'Returns', href: '/distributor/returns', iconName: 'RotateCcw', roles: ['admin', 'distributor'] },
+      { title: 'Invoices', href: '/distributor/invoices', iconName: 'FileText', roles: ['admin', 'distributor'] },
+      { title: 'Payments', href: '/distributor/payments', iconName: 'CreditCard', roles: ['admin', 'distributor'] },
+      { title: 'Outstanding', href: '/distributor/outstanding', iconName: 'AlertCircle', roles: ['admin', 'distributor'] },
     ],
   },
   {
     sectionTitle: 'ACCOUNTING',
     items: [
-      { title: 'Invoices', href: '/accountant/invoices', iconName: 'FileText', roles: ['accountant'] },
-      { title: 'Payroll', href: '/accountant/payroll', iconName: 'Wallet', roles: ['accountant'] },
-      { title: 'Payments', href: '/accountant/payments', iconName: 'CreditCard', roles: ['accountant'] },
-      { title: 'Expenses', href: '/accountant/expenses', iconName: 'Receipt', roles: ['accountant'] },
-      { title: 'Deductions', href: '/accountant/deductions', iconName: 'MinusCircle', roles: ['accountant'] },
-      { title: 'Outstanding', href: '/accountant/outstanding', iconName: 'AlertCircle', roles: ['accountant'] },
-      { title: 'Reports', href: '/accountant/reports', iconName: 'BarChart3', roles: ['accountant'] },
+      { title: 'Invoices', href: '/accountant/invoices', iconName: 'FileText', roles: ['admin', 'accountant'] },
+      { title: 'Payroll', href: '/accountant/payroll', iconName: 'Wallet', roles: ['admin', 'accountant'] },
+      { title: 'Payments', href: '/accountant/payments', iconName: 'CreditCard', roles: ['admin', 'accountant'] },
+      { title: 'Expenses', href: '/accountant/expenses', iconName: 'Receipt', roles: ['admin', 'accountant'] },
+      { title: 'Deductions', href: '/accountant/deductions', iconName: 'MinusCircle', roles: ['admin', 'accountant'] },
+      { title: 'Outstanding', href: '/accountant/outstanding', iconName: 'AlertCircle', roles: ['admin', 'accountant'] },
+      { title: 'Reports', href: '/accountant/reports', iconName: 'BarChart3', roles: ['admin', 'accountant'] },
     ],
   },
 ];
@@ -104,9 +121,28 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
 export function getNavigationForUser(user: User | null): NavSection[] {
   if (!user) return [];
 
+  // SuperAdmin is strictly confined to platform governance dashboard and sees nothing belonging to tenant admin
+  if (user.role === 'super_admin') {
+    return [
+      {
+        sectionTitle: 'PLATFORM GOVERNANCE',
+        items: [
+          {
+            title: 'Customer Organizations',
+            href: '/superadmin/organizations',
+            iconName: 'Building2',
+            roles: ['super_admin'],
+          },
+        ],
+      },
+    ];
+  }
+
   return ALL_NAV_SECTIONS.map((section) => {
     const filteredItems = section.items.filter((item) => {
-      if (item.roles && !item.roles.includes(user.role)) return false;
+      if (item.roles && !item.roles.includes(user.role)) {
+        return false;
+      }
       if (user.role === 'manager' && item.assignments && item.assignments.length > 0) {
         if (!user.assignments || user.assignments.length === 0) return true;
         return item.assignments.some((a) => user.assignments?.includes(a));
