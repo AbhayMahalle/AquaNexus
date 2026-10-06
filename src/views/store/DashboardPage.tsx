@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { fetchApi } from '@/services/apiClient';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -149,7 +149,7 @@ export default function DashboardPage() {
       key: 'action',
       header: 'Action',
       render: () => (
-        <Link href="/store/low-stock">
+        <Link to="/store/low-stock">
           <Button variant="outline" size="sm">
             Reorder
           </Button>
@@ -410,7 +410,7 @@ export default function DashboardPage() {
         {/* 1. KPI Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
           {kpis.map((kpi) => (
-            <Link key={kpi.id} href={kpi.href} className="group">
+            <Link key={kpi.id} to={kpi.href} className="group">
               <Card variant="interactive" padding="sm" className="h-full flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                     Raw preforms, bottle caps, water treatment chemicals, and labels received via GRN slips.
                   </p>
                   <div className="mt-3 pt-2 border-t border-[#E2E8F0] text-[11px] text-[#0F4C81] font-semibold">
-                    <Link href="/store/goods-received" className="hover:underline flex items-center gap-1">
+                    <Link to="/store/goods-received" className="hover:underline flex items-center gap-1">
                       <span>View GRN Registry</span>
                       <ArrowRight className="w-3 h-3" />
                     </Link>
@@ -490,7 +490,7 @@ export default function DashboardPage() {
                     Safety threshold monitoring, storage bin allocations, stock valuation, and balance ledgers.
                   </p>
                   <div className="mt-3 pt-2 border-t border-[#E2E8F0] text-[11px] text-[#0F4C81] font-semibold">
-                    <Link href="/store/inventory" className="hover:underline flex items-center gap-1">
+                    <Link to="/store/inventory" className="hover:underline flex items-center gap-1">
                       <span>View Catalog</span>
                       <ArrowRight className="w-3 h-3" />
                     </Link>
@@ -506,7 +506,7 @@ export default function DashboardPage() {
                     Finished 20L jars & packaged water loading manifests, vehicle gates, and jar return logs.
                   </p>
                   <div className="mt-3 pt-2 border-t border-[#E2E8F0] text-[11px] text-[#0F4C81] font-semibold">
-                    <Link href="/store/dispatch" className="hover:underline flex items-center gap-1">
+                    <Link to="/store/dispatch" className="hover:underline flex items-center gap-1">
                       <span>Dispatch Staging</span>
                       <ArrowRight className="w-3 h-3" />
                     </Link>
@@ -526,7 +526,7 @@ export default function DashboardPage() {
               {quickActions.map((action, idx) => (
                 <Link
                   key={idx}
-                  href={action.href}
+                  to={action.href}
                   className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors border border-transparent hover:border-[#E2E8F0] group"
                 >
                   <div className="flex items-center gap-3">
@@ -557,7 +557,7 @@ export default function DashboardPage() {
                   <CardTitle className="text-base font-bold">Recent Store Activity & Movement</CardTitle>
                   <CardDescription>Latest material receipts, line issuances, and outbound consignments</CardDescription>
                 </div>
-                <Link href="/store/reports">
+                <Link to="/store/reports">
                   <Button variant="ghost" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5" />}>
                     View All
                   </Button>
@@ -585,7 +585,7 @@ export default function DashboardPage() {
                   </CardTitle>
                   <CardDescription>Items below safety threshold</CardDescription>
                 </div>
-                <Link href="/store/low-stock">
+                <Link to="/store/low-stock">
                   <Badge variant="warning" size="sm">Monitor</Badge>
                 </Link>
               </div>

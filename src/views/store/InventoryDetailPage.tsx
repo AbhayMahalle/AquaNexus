@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -291,25 +291,25 @@ export default function InventoryDetailPage() {
               <CardDescription>Direct transactions for this item</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/store/stock-in" className="block">
+              <Link to="/store/stock-in" className="block">
                 <Button variant="primary" size="sm" fullWidth leftIcon={<ArrowDownToLine className="w-4 h-4" />}>
                   Receive Stock In
                 </Button>
               </Link>
 
-              <Link href="/store/stock-out" className="block">
+              <Link to="/store/stock-out" className="block">
                 <Button variant="outline" size="sm" fullWidth leftIcon={<ArrowUpFromLine className="w-4 h-4" />}>
                   Issue to Production
                 </Button>
               </Link>
 
-              <Link href="/store/low-stock" className="block">
+              <Link to="/store/low-stock" className="block">
                 <Button variant="ghost" size="sm" fullWidth leftIcon={<AlertTriangle className="w-4 h-4 text-[#D97706]" />}>
                   Threshold Settings
                 </Button>
               </Link>
 
-              <Link href="/store/reports" className="block">
+              <Link to="/store/reports" className="block">
                 <Button variant="ghost" size="sm" fullWidth leftIcon={<Boxes className="w-4 h-4 text-[#64748B]" />}>
                   Valuation Ledger
                 </Button>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -107,7 +107,7 @@ export default function InventoryListPage() {
       header: 'Action',
       align: 'right',
       render: (r) => (
-        <Link href={`/store/inventory/${r.id}`}>
+        <Link to={`/store/inventory/${r.id}`}>
           <Button variant="outline" size="sm" rightIcon={<ChevronRight className="w-3.5 h-3.5" />}>
             View Details
           </Button>

@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { getDashboardRoute, getNavigationForUser } from '@/lib/navigation';
@@ -153,7 +153,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         )}
       >
         <div className="flex items-center justify-between h-16 px-5 border-b bg-white border-gray-200">
-          <Link href={user ? getDashboardRoute(user.role) : '/'} className="flex items-center gap-2.5 group">
+          <Link to={user ? getDashboardRoute(user.role) : '/'} className="flex items-center gap-2.5 group">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg group-hover:scale-105 transition-transform bg-orange-50 text-orange-600 border border-orange-200">
               <Droplets className="w-4 h-4 fill-orange-200 text-orange-600" />
             </div>
@@ -205,7 +205,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    to={item.href}
                     onClick={handleLinkClick}
                     className={cn(
                       'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-150 group border',

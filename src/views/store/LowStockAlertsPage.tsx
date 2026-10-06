@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -233,7 +233,7 @@ export default function LowStockAlertsPage() {
             Requisition
           </Button>
 
-          <Link href={`/store/inventory/${r.id}`}>
+          <Link to={`/store/inventory/${r.id}`}>
             <Button variant="ghost" size="sm">
               <ExternalLink className="w-3.5 h-3.5 text-[#64748B]" />
             </Button>

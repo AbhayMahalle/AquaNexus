@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { ChevronRight, Home } from 'lucide-react';
@@ -45,7 +45,7 @@ export function PageHeader({
     <div className={cn('mb-5 sm:mb-6 space-y-2.5 pb-4 border-b border-border', className)}>
       {effectiveBreadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1.5 text-xs text-textSecondary flex-wrap">
-          <Link href="/admin/dashboard" className="hover:text-primary transition-colors flex items-center gap-1">
+          <Link to="/admin/dashboard" className="hover:text-primary transition-colors flex items-center gap-1">
             <Home className="w-3.5 h-3.5" />
             <span>Home</span>
           </Link>
@@ -53,7 +53,7 @@ export function PageHeader({
             <React.Fragment key={idx}>
               <ChevronRight className="w-3.5 h-3.5 text-textMuted" />
               {b.href ? (
-                <Link href={b.href} className="hover:text-primary transition-colors">
+                <Link to={b.href} className="hover:text-primary transition-colors">
                   {b.label}
                 </Link>
               ) : (
@@ -77,7 +77,7 @@ export function PageHeader({
           {secondaryActions.map((sec, idx) => {
             if (sec.href) {
               return (
-                <Link key={idx} href={sec.href}>
+                <Link key={idx} to={sec.href}>
                   <Button variant={sec.variant || 'outline'} size="sm" leftIcon={sec.icon} loading={sec.loading} className={sec.className}>
                     {sec.label}
                   </Button>
@@ -92,7 +92,7 @@ export function PageHeader({
           })}
           {primaryAction &&
             (primaryAction.href ? (
-              <Link href={primaryAction.href}>
+              <Link to={primaryAction.href}>
                 <Button variant={primaryAction.variant || 'primary'} size="sm" leftIcon={primaryAction.icon} loading={primaryAction.loading} className={primaryAction.className}>
                   {primaryAction.label}
                 </Button>

@@ -15,7 +15,7 @@ import {
   CheckCircle2, 
   Layers 
 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 
 export default function ManagerDashboardPage() {
   const { user } = useAuth();
@@ -52,7 +52,7 @@ export default function ManagerDashboardPage() {
                   <p className="text-xs text-[#64748B]">Bottling target 85% achieved</p>
                 </div>
                 <div className="flex gap-2">
-                  <Link href="/manager/production" className="w-full">
+                  <Link to="/manager/production" className="w-full">
                     <Button variant="outline" size="sm" fullWidth>Line Details</Button>
                   </Link>
                 </div>
@@ -75,7 +75,7 @@ export default function ManagerDashboardPage() {
                   <p className="text-xs text-[#64748B]">Caps, Preforms, Label stock normal</p>
                 </div>
                 <div className="flex gap-2">
-                  <Link href="/manager/store/inventory" className="w-full">
+                  <Link to="/manager/store/inventory" className="w-full">
                     <Button variant="outline" size="sm" fullWidth>Open Store</Button>
                   </Link>
                 </div>
@@ -98,7 +98,7 @@ export default function ManagerDashboardPage() {
                   <p className="text-xs text-[#64748B]">6 Pending loading vehicles</p>
                 </div>
                 <div className="flex gap-2">
-                  <Link href="/manager/distribution" className="w-full">
+                  <Link to="/manager/distribution" className="w-full">
                     <Button variant="outline" size="sm" fullWidth>Dispatch View</Button>
                   </Link>
                 </div>

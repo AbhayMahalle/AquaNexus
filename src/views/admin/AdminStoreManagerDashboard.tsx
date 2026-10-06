@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { fetchApi } from '@/services/apiClient';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -391,21 +391,21 @@ export default function AdminStoreManagerDashboard() {
               <CardDescription>Direct module access for system admins</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2.5 p-0">
-              <Link href="/store/inventory" className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors border border-transparent hover:border-[#E2E8F0]">
+              <Link to="/store/inventory" className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors border border-transparent hover:border-[#E2E8F0]">
                 <div className="flex items-center gap-2.5">
                   <Boxes className="w-4 h-4 text-[#0F4C81]" />
                   <span className="text-xs font-semibold text-[#172033]">Admin Inventory Master</span>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-[#94A3B8]" />
               </Link>
-              <Link href="/store/stock-in" className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors border border-transparent hover:border-[#E2E8F0]">
+              <Link to="/store/stock-in" className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors border border-transparent hover:border-[#E2E8F0]">
                 <div className="flex items-center gap-2.5">
                   <ArrowDownToLine className="w-4 h-4 text-[#16A34A]" />
                   <span className="text-xs font-semibold text-[#172033]">Purchases & Consignments</span>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-[#94A3B8]" />
               </Link>
-              <Link href="/store/reports" className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors border border-transparent hover:border-[#E2E8F0]">
+              <Link to="/store/reports" className="flex items-center justify-between p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors border border-transparent hover:border-[#E2E8F0]">
                 <div className="flex items-center gap-2.5">
                   <BarChart3 className="w-4 h-4 text-[#2563EB]" />
                   <span className="text-xs font-semibold text-[#172033]">Executive Inventory Reports</span>
