@@ -14,7 +14,6 @@ import { ProfilePage } from '@/pages/shared/ProfilePage';
 import { EmployeeNotificationsPage } from '@/pages/employee/EmployeeNotificationsPage';
 import AdminUsersPage from '@/app/(dashboard)/admin/users/page';
 import AdminRolesPage from '@/app/(dashboard)/admin/roles/page';
-import AdminPermissionsPage from '@/app/(dashboard)/admin/permissions/page';
 import SuperAdminOrganizationsPage from '@/app/(dashboard)/superadmin/organizations/page';
 import AdminStoreManagerDashboardPage from '@/app/(dashboard)/admin/store-manager-oversight/dashboard/page';
 
@@ -67,7 +66,6 @@ import ManagerAccountantDashboardPage from '@/app/(dashboard)/manager/accountant
 import StoreDashboardPage from '@/app/(dashboard)/store/dashboard/page';
 import StoreInventoryPage from '@/app/(dashboard)/store/inventory/page';
 import StoreInventoryDetailPage from '@/app/(dashboard)/store/inventory/[id]/page';
-import StoreLowStockPage from '@/app/(dashboard)/store/low-stock/page';
 import StoreDamagedPage from '@/app/(dashboard)/store/damaged/page';
 import StoreReturnsPage from '@/app/(dashboard)/store/returns/page';
 import StoreStockInPage from '@/app/(dashboard)/store/stock-in/page';
@@ -141,7 +139,6 @@ export function AppRoutes() {
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/roles" element={<AdminRolesPage />} />
-        <Route path="/admin/permissions" element={<AdminPermissionsPage />} />
         <Route path="/admin/managers" element={<AdminUsersPage />} />
         <Route path="/admin/employees" element={<EmployeesListPage />} />
         <Route path="/admin/employees/add" element={<AddEmployeePage />} />
@@ -198,7 +195,6 @@ export function AppRoutes() {
         <Route path="/store/inventory" element={<StoreInventoryPage />} />
         <Route path="/store/inventory/:id" element={<StoreInventoryDetailPage />} />
 
-        <Route path="/store/low-stock" element={<StoreLowStockPage />} />
         <Route path="/store/damaged" element={<StoreDamagedPage />} />
         <Route path="/store/returns" element={<StoreReturnsPage />} />
         <Route path="/store/stock-in" element={<StoreStockInPage />} />

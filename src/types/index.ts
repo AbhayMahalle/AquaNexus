@@ -75,7 +75,7 @@ export interface Overtime {
   notes?: string;
 }
 
-export type ProductionStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type ProductionStatus = 'PENDING' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type GoodsReceivedStatus = 'PENDING' | 'RECEIVED';
 
 export interface Production {

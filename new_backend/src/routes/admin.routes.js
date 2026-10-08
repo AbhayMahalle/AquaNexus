@@ -6,6 +6,7 @@ const {
   updateUser,
 } = require("../controllers/user.controller");
 const { getRoles, getPermissions } = require("../controllers/role.controller");
+const { exportErpData } = require("../controllers/report.controller");
 const { requireAuth } = require("../middleware/auth.middleware");
 const { requireTenantContext } = require("../middleware/tenant.middleware");
 const { requireRole } = require("../middleware/rbac.middleware");
@@ -29,5 +30,8 @@ router.patch("/users/:id", ...adminOnly, validateUpdateUser, validate, updateUse
 // Roles & Permissions
 router.get("/roles", ...adminOnly, getRoles);
 router.get("/permissions", ...adminOnly, getPermissions);
+
+// Export ERP
+router.get("/export-erp", ...adminOnly, exportErpData);
 
 module.exports = router;

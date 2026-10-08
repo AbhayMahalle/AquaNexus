@@ -58,6 +58,8 @@ export const attendanceService = {
       attendanceDate: record.date || TODAY,
       status: record.status,
       remarks: record.remarks,
+      checkIn: (record as any).checkIn,
+      checkOut: (record as any).checkOut,
     };
 
     const realResponse = await fetchApi<any>('/attendance', {

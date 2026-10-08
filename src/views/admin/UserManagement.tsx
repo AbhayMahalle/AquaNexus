@@ -44,11 +44,11 @@ const ITEMS_PER_PAGE = 5;
 
 const ROLE_OPTIONS = [
   { label: '👔 Operations Manager', value: 'manager' },
-  { label: '📦 Store & Inventory Manager (RAM)', value: 'store_manager' },
-  { label: '💼 Accountant (YASH)', value: 'accountant' },
-  { label: '🚚 Distributor (NIRANJAN)', value: 'distributor' },
+  { label: '📦 Store & Inventory Manager', value: 'store_manager' },
+  { label: '💼 Accountant', value: 'accountant' },
+  { label: '🚚 Distributor', value: 'distributor' },
   { label: '🏭 Vendor / Supplier', value: 'supplier' },
-  { label: '⚙️ Line Operator / Plant Staff', value: 'employee' },
+  { label: '⚙️ Employee', value: 'employee' },
 ];
 
 const ROLE_VARIANTS: Record<UserRole, 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'neutral'> = {
@@ -163,14 +163,7 @@ export default function UserManagementPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const roleMap: Record<string, string> = {
-    admin: '9fef54ac-4b08-4213-a6b7-4272d193d818',
-    manager: 'b554c73c-16b8-40f8-ba3a-298d3af39e89',
-    store_manager: 'c2dcdbe3-2766-4f86-b8d3-adf1005b6827',
-    accountant: 'bae5fff7-59b5-47c6-9d7f-73bfc0dfa773',
-    distributor: '8af0c503-111a-465d-a8d2-91f0c95b5e14',
-    employee: '4f4d72be-c828-4759-abc8-f1e341bb16ca',
-  };
+
 
   // Create user
   const handleCreate = async () => {
@@ -225,7 +218,7 @@ export default function UserManagementPage() {
       const names = formData.name.trim().split(/\s+/);
       const firstName = names[0];
       const lastName = names.slice(1).join(' ') || firstName;
-      const roleId = roleMap[formData.role] || roleMap.admin;
+      const roleId = formData.role.toUpperCase();
 
       const res = await fetchApi<any>(`/users/${selectedUser.id}`, {
         method: 'PATCH',

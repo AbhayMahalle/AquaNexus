@@ -5,7 +5,7 @@ const validateCreateUser = [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('firstName').notEmpty().withMessage('First name is required').trim(),
   body('lastName').notEmpty().withMessage('Last name is required').trim(),
-  body('roleId').isUUID().withMessage('Valid Role ID (UUID) is required'),
+  body('roleId').notEmpty().withMessage('Role is required').trim(),
   body('phone').optional().isString().trim(),
   body('username').optional().isString().trim()
 ];
@@ -16,7 +16,7 @@ const validateUpdateUser = [
   body('password').optional().isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('firstName').optional().notEmpty().withMessage('First name cannot be empty').trim(),
   body('lastName').optional().notEmpty().withMessage('Last name cannot be empty').trim(),
-  body('roleId').optional().isUUID().withMessage('Valid Role ID (UUID) is required'),
+  body('roleId').optional().notEmpty().withMessage('Role is required').trim(),
   body('status').optional().isIn(['ACTIVE', 'INACTIVE', 'SUSPENDED']).withMessage('Status must be ACTIVE, INACTIVE, or SUSPENDED'),
   body('phone').optional().isString().trim(),
   body('username').optional().isString().trim()

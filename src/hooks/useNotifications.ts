@@ -77,16 +77,13 @@ export function useNotifications() {
     setIsLoading(true);
     try {
       const res = await apiClient.getNotifications();
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.success && Array.isArray(res.data)) {
         setNotifications(res.data);
       } else {
-        // Fall back to role-aware demo data
-        const demo = DEMO_NOTIFICATIONS[user.role] || DEMO_NOTIFICATIONS['employee'];
-        setNotifications(demo);
+        setNotifications([]);
       }
     } catch {
-      const demo = DEMO_NOTIFICATIONS[user.role] || DEMO_NOTIFICATIONS['employee'];
-      setNotifications(demo);
+      setNotifications([]);
     } finally {
       setIsLoading(false);
     }

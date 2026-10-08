@@ -142,11 +142,13 @@ const recordAttendance = async (req, res) => {
       const dateObj = new Date(item.attendanceDate);
 
       let empId = item.employeeId;
+      let targetUserId = null;
       if (req.user && req.user.role?.name === 'EMPLOYEE') {
         if (!req.user.employee || !req.user.employee.id) {
           return sendError(res, 'Employee profile not found for this user', 403);
         }
         empId = req.user.employee.id;
+        targetUserId = req.user.id;
       } else {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.employeeId);
         const emp = await prisma.employee.findFirst({
@@ -158,6 +160,7 @@ const recordAttendance = async (req, res) => {
           return sendError(res, `Employee ${item.employeeId} not found in your organization`, 404);
         }
         empId = emp.id;
+        targetUserId = emp.userId;
       }
 
       const parsedCheckIn = parseDateTime(item.checkIn, dateObj);
@@ -196,6 +199,22 @@ const recordAttendance = async (req, res) => {
           }
         }
       });
+      
+      if (targetUserId && targetUserId !== req.user.id) {
+        try {
+          await prisma.notification.create({
+            data: {
+              organizationId: req.organizationId,
+              userId: targetUserId,
+              title: 'Attendance Updated',
+              message: `Your attendance for ${dateObj.toLocaleDateString()} was marked as ${item.status}.`,
+              type: 'INFO'
+            }
+          });
+        } catch (e) {
+          console.error("Failed to create notification:", e);
+        }
+      }
       results.push(record);
     }
 

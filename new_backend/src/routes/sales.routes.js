@@ -4,6 +4,7 @@ const {
   createSale,
   getReturns,
   createReturn,
+  updateReturnStatus,
 } = require("../controllers/sales.controller");
 const { requireAuth } = require("../middleware/auth.middleware");
 const { requireRole } = require("../middleware/rbac.middleware");
@@ -38,4 +39,11 @@ router.post(
   requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "STORE_MANAGER"]),
   createReturn,
 );
+router.patch(
+  "/returns/:id/status",
+  salesGuards,
+  requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "STORE_MANAGER"]),
+  updateReturnStatus,
+);
 module.exports = router;
+

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -22,7 +22,10 @@ import {
   Clock,
   Eye,
   CheckCircle2,
-  Trash2
+  Trash2,
+  Edit2,
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react';
 
 export interface DamagedItemRecord {
@@ -30,13 +33,13 @@ export interface DamagedItemRecord {
   incidentNumber: string;
   productName: string;
   sku?: string;
-  quantity: string | number;
+  quantity: number;
   unit: string;
   damageReason: string;
   damageType: 'cracked_jar' | 'defective_cap' | 'broken_preform' | 'chemical_expired' | 'transit_loss';
   date: string;
   reportedBy: string;
-  status: 'approved_writeoff' | 'pending_review' | 'disposed' | 'rejected';
+  status: 'REPORTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'DISPOSED';
   notes?: string;
 }
 
@@ -49,13 +52,19 @@ export default function DamagedGoodsPage() {
   // Modal states
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [selectedDamage, setSelectedDamage] = useState<DamagedItemRecord | null>(null);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
-  // Form states
+  // Status update states
+  const [updateStatus, setUpdateStatus] = useState<DamagedItemRecord['status']>('UNDER_REVIEW');
+  const [updateRemarks, setUpdateRemarks] = useState('');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Report Form states
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [formIncidentNo, setFormIncidentNo] = useState('');
   const [formQuantity, setFormQuantity] = useState('');
-  const [formType, setFormType] = useState<'cracked_jar' | 'defective_cap' | 'broken_preform' | 'chemical_expired' | 'transit_loss'>('cracked_jar');
+  const [formType, setFormType] = useState<DamagedItemRecord['damageType']>('cracked_jar');
   const [formReason, setFormReason] = useState('');
   const [formNotes, setFormNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,10 +75,10 @@ export default function DamagedGoodsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Load products list
-  React.useEffect(() => {
+  // Load products list from real database
+  useEffect(() => {
     async function loadProducts() {
-      const res = await apiRequest<any>('/api/products');
+      const res = await apiRequest<any>('/api/products?limit=100');
       if (res.ok && res.data) {
         const list = res.data.products || (Array.isArray(res.data) ? res.data : []);
         setProducts(list);
@@ -81,8 +90,8 @@ export default function DamagedGoodsPage() {
     loadProducts();
   }, []);
 
-  // Load damaged records
-  const loadDamagedRecords = React.useCallback(async () => {
+  // Load damaged records from backend
+  const loadDamagedRecords = useCallback(async () => {
     setIsLoading(true);
     try {
       const q = new URLSearchParams();
@@ -102,18 +111,22 @@ export default function DamagedGoodsPage() {
           else if (ref.includes('transit') || rem.includes('transit') || rem.includes('transport')) damageType = 'transit_loss';
           else damageType = 'cracked_jar';
 
+          const rawStatus = (tx.status || 'REPORTED').toUpperCase().replace(/[-\s]/g, '_');
+          const validStatuses = ['REPORTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'DISPOSED'];
+          const normStatus = validStatuses.includes(rawStatus) ? rawStatus : 'REPORTED';
+
           return {
             id: tx.id,
             incidentNumber: tx.referenceId || `DMG-${tx.id.slice(0, 8).toUpperCase()}`,
             productName: tx.product?.name || 'Damaged Product',
             sku: tx.product?.sku || '--',
-            quantity: tx.quantity,
+            quantity: Number(tx.quantity),
             unit: tx.product?.unit || 'Units',
             damageReason: tx.remarks || 'Stock write-off',
             damageType,
             date: new Date(tx.createdAt).toLocaleDateString(),
             reportedBy: tx.creator ? `${tx.creator.firstName || ''} ${tx.creator.lastName || ''}`.trim() : 'Store Staff',
-            status: 'approved_writeoff',
+            status: normStatus as DamagedItemRecord['status'],
             notes: tx.remarks || '',
           };
         });
@@ -129,11 +142,101 @@ export default function DamagedGoodsPage() {
     }
   }, [currentPage]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadDamagedRecords();
   }, [loadDamagedRecords]);
 
-  const filteredRecords = React.useMemo(() => {
+  // Open Status Update Modal
+  const handleOpenStatusModal = (record: DamagedItemRecord) => {
+    setSelectedDamage(record);
+    setUpdateStatus(record.status);
+    setUpdateRemarks(record.notes || '');
+    setIsStatusModalOpen(true);
+  };
+
+  // Submit Status Update
+  const handleStatusUpdateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDamage) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      const res = await apiRequest<any>(`/api/stock-transactions/${selectedDamage.id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: updateStatus,
+          remarks: updateRemarks.trim() || undefined,
+        }),
+      });
+
+      if (res.ok) {
+        showToast(
+          updateStatus === 'REJECTED'
+            ? 'Damage claim rejected: stock has been safely restored to inventory.'
+            : `Damaged goods status updated to ${updateStatus} successfully!`,
+          'success'
+        );
+        setIsStatusModalOpen(false);
+        setSelectedDamage(null);
+        await loadDamagedRecords();
+      } else {
+        showToast(res.error || 'Failed to update damaged item status', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error updating damaged goods status', 'error');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Submit Damaged Entry
+  const handleEntrySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProductId || !formQuantity) {
+      showToast('Please select a product and enter quantity', 'error');
+      return;
+    }
+
+    const qty = parseInt(formQuantity, 10);
+    if (isNaN(qty) || qty <= 0) {
+      showToast('Quantity must be a positive integer greater than 0', 'error');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await apiRequest<any>('/api/stock-transactions', {
+        method: 'POST',
+        body: JSON.stringify({
+          productId: selectedProductId,
+          transactionType: 'DAMAGED',
+          quantity: qty,
+          referenceType: formType,
+          status: 'REPORTED',
+          referenceId: formIncidentNo.trim() || `DMG-${Date.now().toString().slice(-6)}`,
+          remarks: `${formReason || 'Physical damage detected'}. Notes: ${formNotes}`,
+        }),
+      });
+
+      if (res.ok) {
+        showToast('Damaged stock write-off reported successfully! Inventory decremented.', 'success');
+        setIsEntryModalOpen(false);
+        setFormIncidentNo('');
+        setFormQuantity('');
+        setFormReason('');
+        setFormNotes('');
+        await loadDamagedRecords();
+      } else {
+        showToast(res.error || 'Failed to record damaged stock', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error reporting damaged stock', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredRecords = useMemo(() => {
     return damagedRecords.filter((r) => {
       if (searchQuery.trim()) {
         const query = searchQuery.trim().toLowerCase();
@@ -152,30 +255,15 @@ export default function DamagedGoodsPage() {
         return false;
       }
 
-      if (statusFilter !== 'all' && r.status !== statusFilter) {
-        return false;
+      if (statusFilter !== 'all') {
+        if (r.status !== statusFilter) {
+          return false;
+        }
       }
 
       return true;
     });
   }, [damagedRecords, searchQuery, typeFilter, statusFilter]);
-
-  const typeOptions = [
-    { label: 'All Damage Classifications', value: 'all' },
-    { label: 'Cracked / Leaking 20L Jars', value: 'cracked_jar' },
-    { label: 'Deformed / Broken Preforms', value: 'broken_preform' },
-    { label: 'Defective Caps & Closures', value: 'defective_cap' },
-    { label: 'Expired Water Treatment Chemical', value: 'chemical_expired' },
-    { label: 'Transit / Loading Impact Damage', value: 'transit_loss' },
-  ];
-
-  const statusOptions = [
-    { label: 'All Statuses', value: 'all' },
-    { label: 'Approved Write-off', value: 'approved_writeoff' },
-    { label: 'Pending Store Manager Review', value: 'pending_review' },
-    { label: 'Disposed / Scrapped', value: 'disposed' },
-    { label: 'Claim Rejected', value: 'rejected' },
-  ];
 
   const columns: Column<DamagedItemRecord>[] = [
     {
@@ -186,12 +274,12 @@ export default function DamagedGoodsPage() {
           <Clock className="w-3.5 h-3.5 text-[#94A3B8]" />
           <span>{r.date}</span>
         </div>
-      )
+      ),
     },
     {
       key: 'incidentNumber',
       header: 'Incident / Ref #',
-      render: (r) => <span className="font-mono font-bold text-xs text-[#DC2626]">{r.incidentNumber}</span>
+      render: (r) => <span className="font-mono font-bold text-xs text-[#DC2626]">{r.incidentNumber}</span>,
     },
     {
       key: 'productName',
@@ -201,117 +289,63 @@ export default function DamagedGoodsPage() {
           <span className="font-bold text-[#172033] block">{r.productName}</span>
           {r.sku && <span className="text-[11px] font-mono text-[#64748B]">SKU: {r.sku}</span>}
         </div>
-      )
-    },
-    {
-      key: 'damageType',
-      header: 'Damage Classification',
-      render: (r) => {
-        const typeLabels: Record<string, string> = {
-          cracked_jar: 'Cracked 20L Jar',
-          broken_preform: 'Broken Preform',
-          defective_cap: 'Defective Cap',
-          chemical_expired: 'Chemical Expired',
-          transit_loss: 'Transit Loss',
-        };
-        return <Badge variant="danger" size="sm">{typeLabels[r.damageType] || r.damageType}</Badge>;
-      }
+      ),
     },
     {
       key: 'quantity',
-      header: 'Quantity',
+      header: 'Damaged Qty',
       render: (r) => (
         <span className="font-mono font-bold text-xs text-[#DC2626]">
           {r.quantity} {r.unit}
         </span>
-      )
-    },
-    {
-      key: 'damageReason',
-      header: 'Reason / Root Cause',
-      render: (r) => <span className="text-xs text-[#172033]">{r.damageReason}</span>
+      ),
     },
     {
       key: 'reportedBy',
       header: 'Reported By',
-      render: (r) => <span className="text-xs text-[#64748B]">{r.reportedBy}</span>
+      render: (r) => <span className="text-xs text-[#172033] font-medium">{r.reportedBy}</span>,
     },
     {
       key: 'status',
       header: 'Status',
       render: (r) => {
         const statusMap: Record<string, { variant: 'danger' | 'warning' | 'neutral' | 'success'; label: string }> = {
-          approved_writeoff: { variant: 'warning', label: 'APPROVED LOSS' },
-          pending_review: { variant: 'neutral', label: 'UNDER REVIEW' },
-          disposed: { variant: 'danger', label: 'DISPOSED' },
-          rejected: { variant: 'success', label: 'REJECTED' },
+          REPORTED: { variant: 'neutral', label: 'REPORTED' },
+          UNDER_REVIEW: { variant: 'warning', label: 'UNDER REVIEW' },
+          APPROVED: { variant: 'danger', label: 'APPROVED LOSS' },
+          DISPOSED: { variant: 'danger', label: 'DISPOSED' },
+          REJECTED: { variant: 'success', label: 'CLAIM REJECTED' },
         };
         const config = statusMap[r.status] || { variant: 'neutral', label: r.status };
         return <Badge variant={config.variant} size="sm">{config.label}</Badge>;
-      }
+      },
     },
     {
       key: 'actions',
       header: 'Action',
       align: 'right',
       render: (r) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSelectedDamage(r)}
-          leftIcon={<Eye className="w-3.5 h-3.5" />}
-        >
-          Details
-        </Button>
-      )
-    }
+        <div className="flex items-center justify-end gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleOpenStatusModal(r)}
+            leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+          >
+            Update Status
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedDamage(r)}
+            leftIcon={<Eye className="w-3.5 h-3.5" />}
+          >
+            Details
+          </Button>
+        </div>
+      ),
+    },
   ];
-
-  const handleResetFilters = () => {
-    setSearchQuery('');
-    setTypeFilter('all');
-    setStatusFilter('all');
-    setCurrentPage(1);
-  };
-
-  const handleEntrySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProductId || !formQuantity) {
-      showToast('Please select a product and enter quantity', 'error');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const res = await apiRequest<any>('/api/stock-transactions', {
-        method: 'POST',
-        body: JSON.stringify({
-          productId: selectedProductId,
-          transactionType: 'DAMAGED',
-          quantity: Number(formQuantity),
-          referenceType: formType,
-          referenceId: formIncidentNo.trim() || `DMG-${Date.now()}`,
-          remarks: `${formReason}. Notes: ${formNotes}`,
-        }),
-      });
-
-      if (res.ok) {
-        showToast('Damage write-off recorded successfully!', 'success');
-        setIsEntryModalOpen(false);
-        setFormIncidentNo('');
-        setFormQuantity('');
-        setFormReason('');
-        setFormNotes('');
-        loadDamagedRecords();
-      } else {
-        showToast(res.error || 'Failed to record damaged stock', 'error');
-      }
-    } catch (err: any) {
-      showToast(err.message || 'Error reporting damaged stock', 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <AuthGuard allowedRoles={['admin', 'manager', 'store_manager']}>
@@ -319,12 +353,17 @@ export default function DamagedGoodsPage() {
         {/* Page Header */}
         <PageHeader
           title="Damaged & Scrap Stock Write-offs"
-          description="Log damaged bottles, cracked jars, defective preforms, and expired chemicals for write-off and scrap disposal."
+          description="Log damaged bottles, cracked jars, defective preforms, and expired chemicals for review and scrap disposal."
           breadcrumbs={[
             { label: 'Store', href: '/store/dashboard' },
             { label: 'Damaged Goods' }
           ]}
           secondaryActions={[
+            {
+              label: 'Manage Products',
+              href: '/store/products',
+              icon: <Package className="w-4 h-4" />,
+            },
             {
               label: 'Store Inventory',
               href: '/store/inventory',
@@ -348,61 +387,81 @@ export default function DamagedGoodsPage() {
                   placeholder="Search by Incident #, material, or reason..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  leftIcon={<Search className="w-4 h-4" />}
+                  leftIcon={<Search className="w-4 h-4 text-[#94A3B8]" />}
                 />
               </div>
 
               <div>
                 <Select
-                  label="Damage Type"
+                  label="Filter by Classification"
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  options={typeOptions}
+                  options={[
+                    { label: 'All Damage Classifications', value: 'all' },
+                    { label: 'Cracked / Leaking 20L Jars', value: 'cracked_jar' },
+                    { label: 'Deformed / Broken Preforms', value: 'broken_preform' },
+                    { label: 'Defective Caps & Closures', value: 'defective_cap' },
+                    { label: 'Expired Water Treatment Chemical', value: 'chemical_expired' },
+                    { label: 'Transit / Loading Impact Damage', value: 'transit_loss' },
+                  ]}
                 />
               </div>
 
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <Select
-                    label="Write-off Status"
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    options={statusOptions}
-                  />
-                </div>
-
-                {(searchQuery || typeFilter !== 'all' || statusFilter !== 'all') && (
-                  <Button
-                    variant="ghost"
-                    size="md"
-                    onClick={handleResetFilters}
-                    title="Reset filters"
-                    className="shrink-0 text-xs px-2.5"
-                  >
-                    <FilterX className="w-4 h-4 text-[#64748B]" />
-                  </Button>
-                )}
+              <div>
+                <Select
+                  label="Filter by Status"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  options={[
+                    { label: 'All Statuses', value: 'all' },
+                    { label: 'Reported', value: 'REPORTED' },
+                    { label: 'Under Review', value: 'UNDER_REVIEW' },
+                    { label: 'Approved Write-off', value: 'APPROVED' },
+                    { label: 'Disposed / Scrapped', value: 'DISPOSED' },
+                    { label: 'Claim Rejected', value: 'REJECTED' },
+                  ]}
+                />
               </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#E2E8F0]">
+              <span className="text-xs text-[#64748B]">
+                Showing <strong className="text-[#172033]">{filteredRecords.length}</strong> incident records
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setTypeFilter('all');
+                  setStatusFilter('all');
+                  setCurrentPage(1);
+                }}
+                leftIcon={<FilterX className="w-3.5 h-3.5" />}
+              >
+                Clear Filters
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Damaged Ledger Table */}
+        {/* Damaged Goods Ledger Table */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <CardTitle className="text-base font-bold flex items-center gap-2">
                   <AlertOctagon className="w-5 h-5 text-[#DC2626]" />
-                  <span>Damaged & Scrap Write-off Registry</span>
+                  <span>Damaged Goods & Loss Log</span>
                 </CardTitle>
                 <CardDescription>
-                  Loss accounting entries tracking physical damage before inventory adjustment approval.
+                  Tracking write-offs, review status, and disposal stages for defective store assets.
                 </CardDescription>
               </div>
 
               <Badge variant="danger" size="sm">
-                Loss Tracking Active
+                Loss Tracking
               </Badge>
             </div>
           </CardHeader>
@@ -411,63 +470,41 @@ export default function DamagedGoodsPage() {
               columns={columns}
               data={filteredRecords}
               loading={isLoading}
-              emptyText="No damaged items recorded"
-              emptyDescription="No damage incident reports found. Click 'Report Damaged Items' to log defective jars, preforms, or expired chemicals."
+              emptyText="No damaged item records found"
+              emptyDescription="No damage records match your filter criteria. Click 'Report Damaged Items' to log defective stock."
             />
-
             {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                itemsPerPage={10}
-                onPageChange={(p) => setCurrentPage(p)}
-              />
+              <div className="p-4 border-t border-[#E2E8F0] flex items-center justify-between">
+                <span className="text-xs text-[#64748B]">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(p) => setCurrentPage(p)}
+                />
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Modal: Report Damaged Items */}
+        {/* Modal: Report Damaged Stock */}
         <Modal
           isOpen={isEntryModalOpen}
           onClose={() => setIsEntryModalOpen(false)}
           title={
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-[#DC2626]">
               <AlertOctagon className="w-5 h-5 text-[#DC2626]" />
-              <span>Report Damaged Stock Incident</span>
+              <span>Report Damaged Stock / Material</span>
             </div>
           }
-          description="Log damaged materials for write-off and audit review."
+          description="Log damaged bottles, cracked jars, or scrap material for manager review and write-off."
           size="lg"
         >
           <form onSubmit={handleEntrySubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Damage Incident #"
-                required
-                placeholder="e.g. DMG-2026-0012"
-                value={formIncidentNo}
-                onChange={(e) => setFormIncidentNo(e.target.value)}
-              />
-
               <Select
-                label="Damage Classification"
-                required
-                value={formType}
-                onChange={(e) => setFormType(e.target.value as any)}
-                options={[
-                  { label: 'Cracked / Leaking 20L Jar', value: 'cracked_jar' },
-                  { label: 'Broken / Deformed Preforms', value: 'broken_preform' },
-                  { label: 'Defective Caps & Closures', value: 'defective_cap' },
-                  { label: 'Expired Chemical Reagent', value: 'chemical_expired' },
-                  { label: 'Transit / Handling Impact', value: 'transit_loss' },
-                ]}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Select
-                label="Product / Material Damaged"
+                label="Product / Material"
                 required
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(e.target.value)}
@@ -478,47 +515,54 @@ export default function DamagedGoodsPage() {
               />
 
               <Input
-                label="Observed Cause / Reason"
+                label="Quantity Damaged"
                 required
-                placeholder="e.g. Forklift impact during pallet unloading"
+                type="number"
+                min="1"
+                placeholder="0"
+                value={formQuantity}
+                onChange={(e) => setFormQuantity(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Select
+                label="Damage Classification"
+                value={formType}
+                onChange={(e) => setFormType(e.target.value as any)}
+                options={[
+                  { label: 'Cracked / Leaking 20L Jar', value: 'cracked_jar' },
+                  { label: 'Deformed / Broken Preform', value: 'broken_preform' },
+                  { label: 'Defective Cap / Closure', value: 'defective_cap' },
+                  { label: 'Expired Water Treatment Chemical', value: 'chemical_expired' },
+                  { label: 'Transit / Handling Impact Damage', value: 'transit_loss' },
+                ]}
+              />
+
+              <Input
+                label="Incident / Batch Reference #"
+                placeholder="e.g. INC-2026-081"
+                value={formIncidentNo}
+                onChange={(e) => setFormIncidentNo(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Input
+                label="Specific Reason / Root Cause"
+                required
+                placeholder="e.g. Hairline crack near neck detected during pre-fill inspection"
                 value={formReason}
                 onChange={(e) => setFormReason(e.target.value)}
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label={`Quantity Damaged (${products.find(p => p.id === selectedProductId)?.unit || 'Units'})`}
-                required
-                type="number"
-                placeholder="0"
-                value={formQuantity}
-                onChange={(e) => setFormQuantity(e.target.value)}
-              />
-
-              <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-[#64748B] block">Product SKU</span>
-                  <span className="font-mono font-bold text-[#0F4C81]">
-                    {products.find((p) => p.id === selectedProductId)?.sku || '--'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[#64748B] block">Standard Unit</span>
-                  <span className="font-bold text-[#172033]">
-                    {products.find((p) => p.id === selectedProductId)?.unit || 'Units'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
             <div>
               <Input
-                label="Disposal & Loss Assessment Notes"
-                placeholder="e.g. Water drained, jar scrapped into recycling holding bin"
+                label="Additional Investigation Notes"
+                placeholder="e.g. Segregated into scrap bin #2 awaiting disposal"
                 value={formNotes}
                 onChange={(e) => setFormNotes(e.target.value)}
-                leftIcon={<Trash2 className="w-4 h-4 text-[#64748B]" />}
               />
             </div>
 
@@ -526,30 +570,138 @@ export default function DamagedGoodsPage() {
               <Button variant="outline" size="sm" onClick={() => setIsEntryModalOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="danger" size="sm" type="submit" disabled={isSubmitting} leftIcon={<AlertOctagon className="w-4 h-4" />}>
-                {isSubmitting ? 'Submitting...' : 'Submit Damage Report'}
+              <Button
+                variant="danger"
+                size="sm"
+                type="submit"
+                disabled={isSubmitting}
+                leftIcon={<AlertOctagon className="w-4 h-4" />}
+              >
+                {isSubmitting ? 'Recording...' : 'Report Damage'}
               </Button>
             </div>
           </form>
         </Modal>
 
-        {/* Modal: View Details */}
+        {/* Modal: Update Status */}
         {selectedDamage && (
+          <Modal
+            isOpen={isStatusModalOpen}
+            onClose={() => {
+              setIsStatusModalOpen(false);
+              setSelectedDamage(null);
+            }}
+            title={
+              <div className="flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-[#0F4C81]" />
+                <span>Update Damaged Status: {selectedDamage.incidentNumber}</span>
+              </div>
+            }
+            description="Manage damage incident workflow. If rejected, previously written-off stock will be restored."
+            size="md"
+          >
+            <form onSubmit={handleStatusUpdateSubmit} className="space-y-4">
+              <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-[#64748B]">Material:</span>
+                  <strong className="text-[#172033]">{selectedDamage.productName} ({selectedDamage.sku})</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#64748B]">Quantity:</span>
+                  <strong className="font-mono text-[#DC2626]">{selectedDamage.quantity} {selectedDamage.unit}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#64748B]">Current Status:</span>
+                  <Badge variant="secondary" size="sm">{selectedDamage.status}</Badge>
+                </div>
+              </div>
+
+              <div>
+                <Select
+                  label="Workflow Stage / Status"
+                  required
+                  value={updateStatus}
+                  onChange={(e) => setUpdateStatus(e.target.value as any)}
+                  options={[
+                    { label: 'REPORTED - Newly reported incident', value: 'REPORTED' },
+                    { label: 'UNDER_REVIEW - QA / Store Manager investigating cause', value: 'UNDER_REVIEW' },
+                    { label: 'APPROVED - Write-off loss confirmed', value: 'APPROVED' },
+                    { label: 'DISPOSED - Physical scrap disposal completed', value: 'DISPOSED' },
+                    { label: 'REJECTED - Damage claim rejected (Restores stock to inventory)', value: 'REJECTED' },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="Manager Remarks & Disposal Notes"
+                  placeholder="e.g. Approved scrap write-off. Material sent to recycling facility."
+                  value={updateRemarks}
+                  onChange={(e) => setUpdateRemarks(e.target.value)}
+                />
+              </div>
+
+              {updateStatus === 'REJECTED' && (
+                <div className="p-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl text-xs text-[#166534] flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                  <span>
+                    Setting status to REJECTED will safely reverse the write-off and restore {selectedDamage.quantity} {selectedDamage.unit} back to active inventory.
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#E2E8F0]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsStatusModalOpen(false);
+                    setSelectedDamage(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  type="submit"
+                  disabled={isUpdatingStatus}
+                  leftIcon={<Edit2 className="w-4 h-4" />}
+                >
+                  {isUpdatingStatus ? 'Saving...' : 'Update Status'}
+                </Button>
+              </div>
+            </form>
+          </Modal>
+        )}
+
+        {/* Modal: View Details */}
+        {selectedDamage && !isStatusModalOpen && (
           <Modal
             isOpen={!!selectedDamage}
             onClose={() => setSelectedDamage(null)}
-            title={`Incident Details: ${selectedDamage.incidentNumber}`}
-            description="Damaged stock audit record."
+            title={`Damage Incident: ${selectedDamage.incidentNumber}`}
+            description="Defective material report record."
             footer={
-              <Button variant="outline" size="sm" onClick={() => setSelectedDamage(null)}>
-                Close
-              </Button>
+              <div className="flex items-center justify-between w-full">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleOpenStatusModal(selectedDamage)}
+                  leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+                >
+                  Change Status
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedDamage(null)}>
+                  Close
+                </Button>
+              </div>
             }
           >
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs">
+            <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
                 <div>
-                  <span className="text-[#64748B] block">Product</span>
+                  <span className="text-[#64748B] block">Material</span>
                   <span className="font-bold text-[#172033]">{selectedDamage.productName}</span>
                 </div>
                 <div>
@@ -557,14 +709,29 @@ export default function DamagedGoodsPage() {
                   <span className="font-mono font-bold text-[#DC2626]">{selectedDamage.quantity} {selectedDamage.unit}</span>
                 </div>
                 <div>
-                  <span className="text-[#64748B] block">Reason</span>
-                  <span>{selectedDamage.damageReason}</span>
+                  <span className="text-[#64748B] block">Status</span>
+                  <Badge variant="primary" size="sm">{selectedDamage.status}</Badge>
+                </div>
+                <div>
+                  <span className="text-[#64748B] block">Date</span>
+                  <span>{selectedDamage.date}</span>
                 </div>
                 <div>
                   <span className="text-[#64748B] block">Reported By</span>
                   <span>{selectedDamage.reportedBy}</span>
                 </div>
+                <div>
+                  <span className="text-[#64748B] block">Classification</span>
+                  <span className="capitalize">{selectedDamage.damageType.replace('_', ' ')}</span>
+                </div>
               </div>
+
+              {selectedDamage.damageReason && (
+                <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+                  <span className="text-[#64748B] block mb-1">Reason & Remarks:</span>
+                  <p className="text-[#172033]">{selectedDamage.damageReason}</p>
+                </div>
+              )}
             </div>
           </Modal>
         )}

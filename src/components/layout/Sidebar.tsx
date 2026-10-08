@@ -39,6 +39,7 @@ import {
   User,
   CalendarOff,
   Clock,
+  Boxes,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -57,6 +58,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Clock: <Clock className="w-5 h-5" />,
   Factory: <Factory className="w-5 h-5" />,
   Package: <Package className="w-5 h-5" />,
+  Boxes: <Boxes className="w-5 h-5" />,
   PackagePlus: <PackagePlus className="w-5 h-5" />,
   PackageMinus: <PackageMinus className="w-5 h-5" />,
   PackageCheck: <PackageCheck className="w-5 h-5" />,

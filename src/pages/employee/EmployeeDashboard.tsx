@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { CalendarCheck, CalendarOff, Clock, User as UserIcon, Loader2 } from 'lucide-react';
+import { CalendarCheck, CalendarOff, Clock, User as UserIcon, Loader2, RefreshCw } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -12,27 +12,29 @@ export function EmployeeDashboardPage() {
   const [attendance, setAttendance] = useState<any[]>([]);
   const [leaves, setLeaves] = useState<any[]>([]);
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const [profRes, attRes, levRes] = await Promise.all([
-          apiClient.getMyProfile(),
-          apiClient.getAttendance(),
-          apiClient.getLeaves()
-        ]);
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [profRes, attRes, levRes] = await Promise.all([
+        apiClient.getMyProfile(),
+        apiClient.getAttendance(),
+        apiClient.getLeaves()
+      ]);
 
-        if (profRes.success) setProfile(profRes.data);
-        if (attRes.success) setAttendance(attRes.data);
-        if (levRes.success) setLeaves(levRes.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      if (profRes.success) setProfile(profRes.data);
+      if (attRes.success) setAttendance(attRes.data);
+      if (levRes.success) setLeaves(levRes.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     loadData();
   }, []);
+
 
   const renderContent = () => {
     if (loading) {
@@ -62,6 +64,11 @@ export function EmployeeDashboardPage() {
           title={`Welcome, ${profile?.firstName || 'Employee'}!`}
           description={`${profile?.designation || 'Staff'} • ${profile?.department?.name || 'Department'}`}
           breadcrumbs={[{ label: 'Employee Portal' }]}
+          primaryAction={{
+            label: 'Refresh',
+            icon: <RefreshCw className="w-4 h-4" />,
+            onClick: loadData
+          }}
         />
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -111,11 +118,15 @@ export function EmployeeDashboardPage() {
                       <div className="text-sm font-medium">
                         {new Date(att.attendanceDate).toLocaleDateString()}
                       </div>
-                      <div className="text-sm flex gap-2 items-center">
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${att.status === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {att.status}
-                        </span>
-                        {att.checkIn && <span className="text-gray-500">In: {new Date(att.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+                      <div className="flex flex-col items-end">
+                        <div className="text-sm flex gap-2 items-center">
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${att.status === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {att.status}
+                          </span>
+                          {att.checkIn && <span className="text-gray-500 text-xs">In: {new Date(att.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+                          {att.checkOut && <span className="text-gray-500 text-xs ml-1">Out: {new Date(att.checkOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
+                        </div>
+                        {att.remarks && <span className="text-xs text-gray-500 mt-1 italic">Note: {att.remarks}</span>}
                       </div>
                     </div>
                   ))}

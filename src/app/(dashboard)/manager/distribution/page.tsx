@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -7,38 +7,45 @@ import { Table, Column } from '@/components/ui/Table';
 import { Select } from '@/components/ui/Select';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Truck, AlertCircle } from 'lucide-react';
+import { orderService, Order } from '@/services/orderService';
 import type { OrderStatus } from '@/types/business';
 
-interface OrderRow {
-  orderNo: string;
-  agency: string;
-  route: string;
-  qty: string;
-  status: OrderStatus;
-}
-
-const INITIAL_MOCK_ORDERS: OrderRow[] = [
-  { orderNo: 'ORD-2026-104', agency: 'Star Water Distributors', route: 'Kothrud - Route A', qty: '450 Jars', status: 'DISPATCHED' },
-  { orderNo: 'ORD-2026-105', agency: 'Apex Beverages', route: 'Hadapsar - Route C', qty: '800 Cases (1L)', status: 'PENDING' },
-  { orderNo: 'ORD-2026-106', agency: 'Crystal Springs Agency', route: 'Viman Nagar - Route B', qty: '600 Jars', status: 'DELIVERED' },
-];
-
 export default function ManagerDistributionPage() {
-  const [orders, setOrders] = useState<OrderRow[]>(INITIAL_MOCK_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleStatusChange = async (orderNo: string, newStatus: OrderStatus) => {
-    // Requirements stipulate we MUST NOT fake a backend API or change it.
-    // Since there is no distributionService/orderService, we must report it clearly.
-    setErrorMsg(`API Error: Cannot update status to ${newStatus}. No backend API service found for distribution/orders.`);
-    setTimeout(() => setErrorMsg(null), 5000);
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const data = await orderService.getOrders();
+      setOrders(data);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to fetch orders');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const columns: Column<OrderRow>[] = [
-    { key: 'orderNo', header: 'Dispatch Order', render: (r) => <span className="font-mono font-bold text-[#0F4C81] text-xs">{r.orderNo}</span> },
-    { key: 'agency', header: 'Distributor Agency', render: (r) => <span className="font-bold text-[#172033]">{r.agency}</span> },
-    { key: 'route', header: 'Delivery Route', render: (r) => <span className="text-[#64748B]">{r.route}</span> },
-    { key: 'qty', header: 'Quantity', render: (r) => <span className="font-medium text-[#172033]">{r.qty}</span> },
+  const handleStatusChange = async (id: string, newStatus: OrderStatus) => {
+    try {
+      const updatedOrder = await orderService.updateOrderStatus(id, newStatus);
+      setOrders((prev) => prev.map((o) => (o.id === id ? updatedOrder : o)));
+    } catch (err: any) {
+      setErrorMsg(`API Error: Cannot update status to ${newStatus}. ${err.message}`);
+      setTimeout(() => setErrorMsg(null), 5000);
+    }
+  };
+
+  const columns: Column<Order>[] = [
+    { key: 'orderNumber', header: 'Dispatch Order', render: (r) => <span className="font-mono font-bold text-[#0F4C81] text-xs">{r.orderNumber}</span> },
+    { key: 'agency', header: 'Distributor Agency', render: (r) => <span className="font-bold text-[#172033]">{r.distributor?.name || 'N/A'}</span> },
+    { key: 'route', header: 'Delivery Route', render: (r) => <span className="text-[#64748B]">{r.distributor?.route || 'N/A'}</span> },
+    { key: 'qty', header: 'Quantity', render: (r) => <span className="font-medium text-[#172033]">{r.orderItems?.reduce((acc, curr) => acc + curr.quantity, 0)} Items</span> },
     { 
       key: 'status', 
       header: 'Status', 
@@ -46,14 +53,24 @@ export default function ManagerDistributionPage() {
         <div className="w-40">
           <Select
             value={r.status}
-            onChange={(e) => handleStatusChange(r.orderNo, e.target.value as OrderStatus)}
+            onChange={(e) => handleStatusChange(r.id, e.target.value as OrderStatus)}
             options={[
               { value: 'PENDING', label: 'Pending' },
               { value: 'CONFIRMED', label: 'Confirmed' },
               { value: 'DISPATCHED', label: 'Dispatched' },
               { value: 'DELIVERED', label: 'Delivered' },
               { value: 'CANCELLED', label: 'Cancelled' },
-            ]}
+            ].filter((opt) => {
+              if (opt.value === r.status) return true;
+              const validTransitions: Record<string, string[]> = {
+                'PENDING': ['CONFIRMED', 'CANCELLED'],
+                'CONFIRMED': ['CANCELLED', 'DISPATCHED'],
+                'DISPATCHED': ['DELIVERED'],
+                'DELIVERED': [],
+                'CANCELLED': []
+              };
+              return validTransitions[r.status]?.includes(opt.value);
+            })}
           />
         </div>
       )
@@ -84,7 +101,11 @@ export default function ManagerDistributionPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Table columns={columns} data={orders} keyExtractor={(item) => item.orderNo} />
+            {loading ? (
+              <div className="p-8 text-center text-slate-500">Loading...</div>
+            ) : (
+              <Table columns={columns} data={orders} keyExtractor={(item) => item.id} />
+            )}
           </CardContent>
         </Card>
       </DashboardLayout>

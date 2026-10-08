@@ -3,6 +3,7 @@ const {
   getOrders,
   getOrderById,
   createOrder,
+  updateOrderStatus,
 } = require("../controllers/order.controller");
 const { requireAuth } = require("../middleware/auth.middleware");
 const { requireTenantContext } = require("../middleware/tenant.middleware");
@@ -18,5 +19,6 @@ router.use(requireManagerArea("DISTRIBUTION"));
 router.get("/", getOrders);
 router.post("/", createOrder);
 router.get("/:id", getOrderById);
+router.patch("/:id/status", updateOrderStatus);
 
 module.exports = router;

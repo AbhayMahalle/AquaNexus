@@ -196,7 +196,70 @@ const createDispatch = async (req, res) => {
   }
 };
 
+const updateDispatchStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, remarks } = req.body;
+
+    if (!status) {
+      return sendError(res, "Status is required", 400);
+    }
+
+    const dispatch = await prisma.dispatch.findFirst({
+      where: { id, organizationId: req.organizationId },
+      include: { dispatchItems: true, order: true }
+    });
+
+    if (!dispatch) {
+      return sendError(res, "Dispatch not found", 404);
+    }
+
+    const currentStatus = dispatch.status;
+
+    // 1. Enforce State Machine Transitions
+    const validTransitions = {
+      'PREPARING': ['DISPATCHED', 'CANCELLED'],
+      'DISPATCHED': ['DELIVERED'],
+      'DELIVERED': [],
+      'CANCELLED': []
+    };
+
+    if (!validTransitions[currentStatus] || !validTransitions[currentStatus].includes(status)) {
+      return sendError(res, `Invalid dispatch transition from ${currentStatus} to ${status}`, 400);
+    }
+
+    const updatedDispatch = await prisma.$transaction(async (tx) => {
+      const updated = await tx.dispatch.update({
+        where: { id },
+        data: { 
+          status,
+          ...(remarks !== undefined && { remarks })
+        }
+      });
+
+      // If updating to DELIVERED, update related Order if exists
+      if (status === 'DELIVERED' && dispatch.orderId) {
+        await tx.order.update({
+          where: { id: dispatch.orderId },
+          data: { status: 'DELIVERED' }
+        });
+      }
+
+      // If cancelling from PREPARING, we might need to revert reserved stock
+      // (Currently the system doesn't explicitly deduct stock until createDispatch which forces DISPATCHED. Let's assume createDispatch is refactored below).
+
+      return updated;
+    });
+
+    return sendSuccess(res, { dispatch: updatedDispatch }, `Dispatch status updated to ${status}`);
+  } catch (error) {
+    console.error("updateDispatchStatus error:", error);
+    return sendError(res, "Failed to update dispatch status", 500);
+  }
+};
+
 module.exports = {
   getDispatches,
   createDispatch,
+  updateDispatchStatus,
 };

@@ -201,7 +201,7 @@ const createUser = async (req, res) => {
           organizationId: targetOrgId,
           isSuperAdmin: false,
           superAdminSlot: null,
-          userRoles: { create: { roleId } },
+          userRoles: { create: { roleId: role.id } },
         },
         include: userInclude,
       });
@@ -278,9 +278,10 @@ const updateUser = async (req, res) => {
 
     const user = await prisma.$transaction(async (transaction) => {
       if (roleId) {
-        const role = await transaction.role.findUnique({
-          where: { id: roleId },
-        });
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roleId || '');
+        const role = isUuid
+          ? await transaction.role.findUnique({ where: { id: roleId } })
+          : await transaction.role.findUnique({ where: { name: (roleId || '').toUpperCase() } });
         if (!role) {
           const error = new Error("Role not found");
           error.statusCode = 400;
@@ -295,7 +296,7 @@ const updateUser = async (req, res) => {
         }
 
         await transaction.userRole.deleteMany({ where: { userId: id } });
-        await transaction.userRole.create({ data: { userId: id, roleId } });
+        await transaction.userRole.create({ data: { userId: id, roleId: role.id } });
       }
 
       return transaction.user.update({

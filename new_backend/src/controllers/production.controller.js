@@ -312,20 +312,82 @@ const updateProductionStatus = async (req, res) => {
     }
 
     const existingProduction = await prisma.production.findFirst({
-      where: { id, organizationId: req.organizationId }
+      where: { id, organizationId: req.organizationId },
+      include: { product: true }
     });
+    
     if (!existingProduction) {
       return sendError(res, 'Production record not found', 404);
     }
 
-    const updatedProduction = await prisma.production.update({
-      where: { id },
-      data: {
-        status: resolvedStatus,
-        ...(remarks !== undefined && { remarks })
-      },
-      include: {
-        product: true
+    const currentStatus = existingProduction.status;
+
+    // 1. Enforce State Machine Transitions
+    const validTransitions = {
+      'PLANNED': ['IN_PROGRESS', 'CANCELLED'],
+      'IN_PROGRESS': ['COMPLETED', 'CANCELLED'],
+      'COMPLETED': [], // Terminal state
+      'CANCELLED': [] // Terminal state
+    };
+
+    if (!validTransitions[currentStatus].includes(resolvedStatus)) {
+      return sendError(res, `Invalid transition from ${currentStatus} to ${resolvedStatus}`, 400);
+    }
+
+    // Ensure remarks provided if cancelling from IN_PROGRESS
+    if (currentStatus === 'IN_PROGRESS' && resolvedStatus === 'CANCELLED' && !remarks) {
+      return sendError(res, 'Remarks are required when cancelling an in-progress batch', 400);
+    }
+
+    // 2. Perform DB updates in transaction if needed
+    let updatedProduction;
+
+    await prisma.$transaction(async (tx) => {
+      updatedProduction = await tx.production.update({
+        where: { id },
+        data: {
+          status: resolvedStatus,
+          ...(remarks !== undefined && { remarks })
+        },
+        include: { product: true }
+      });
+
+      // If completing, we need to create a stock transaction and update inventory
+      if (resolvedStatus === 'COMPLETED') {
+        const creatorId = req.user ? req.user.id : existingProduction.createdBy;
+        
+        await tx.stockTransaction.create({
+          data: {
+            organizationId: req.organizationId,
+            productId: existingProduction.productId,
+            transactionType: 'PRODUCTION_RECEIPT',
+            quantity: existingProduction.quantity,
+            referenceType: 'PRODUCTION',
+            referenceId: existingProduction.id,
+            status: 'COMPLETED',
+            remarks: 'Auto-generated from completed production batch',
+            createdBy: creatorId
+          }
+        });
+
+        const inventory = await tx.inventory.findFirst({
+          where: { productId: existingProduction.productId, organizationId: req.organizationId }
+        });
+
+        if (inventory) {
+          await tx.inventory.update({
+            where: { id: inventory.id },
+            data: { quantity: { increment: existingProduction.quantity } }
+          });
+        } else {
+          await tx.inventory.create({
+            data: {
+              organizationId: req.organizationId,
+              productId: existingProduction.productId,
+              quantity: existingProduction.quantity
+            }
+          });
+        }
       }
     });
 

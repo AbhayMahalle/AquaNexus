@@ -56,6 +56,7 @@ export const ProductionDetailPage: React.FC = () => {
     COMPLETED: 'success',
     IN_PROGRESS: 'warning',
     PENDING: 'info',
+    PLANNED: 'info',
     CANCELLED: 'danger',
   };
 
@@ -146,23 +147,44 @@ export const ProductionDetailPage: React.FC = () => {
               <p className="text-xs text-text-secondary">Update Batch Progression:</p>
               <div className="flex items-center gap-2">
                 {batch.status === 'IN_PROGRESS' && (
-                  <Button
-                    variant="success"
-                    size="sm"
-                    onClick={() => handleStatusUpdate('COMPLETED')}
-                    icon={<CheckCircle2 className="w-4 h-4" />}
-                  >
-                    Mark Batch Completed
-                  </Button>
+                  <>
+                    <Button
+                      variant="success"
+                      size="sm"
+                      onClick={() => handleStatusUpdate('COMPLETED')}
+                      icon={<CheckCircle2 className="w-4 h-4" />}
+                    >
+                      Mark Batch Completed
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => {
+                        const reason = prompt('Reason for cancellation?');
+                        if (reason) handleStatusUpdate('CANCELLED');
+                      }}
+                    >
+                      Cancel Batch
+                    </Button>
+                  </>
                 )}
-                {batch.status === 'PENDING' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleStatusUpdate('IN_PROGRESS')}
-                  >
-                    Start Production
-                  </Button>
+                {(batch.status === 'PENDING' || batch.status === 'PLANNED') && (
+                  <>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleStatusUpdate('IN_PROGRESS')}
+                    >
+                      Start Production
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleStatusUpdate('CANCELLED')}
+                    >
+                      Cancel
+                    </Button>
+                  </>
                 )}
               </div>
             </div>

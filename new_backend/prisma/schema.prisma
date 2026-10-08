@@ -153,6 +153,8 @@ enum ReturnStatus {
   REJECTED
   RECEIVED
   CANCELLED
+  INSPECTED
+  COMPLETED
 }
 
 enum ReturnCondition {
@@ -587,6 +589,7 @@ model StockTransaction {
   quantity        Int
   referenceType   String?         @map("reference_type") @db.VarChar(50)
   referenceId     String?         @map("reference_id") @db.Uuid
+  status          String?         @default("COMPLETED") @db.VarChar(50)
   remarks         String?
   createdBy       String          @map("created_by") @db.Uuid
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz()
@@ -609,6 +612,7 @@ model GoodsReceived {
   productionId   String   @map("production_id") @db.Uuid
   quantity       Int
   receivedDate   DateTime @map("received_date") @db.Date
+  status         String   @default("RECEIVED") @db.VarChar(50)
   receivedBy     String   @map("received_by") @db.Uuid
   remarks        String?
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
@@ -1360,4 +1364,5 @@ model P2PPayment {
   @@index([vendorInvoiceId])
   @@map("p2p_payments")
 }
+
 

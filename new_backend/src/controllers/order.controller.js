@@ -198,8 +198,65 @@ const createOrder = async (req, res) => {
   }
 };
 
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, remarks } = req.body;
+    
+    if (!status) {
+      return sendError(res, "Status is required", 400);
+    }
+
+    const order = await prisma.order.findFirst({
+      where: { id, organizationId: req.organizationId },
+    });
+
+    if (!order) {
+      return sendError(res, "Order not found", 404);
+    }
+
+    const currentStatus = order.status;
+
+    // 1. Enforce State Machine Transitions
+    const validTransitions = {
+      'PENDING': ['CONFIRMED', 'CANCELLED'],
+      'CONFIRMED': ['CANCELLED', 'DISPATCHED'], // DISPATCHED is typically set by the Dispatch module
+      'DISPATCHED': ['DELIVERED'], // Typically set by the Dispatch module
+      'DELIVERED': [],
+      'CANCELLED': []
+    };
+
+    if (!validTransitions[currentStatus] || !validTransitions[currentStatus].includes(status)) {
+      return sendError(res, `Invalid order transition from ${currentStatus} to ${status}`, 400);
+    }
+
+    const accessibleIds = getAccessibleDistributorIds(req);
+    if (accessibleIds !== null && !accessibleIds.includes(order.distributorId)) {
+      return sendError(res, "Order not found", 404);
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id },
+      data: { 
+        status,
+        ...(remarks !== undefined && { notes: remarks }) // store remarks in notes if provided
+      },
+      include: {
+        distributor: true,
+        orderItems: { include: { product: true } },
+      }
+    });
+
+    return sendSuccess(res, { order: updatedOrder }, `Order status updated to ${status}`);
+  } catch (error) {
+    console.error("updateOrderStatus error:", error);
+    return sendError(res, "Failed to update order status", 500);
+  }
+};
+
 module.exports = {
   getOrders,
   getOrderById,
   createOrder,
+  updateOrderStatus,
 };

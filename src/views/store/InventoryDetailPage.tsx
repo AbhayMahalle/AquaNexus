@@ -303,11 +303,7 @@ export default function InventoryDetailPage() {
                 </Button>
               </Link>
 
-              <Link to="/store/low-stock" className="block">
-                <Button variant="ghost" size="sm" fullWidth leftIcon={<AlertTriangle className="w-4 h-4 text-[#D97706]" />}>
-                  Threshold Settings
-                </Button>
-              </Link>
+
 
               <Link to="/store/reports" className="block">
                 <Button variant="ghost" size="sm" fullWidth leftIcon={<Boxes className="w-4 h-4 text-[#64748B]" />}>

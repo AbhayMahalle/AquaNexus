@@ -39,8 +39,6 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
     items: [
       { title: 'User Management', href: '/admin/users', iconName: 'Users', roles: ['admin'] },
       { title: 'Roles & Security', href: '/admin/roles', iconName: 'ShieldCheck', roles: ['admin'] },
-      { title: 'Permission Matrix', href: '/admin/permissions', iconName: 'Lock', roles: ['admin'] },
-      { title: 'Managers', href: '/admin/managers', iconName: 'UserCheck', roles: ['admin'] },
       { title: 'Employees', href: '/admin/employees', iconName: 'Users2', roles: ['admin'] },
     ],
   },
@@ -81,13 +79,15 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
     sectionTitle: 'STORE',
     items: [
       { title: 'Inventory', href: '/store/inventory', iconName: 'Package', roles: ['admin', 'store_manager'] },
+      { title: 'Manage Products', href: '/store/products', iconName: 'Boxes', roles: ['admin', 'store_manager'] },
       { title: 'Stock In', href: '/store/stock-in', iconName: 'PackagePlus', roles: ['admin', 'store_manager'] },
       { title: 'Goods Received', href: '/store/goods-received', iconName: 'PackageCheck', roles: ['admin', 'store_manager'] },
       { title: 'Stock Out', href: '/store/stock-out', iconName: 'PackageMinus', roles: ['admin', 'store_manager'] },
       { title: 'Dispatch', href: '/store/dispatch', iconName: 'Truck', roles: ['admin', 'store_manager'] },
       { title: 'Returns', href: '/store/returns', iconName: 'RotateCcw', roles: ['admin', 'store_manager'] },
       { title: 'Damaged Goods', href: '/store/damaged', iconName: 'AlertTriangle', roles: ['admin', 'store_manager'] },
-      { title: 'Low Stock Alerts', href: '/store/low-stock', iconName: 'Bell', roles: ['admin', 'store_manager'] },
+
+      { title: 'Stock Transactions', href: '/store/stock-transactions', iconName: 'Clock', roles: ['admin', 'store_manager'] },
       { title: 'Reports', href: '/store/reports', iconName: 'BarChart3', roles: ['admin', 'store_manager'] },
     ],
   },

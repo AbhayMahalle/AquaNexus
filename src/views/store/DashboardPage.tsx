@@ -149,9 +149,9 @@ export default function DashboardPage() {
       key: 'action',
       header: 'Action',
       render: () => (
-        <Link to="/store/low-stock">
+        <Link to="/store/inventory">
           <Button variant="outline" size="sm">
-            Reorder
+            View Item
           </Button>
         </Link>
       )
@@ -173,11 +173,12 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadStoreData() {
       try {
-        const [invRes, lowRes, txRes, retRes] = await Promise.all([
+        const [invRes, lowRes, txRes, retRes, dispRes] = await Promise.all([
           fetchApi<{ inventory: any[] }>('/inventory'),
           fetchApi<{ lowStockItems: any[] } | any[]>('/inventory/low-stock'),
           fetchApi<{ transactions: any[] }>('/stock-transactions'),
           fetchApi<{ returns: any[] }>('/returns'),
+          fetchApi<{ dispatches: any[] }>('/dispatches'),
         ]);
 
         let skuCount = 0;
@@ -242,11 +243,17 @@ export default function DashboardPage() {
           });
         }
 
+        let pendingDisp = 0;
+        if (dispRes.success && dispRes.data) {
+          const dispList = (dispRes.data as any).dispatches || (Array.isArray(dispRes.data) ? dispRes.data : []);
+          pendingDisp = dispList.filter((d: any) => d.status === 'PREPARING' || d.status === 'PENDING').length;
+        }
+
         setKpiCounts({
           currentStock: String(skuCount),
           stockIn: String(inCount),
           stockOut: String(outCount),
-          pendingDispatch: '0',
+          pendingDispatch: String(pendingDisp),
           returns: String(retCount),
           damaged: String(damCount),
           lowStock: String(lowList.length),
@@ -332,18 +339,6 @@ export default function DashboardPage() {
       bgIcon: 'bg-[#DC2626]/10',
       href: '/store/damaged',
     },
-    {
-      id: 'low-stock',
-      label: 'Low Stock',
-      value: kpiCounts.lowStock,
-      unit: 'Critical Items',
-      subtext: 'Below minimum safety threshold',
-      icon: <AlertTriangle className="w-5 h-5 text-[#D97706]" />,
-      badge: 'Action Required',
-      badgeVariant: 'warning' as const,
-      bgIcon: 'bg-[#D97706]/10',
-      href: '/store/low-stock',
-    },
   ];
 
   const quickActions = [
@@ -367,6 +362,13 @@ export default function DashboardPage() {
       href: '/store/goods-received',
       icon: <FileCheck2 className="w-4 h-4 text-[#0F4C81]" />,
       btnText: 'New GRN',
+    },
+    {
+      title: 'Manage Products',
+      description: 'Add & maintain master catalog items',
+      href: '/store/products',
+      icon: <Boxes className="w-4 h-4 text-[#0F4C81]" />,
+      btnText: 'Products',
     },
     {
       title: 'Stage Outbound Dispatch',
@@ -574,31 +576,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Critical Low-Stock & Reorder Attention */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base font-bold flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-[#D97706]" />
-                    <span>Low Stock Attention</span>
-                  </CardTitle>
-                  <CardDescription>Items below safety threshold</CardDescription>
-                </div>
-                <Link to="/store/low-stock">
-                  <Badge variant="warning" size="sm">Monitor</Badge>
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table
-                columns={lowStockColumns}
-                data={lowStockAlerts}
-                emptyText="Stock levels optimal"
-                emptyDescription="All raw materials and finished water items currently meet required safety stock thresholds."
-              />
-            </CardContent>
-          </Card>
+
         </div>
       </DashboardLayout>
     </AuthGuard>

@@ -211,6 +211,11 @@ export default function InventoryListPage() {
           ]}
           secondaryActions={[
             {
+              label: 'Manage Products',
+              href: '/store/products',
+              icon: <Package className="w-4 h-4" />,
+            },
+            {
               label: 'Issue Stock OUT',
               href: '/store/stock-out',
               icon: <ArrowUpFromLine className="w-4 h-4" />,

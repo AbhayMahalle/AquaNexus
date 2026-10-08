@@ -320,4 +320,163 @@ const createReturn = async (req, res) => {
   }
 };
 
-module.exports = { getSales, createSale, getReturns, createReturn };
+/**
+ * Update Return status and manage store inventory synchronization
+ * Flow: REQUESTED -> APPROVED -> RECEIVED -> INSPECTED -> COMPLETED / REJECTED / CANCELLED
+ * Handles returned/damaged quantities correctly without corrupting inventory.
+ */
+const updateReturnStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, remarks } = req.body;
+
+    if (!status) {
+      return sendError(res, "status is required", 400);
+    }
+
+    const normStatus = status.toUpperCase().replace(/[-\s]/g, "_");
+    const validStatuses = [
+      "REQUESTED",
+      "APPROVED",
+      "RECEIVED",
+      "INSPECTED",
+      "COMPLETED",
+      "REJECTED",
+      "CANCELLED"
+    ];
+
+    if (!validStatuses.includes(normStatus)) {
+      return sendError(res, `Invalid status. Allowed: ${validStatuses.join(", ")}`, 400);
+    }
+
+    const userId = req.user ? req.user.id : null;
+
+    const result = await prisma.$transaction(async (tx) => {
+      const returnRec = await tx.return.findFirst({
+        where: { id, organizationId: req.organizationId },
+        include: {
+          returnItems: { include: { product: true } },
+          distributor: true
+        }
+      });
+
+      if (!returnRec) {
+        throw new Error("RETURN_NOT_FOUND");
+      }
+
+      // Check if stock has already been restocked into central store inventory for this return
+      const existingRestockTx = await tx.stockTransaction.findFirst({
+        where: {
+          organizationId: req.organizationId,
+          referenceId: returnRec.id,
+          transactionType: "RETURN"
+        }
+      });
+
+      const willRestock = ["RECEIVED", "INSPECTED", "COMPLETED"].includes(normStatus);
+      const isAlreadyRestocked = !!existingRestockTx;
+
+      if (willRestock && !isAlreadyRestocked) {
+        // Restock items in GOOD condition into Central Store Inventory
+        for (const item of returnRec.returnItems) {
+          if (item.condition === "GOOD" && item.quantity > 0) {
+            await tx.inventory.upsert({
+              where: { productId: item.productId },
+              update: { quantity: { increment: item.quantity } },
+              create: {
+                organizationId: req.organizationId,
+                productId: item.productId,
+                quantity: item.quantity,
+                reservedQuantity: 0,
+                reorderLevel: item.product?.minimumStock || 0
+              }
+            });
+
+            await tx.stockTransaction.create({
+              data: {
+                organizationId: req.organizationId,
+                productId: item.productId,
+                transactionType: "RETURN",
+                quantity: item.quantity,
+                referenceType: "RETURN",
+                referenceId: returnRec.id,
+                status: "COMPLETED",
+                remarks: `Return #${returnRec.returnNumber} accepted in GOOD condition (Restocked to Central Inventory)`,
+                createdBy: userId
+              }
+            });
+          } else if (item.condition === "DAMAGED" && item.quantity > 0) {
+            // Damaged goods: log damaged stock transaction without corrupting saleable inventory
+            await tx.stockTransaction.create({
+              data: {
+                organizationId: req.organizationId,
+                productId: item.productId,
+                transactionType: "DAMAGED",
+                quantity: item.quantity,
+                status: "REPORTED",
+                referenceType: "RETURN_DAMAGED",
+                referenceId: returnRec.id,
+                remarks: `Return #${returnRec.returnNumber} item received DAMAGED (Quarantined/Scrap)`,
+                createdBy: userId
+              }
+            });
+          }
+        }
+      } else if (isAlreadyRestocked && (normStatus === "REJECTED" || normStatus === "CANCELLED")) {
+        // If it was already restocked, but now explicitly rejected/cancelled, revert the store inventory!
+        for (const item of returnRec.returnItems) {
+          if (item.condition === "GOOD" && item.quantity > 0) {
+            await tx.inventory.update({
+              where: { productId: item.productId },
+              data: { quantity: { decrement: item.quantity } }
+            });
+
+            await tx.stockTransaction.create({
+              data: {
+                organizationId: req.organizationId,
+                productId: item.productId,
+                transactionType: "ADJUSTMENT",
+                quantity: item.quantity,
+                referenceType: "RETURN_REVERSAL",
+                referenceId: returnRec.id,
+                status: "COMPLETED",
+                remarks: `Return #${returnRec.returnNumber} marked ${normStatus} (Reversed store inventory: -${item.quantity})`,
+                createdBy: userId
+              }
+            });
+          }
+        }
+      }
+
+      const updatedReturn = await tx.return.update({
+        where: { id: returnRec.id },
+        data: {
+          status: normStatus,
+          ...(remarks !== undefined && { reason: remarks || returnRec.reason })
+        },
+        include: {
+          returnItems: { include: { product: true } },
+          distributor: true,
+          sale: true
+        }
+      });
+
+      return updatedReturn;
+    });
+
+    return sendSuccess(res, { return: result, data: result }, `Return status updated to ${result.status} successfully`);
+  } catch (error) {
+    console.error("updateReturnStatus error:", error);
+    if (error.message === "RETURN_NOT_FOUND") return sendError(res, "Return record not found", 404);
+    return sendError(res, "Failed to update return status", 500);
+  }
+};
+
+module.exports = {
+  getSales,
+  createSale,
+  getReturns,
+  createReturn,
+  updateReturnStatus
+};
+

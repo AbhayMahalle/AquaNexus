@@ -77,7 +77,7 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
           return {
             ...r,
             status: newStatus,
-            checkIn: isPresent ? r.checkIn || '08:00 AM' : '',
+            checkIn: isPresent ? r.checkIn || '09:00 AM' : '',
             checkOut: isPresent ? r.checkOut || '05:00 PM' : '',
           };
         }
@@ -196,13 +196,33 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
     {
       header: 'Check In',
       cell: (r: Attendance) => (
-        <span className="text-xs font-mono text-text-primary">{r.checkIn || '--:--'}</span>
+        user?.role === 'employee' ? (
+          <span className="text-xs font-mono text-text-primary">{r.checkIn || '--:--'}</span>
+        ) : (
+          <input
+            type="text"
+            placeholder="09:00 AM"
+            value={r.checkIn || ''}
+            onChange={(e) => setRecords(prev => prev.map(item => item.id === r.id ? { ...item, checkIn: e.target.value } : item))}
+            className="w-24 text-xs font-mono px-2 py-1 bg-slate-50 border border-border rounded focus:outline-none focus:border-secondary"
+          />
+        )
       ),
     },
     {
       header: 'Check Out',
       cell: (r: Attendance) => (
-        <span className="text-xs font-mono text-text-primary">{r.checkOut || '--:--'}</span>
+        user?.role === 'employee' ? (
+          <span className="text-xs font-mono text-text-primary">{r.checkOut || '--:--'}</span>
+        ) : (
+          <input
+            type="text"
+            placeholder="05:00 PM"
+            value={r.checkOut || ''}
+            onChange={(e) => setRecords(prev => prev.map(item => item.id === r.id ? { ...item, checkOut: e.target.value } : item))}
+            className="w-24 text-xs font-mono px-2 py-1 bg-slate-50 border border-border rounded focus:outline-none focus:border-secondary"
+          />
+        )
       ),
     },
     {

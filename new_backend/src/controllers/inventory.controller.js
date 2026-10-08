@@ -277,6 +277,10 @@ const receiveGoods = async (req, res) => {
         grnNum = `${grnNum}-${Math.floor(Math.random() * 900 + 100)}`;
       }
 
+      const normStatus = (req.body.status || 'RECEIVED').toUpperCase().replace(/[-\s]/g, '_');
+      const validStatuses = ['PENDING', 'RECEIVED', 'PARTIALLY_RECEIVED', 'REJECTED'];
+      const grnStatus = validStatuses.includes(normStatus) ? normStatus : 'RECEIVED';
+
       // 3. Create GoodsReceived record with organizationId
       const goodsReceived = await tx.goodsReceived.create({
         data: {
@@ -286,56 +290,62 @@ const receiveGoods = async (req, res) => {
           productionId: production.id,
           quantity: qty,
           receivedDate: receivedDate ? new Date(receivedDate) : new Date(),
+          status: grnStatus,
           receivedBy: userId,
           remarks
         }
       });
 
-      // 4. Create StockTransaction audit log with organizationId
-      await tx.stockTransaction.create({
-        data: {
-          organizationId: req.organizationId,
-          productId: product.id,
-          transactionType: 'PRODUCTION_RECEIPT',
-          quantity: qty,
-          referenceType: 'GoodsReceived',
-          referenceId: goodsReceived.id,
-          remarks: remarks || `Goods received via ${grnNum}`,
-          createdBy: userId
-        }
-      });
+      let updatedInventory = null;
 
-      // 5. Update or Create Inventory
-      const existingInventory = await tx.inventory.findUnique({
-        where: { productId: product.id }
-      });
-
-      let updatedInventory;
-      if (existingInventory) {
-        updatedInventory = await tx.inventory.update({
-          where: { productId: product.id },
-          data: {
-            quantity: { increment: qty }
-          }
-        });
-      } else {
-        updatedInventory = await tx.inventory.create({
+      // Only increment inventory and log stock transaction if status is RECEIVED or PARTIALLY_RECEIVED
+      if (grnStatus === 'RECEIVED' || grnStatus === 'PARTIALLY_RECEIVED') {
+        // 4. Create StockTransaction audit log with organizationId
+        await tx.stockTransaction.create({
           data: {
             organizationId: req.organizationId,
             productId: product.id,
+            transactionType: 'PRODUCTION_RECEIPT',
             quantity: qty,
-            reservedQuantity: 0,
-            reorderLevel: product.minimumStock || 0
+            referenceType: 'GoodsReceived',
+            referenceId: goodsReceived.id,
+            status: 'COMPLETED',
+            remarks: remarks || `Goods received via ${grnNum}`,
+            createdBy: userId
           }
         });
-      }
 
-      // 6. Auto-update production status to COMPLETED if fully received
-      if (alreadyReceived + qty >= production.quantity) {
-        await tx.production.update({
-          where: { id: production.id },
-          data: { status: 'COMPLETED' }
+        // 5. Update or Create Inventory
+        const existingInventory = await tx.inventory.findUnique({
+          where: { productId: product.id }
         });
+
+        if (existingInventory) {
+          updatedInventory = await tx.inventory.update({
+            where: { productId: product.id },
+            data: {
+              quantity: { increment: qty }
+            }
+          });
+        } else {
+          updatedInventory = await tx.inventory.create({
+            data: {
+              organizationId: req.organizationId,
+              productId: product.id,
+              quantity: qty,
+              reservedQuantity: 0,
+              reorderLevel: product.minimumStock || 0
+            }
+          });
+        }
+
+        // 6. Auto-update production status to COMPLETED if fully received
+        if (alreadyReceived + qty >= production.quantity) {
+          await tx.production.update({
+            where: { id: production.id },
+            data: { status: 'COMPLETED' }
+          });
+        }
       }
 
       return {
@@ -345,7 +355,7 @@ const receiveGoods = async (req, res) => {
       };
     });
 
-    return sendSuccess(res, result, 'Goods received and inventory updated successfully', 201);
+    return sendSuccess(res, result, 'Goods received record created successfully', 201);
   } catch (error) {
     console.error('receiveGoods error:', error);
 
@@ -445,6 +455,9 @@ const createStockTransaction = async (req, res) => {
         }
       }
 
+      // Determine initial transaction status (e.g. REPORTED for DAMAGED if not specified)
+      const txStatus = req.body.status || (transactionType === 'DAMAGED' ? 'REPORTED' : 'COMPLETED');
+
       // Record transaction log with organizationId
       const transaction = await tx.stockTransaction.create({
         data: {
@@ -454,6 +467,7 @@ const createStockTransaction = async (req, res) => {
           quantity: qty,
           referenceType,
           referenceId: validReferenceUuid,
+          status: txStatus,
           remarks: resolvedRemarks,
           createdBy: userId
         }
@@ -553,11 +567,304 @@ const getGoodsReceived = async (req, res) => {
   }
 };
 
+/**
+ * Update Goods Received status (PENDING -> RECEIVED / PARTIALLY_RECEIVED / REJECTED)
+ * Store Manager can update status, receivedQuantity, and remarks.
+ * Prevents duplicate stock additions.
+ */
+const updateGoodsReceivedStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, receivedQuantity, remarks } = req.body;
+
+    if (!status) {
+      return sendError(res, 'status is required', 400);
+    }
+
+    const normStatus = status.toUpperCase().replace(/[-\s]/g, '_');
+
+
+    const userId = req.user ? req.user.id : null;
+
+    const result = await prisma.$transaction(async (tx) => {
+      const gr = await tx.goodsReceived.findFirst({
+        where: { id, organizationId: req.organizationId },
+        include: {
+          product: true,
+          production: true
+        }
+      });
+
+      if (!gr) {
+        throw new Error('GRN_NOT_FOUND');
+      }
+
+      const prevStatus = (gr.status || 'PENDING').toUpperCase();
+
+      const validTransitions = {
+        'PENDING': ['PARTIALLY_RECEIVED', 'RECEIVED', 'REJECTED'],
+        'PARTIALLY_RECEIVED': ['RECEIVED', 'REJECTED'],
+        'RECEIVED': [],
+        'REJECTED': []
+      };
+
+      if (prevStatus !== normStatus && (!validTransitions[prevStatus] || !validTransitions[prevStatus].includes(normStatus))) {
+        throw new Error(`INVALID_TRANSITION:${prevStatus}->${normStatus}`);
+      }
+
+      const currentQty = gr.quantity;
+      const targetQty = receivedQuantity !== undefined ? parseInt(receivedQuantity) : currentQty;
+
+      if (isNaN(targetQty) || targetQty < 0) {
+        throw new Error('INVALID_QUANTITY');
+      }
+
+      // Check existing transactions for this GRN
+      const existingTx = await tx.stockTransaction.findFirst({
+        where: {
+          organizationId: req.organizationId,
+          referenceType: 'GoodsReceived',
+          referenceId: gr.id,
+          transactionType: 'PRODUCTION_RECEIPT'
+        }
+      });
+
+      let inventoryDelta = 0;
+
+      const wasStockAdded = (prevStatus === 'RECEIVED' || prevStatus === 'PARTIALLY_RECEIVED') && !!existingTx;
+      const willStockBeAdded = normStatus === 'RECEIVED' || normStatus === 'PARTIALLY_RECEIVED';
+
+      if (!wasStockAdded && willStockBeAdded) {
+        // Stock was NOT previously added (was PENDING or REJECTED), now receiving:
+        inventoryDelta = targetQty;
+        // Create stock transaction
+        await tx.stockTransaction.create({
+          data: {
+            organizationId: req.organizationId,
+            productId: gr.productId,
+            transactionType: 'PRODUCTION_RECEIPT',
+            quantity: targetQty,
+            referenceType: 'GoodsReceived',
+            referenceId: gr.id,
+            status: 'COMPLETED',
+            remarks: remarks || `Goods received status changed to ${normStatus} via ${gr.grnNumber}`,
+            createdBy: userId
+          }
+        });
+      } else if (wasStockAdded && !willStockBeAdded) {
+        // Stock WAS previously added, now REJECTING or reverting to PENDING:
+        // Decrement previously added stock
+        inventoryDelta = -currentQty;
+        await tx.stockTransaction.create({
+          data: {
+            organizationId: req.organizationId,
+            productId: gr.productId,
+            transactionType: 'ADJUSTMENT',
+            quantity: currentQty,
+            referenceType: 'GoodsReceived',
+            referenceId: gr.id,
+            status: 'COMPLETED',
+            remarks: `Goods receipt reverted to ${normStatus} (Reversed stock: -${currentQty}) for ${gr.grnNumber}`,
+            createdBy: userId
+          }
+        });
+      } else if (wasStockAdded && willStockBeAdded && targetQty !== currentQty) {
+        // Quantity adjustment while already in received state
+        inventoryDelta = targetQty - currentQty;
+        await tx.stockTransaction.create({
+          data: {
+            organizationId: req.organizationId,
+            productId: gr.productId,
+            transactionType: inventoryDelta > 0 ? 'PRODUCTION_RECEIPT' : 'ADJUSTMENT',
+            quantity: Math.abs(inventoryDelta),
+            referenceType: 'GoodsReceived',
+            referenceId: gr.id,
+            status: 'COMPLETED',
+            remarks: `GRN ${gr.grnNumber} quantity revised from ${currentQty} to ${targetQty} (Delta: ${inventoryDelta > 0 ? '+' : ''}${inventoryDelta})`,
+            createdBy: userId
+          }
+        });
+      }
+      // If wasStockAdded && willStockBeAdded && targetQty === currentQty -> DO NOTHING to inventory!
+      // This strictly PREVENTS duplicate stock addition!
+
+      // If inventoryDelta is negative, verify available stock
+      if (inventoryDelta < 0) {
+        const inv = await tx.inventory.findUnique({ where: { productId: gr.productId } });
+        if (inv && inv.quantity < Math.abs(inventoryDelta)) {
+          throw new Error(`INSUFFICIENT_STOCK_TO_REVERT:${inv.quantity}`);
+        }
+      }
+
+      // Apply inventory delta if non-zero
+      let updatedInventory = null;
+      if (inventoryDelta !== 0) {
+        updatedInventory = await tx.inventory.upsert({
+          where: { productId: gr.productId },
+          update: { quantity: { increment: inventoryDelta } },
+          create: {
+            organizationId: req.organizationId,
+            productId: gr.productId,
+            quantity: Math.max(0, inventoryDelta),
+            reservedQuantity: 0,
+            reorderLevel: gr.product.minimumStock || 0
+          }
+        });
+      }
+
+      // Update GoodsReceived record
+      const updatedGR = await tx.goodsReceived.update({
+        where: { id: gr.id },
+        data: {
+          status: normStatus,
+          quantity: targetQty,
+          ...(remarks !== undefined && { remarks: remarks || gr.remarks }),
+          ...(userId && { receivedBy: userId })
+        },
+        include: {
+          product: true,
+          production: true,
+          receiver: { select: { id: true, firstName: true, lastName: true, username: true } }
+        }
+      });
+
+      return {
+        goodsReceived: updatedGR,
+        data: updatedGR,
+        inventoryDelta,
+        inventory: updatedInventory
+      };
+    });
+
+    return sendSuccess(res, result, `Goods Received status updated to ${result.goodsReceived.status} successfully`);
+  } catch (error) {
+    console.error('updateGoodsReceivedStatus error:', error);
+    if (error.message === 'GRN_NOT_FOUND') return sendError(res, 'Goods received record not found', 404);
+    if (error.message === 'INVALID_QUANTITY') return sendError(res, 'Quantity must be a non-negative integer', 400);
+    if (error.message.startsWith('INVALID_TRANSITION:')) {
+      const parts = error.message.split(':');
+      return sendError(res, `Invalid transition: ${parts[1]}`, 400);
+    }
+    if (error.message.startsWith('INSUFFICIENT_STOCK_TO_REVERT:')) {
+      const curr = error.message.split(':')[1];
+      return sendError(res, `Cannot revert GRN: available inventory (${curr}) is less than required reduction`, 400);
+    }
+    return sendError(res, 'Failed to update goods received status', 500);
+  }
+};
+
+/**
+ * Update stock transaction status and remarks (e.g. for Damaged Goods workflow)
+ * Flow: REPORTED -> UNDER_REVIEW -> APPROVED / REJECTED -> DISPOSED
+ */
+const updateStockTransactionStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, remarks } = req.body;
+
+    if (!status) {
+      return sendError(res, 'status is required', 400);
+    }
+
+    const normStatus = status.toUpperCase().replace(/[-\s]/g, '_');
+    const validStatuses = ['REPORTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'DISPOSED', 'COMPLETED'];
+    if (!validStatuses.includes(normStatus)) {
+      return sendError(res, `Invalid status. Allowed: ${validStatuses.join(', ')}`, 400);
+    }
+
+    const userId = req.user ? req.user.id : null;
+
+    const result = await prisma.$transaction(async (tx) => {
+      const transaction = await tx.stockTransaction.findFirst({
+        where: { id, organizationId: req.organizationId },
+        include: { product: true }
+      });
+
+      if (!transaction) {
+        throw new Error('TRANSACTION_NOT_FOUND');
+      }
+
+      const prevStatus = (transaction.status || 'COMPLETED').toUpperCase();
+      let inventoryDelta = 0;
+
+      // For DAMAGED transaction:
+      // When created, it decremented stock.
+      // If status changes to REJECTED (damage claim rejected, bottles intact):
+      // Restore the stock (+quantity)!
+      if (transaction.transactionType === 'DAMAGED') {
+        if (prevStatus !== 'REJECTED' && normStatus === 'REJECTED') {
+          inventoryDelta = transaction.quantity;
+          // Log adjustment restoring stock
+          await tx.stockTransaction.create({
+            data: {
+              organizationId: req.organizationId,
+              productId: transaction.productId,
+              transactionType: 'ADJUSTMENT',
+              quantity: transaction.quantity,
+              referenceType: 'DAMAGED_REJECTED',
+              referenceId: transaction.id,
+              status: 'COMPLETED',
+              remarks: `Damage claim rejected: restored ${transaction.quantity} ${transaction.product.unit || 'units'} to inventory`,
+              createdBy: userId
+            }
+          });
+        } else if (prevStatus === 'REJECTED' && normStatus !== 'REJECTED') {
+          // Re-applying damage (e.g. moving from REJECTED back to APPROVED/DISPOSED)
+          inventoryDelta = -transaction.quantity;
+          const inv = await tx.inventory.findUnique({ where: { productId: transaction.productId } });
+          if (inv && inv.quantity < transaction.quantity) {
+            throw new Error(`INSUFFICIENT_STOCK:${inv.quantity}`);
+          }
+        }
+      }
+
+      let updatedInventory = null;
+      if (inventoryDelta !== 0) {
+        updatedInventory = await tx.inventory.update({
+          where: { productId: transaction.productId },
+          data: { quantity: { increment: inventoryDelta } }
+        });
+      }
+
+      const updatedTx = await tx.stockTransaction.update({
+        where: { id },
+        data: {
+          status: normStatus,
+          ...(remarks !== undefined && { remarks: remarks || transaction.remarks })
+        },
+        include: {
+          product: true,
+          creator: { select: { id: true, firstName: true, lastName: true } }
+        }
+      });
+
+      return {
+        transaction: updatedTx,
+        data: updatedTx,
+        inventory: updatedInventory
+      };
+    });
+
+    return sendSuccess(res, result, `Transaction status updated to ${result.transaction.status} successfully`);
+  } catch (error) {
+    console.error('updateStockTransactionStatus error:', error);
+    if (error.message === 'TRANSACTION_NOT_FOUND') return sendError(res, 'Stock transaction not found', 404);
+    if (error.message.startsWith('INSUFFICIENT_STOCK:')) {
+      const curr = error.message.split(':')[1];
+      return sendError(res, `Insufficient stock to apply damage (Current: ${curr})`, 400);
+    }
+    return sendError(res, 'Failed to update transaction status', 500);
+  }
+};
+
 module.exports = {
   getInventory,
   getLowStockAlerts,
   getStockTransactions,
   receiveGoods,
   getGoodsReceived,
-  createStockTransaction
+  createStockTransaction,
+  updateGoodsReceivedStatus,
+  updateStockTransactionStatus
 };
+

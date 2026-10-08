@@ -20,6 +20,7 @@ export interface StockTransaction {
   destinationOrSource?: string;
   status: 'completed' | 'pending' | 'cancelled' | 'flagged';
   notes?: string;
+  rawReferenceType?: string;
 }
 
 export interface StockTransactionTableProps {

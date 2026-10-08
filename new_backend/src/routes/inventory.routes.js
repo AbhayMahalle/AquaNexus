@@ -10,7 +10,9 @@ const {
   getStockTransactions,
   receiveGoods,
   getGoodsReceived,
-  createStockTransaction
+  createStockTransaction,
+  updateGoodsReceivedStatus,
+  updateStockTransactionStatus
 } = require('../controllers/inventory.controller');
 
 const inventoryGuards = [requireAuth, requireTenantContext, requireManagerArea('STORE')];
@@ -22,9 +24,11 @@ router.get('/inventory/low-stock', inventoryGuards, requirePermission('inventory
 // Stock audit transactions
 router.get('/stock-transactions', inventoryGuards, requirePermission('inventory.view'), getStockTransactions);
 router.post('/stock-transactions', inventoryGuards, requirePermission('inventory.manage'), createStockTransaction);
+router.patch('/stock-transactions/:id/status', inventoryGuards, requirePermission('inventory.manage'), updateStockTransactionStatus);
 
 // Goods Received from Production
 router.get('/goods-received', inventoryGuards, requirePermission('inventory.view'), getGoodsReceived);
 router.post('/goods-received', inventoryGuards, requirePermission('inventory.manage'), receiveGoods);
+router.patch('/goods-received/:id/status', inventoryGuards, requirePermission('inventory.manage'), updateGoodsReceivedStatus);
 
 module.exports = router;

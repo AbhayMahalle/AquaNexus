@@ -233,9 +233,103 @@ const updateProduct = async (req, res) => {
   }
 };
 
+/**
+ * Delete or deactivate product
+ * If product is referenced by inventory (qty > 0), stock transactions, orders, dispatches,
+ * sales, goods received, purchase requisitions, or purchase orders, deactivate it (status = INACTIVE).
+ * If completely unreferenced and 0 inventory, permanently delete.
+ */
+const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await prisma.product.findFirst({
+      where: { id, organizationId: req.organizationId },
+      include: {
+        inventory: true
+      }
+    });
+
+    if (!product) {
+      return sendError(res, 'Product not found', 404);
+    }
+
+    // Check references
+    const [
+      txCount,
+      orderItemCount,
+      dispatchItemCount,
+      saleItemCount,
+      goodsReceivedCount,
+      poItemCount,
+      prItemCount,
+      productionCount
+    ] = await Promise.all([
+      prisma.stockTransaction.count({ where: { productId: id } }),
+      prisma.orderItem.count({ where: { productId: id } }),
+      prisma.dispatchItem.count({ where: { productId: id } }),
+      prisma.saleItem.count({ where: { productId: id } }),
+      prisma.goodsReceived.count({ where: { productId: id } }),
+      prisma.purchaseOrderItem.count({ where: { productId: id } }),
+      prisma.purchaseRequisitionItem.count({ where: { productId: id } }),
+      prisma.production.count({ where: { productId: id } })
+    ]);
+
+    const hasStock = product.inventory && product.inventory.quantity > 0;
+    const hasReferences = (
+      hasStock ||
+      txCount > 0 ||
+      orderItemCount > 0 ||
+      dispatchItemCount > 0 ||
+      saleItemCount > 0 ||
+      goodsReceivedCount > 0 ||
+      poItemCount > 0 ||
+      prItemCount > 0 ||
+      productionCount > 0
+    );
+
+    if (hasReferences) {
+      // Soft-delete / deactivate product to preserve historical integrity
+      const updated = await prisma.product.update({
+        where: { id },
+        data: { status: 'INACTIVE' },
+        include: { inventory: true }
+      });
+
+      const reasons = [];
+      if (hasStock) reasons.push(`current stock is ${product.inventory.quantity}`);
+      if (txCount > 0) reasons.push(`${txCount} stock transaction(s)`);
+      if (orderItemCount > 0) reasons.push(`${orderItemCount} order(s)`);
+      if (dispatchItemCount > 0) reasons.push(`${dispatchItemCount} dispatch(es)`);
+      if (goodsReceivedCount > 0) reasons.push(`${goodsReceivedCount} goods received record(s)`);
+      if (productionCount > 0) reasons.push(`${productionCount} production batch(es)`);
+
+      return sendSuccess(res, {
+        product: updated,
+        action: 'DEACTIVATED',
+        referenced: true,
+        reasons
+      }, `Product is referenced in system records (${reasons.join(', ')}). Product has been safely deactivated (status: INACTIVE) to preserve database integrity.`);
+    }
+
+    // Unreferenced - safe to delete permanently
+    await prisma.$transaction(async (tx) => {
+      await tx.inventory.deleteMany({ where: { productId: id } });
+      await tx.product.delete({ where: { id } });
+    });
+
+    return sendSuccess(res, { action: 'DELETED', id }, 'Product permanently deleted successfully');
+  } catch (error) {
+    console.error('deleteProduct error:', error);
+    return sendError(res, 'Failed to delete product', 500);
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
   createProduct,
-  updateProduct
+  updateProduct,
+  deleteProduct
 };
+

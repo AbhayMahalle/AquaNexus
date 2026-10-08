@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/Card';
@@ -25,69 +25,105 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-interface ProductionBatch {
-  id: string;
-  batchNo: string;
-  item: string;
-  quantity: number;
-  unit: string;
-  manager: string;
-  status: 'completed' | 'in_progress' | 'scheduled';
-  time: string;
-}
-
-const MOCK_BATCHES: ProductionBatch[] = [
-  { id: '1', batchNo: 'BATCH-2026-089', item: '20L Jar Water', quantity: 2400, unit: 'Units', manager: 'Ramesh K.', status: 'completed', time: '10:30 AM' },
-  { id: '2', batchNo: 'BATCH-2026-090', item: '1L Packaged Bottle', quantity: 5000, unit: 'Units', manager: 'Sunil P.', status: 'in_progress', time: '01:15 PM' },
-  { id: '3', batchNo: 'BATCH-2026-091', item: '500ml Bottle Case', quantity: 1200, unit: 'Cases', manager: 'Amit S.', status: 'scheduled', time: '04:00 PM' },
-];
+import type { Production, Product } from '@/types';
+import { productionService } from '@/services/productionService';
+import { fetchApi } from '@/services/apiClient';
 
 export default function AdminDashboardPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newBatchNo, setNewBatchNo] = useState('BATCH-2026-092');
+  const [activeBatches, setActiveBatches] = useState<Production[]>([]);
+  const [stats, setStats] = useState<any>({ totalQuantity: 0, completedBatches: 0, inProgressBatches: 0 });
+  const [kpi, setKpi] = useState<any>({ production: 0, inventory: 0, employees: 0, pendingDispatches: 0, revenue: 0 });
+  const [loading, setLoading] = useState(true);
 
-  const productionColumns: Column<ProductionBatch>[] = [
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [batchesRes, statsRes, inventoryRes, employeesRes, ordersRes, dispatchRes] = await Promise.all([
+        productionService.getProductionBatches({}),
+        fetch('/api/production/stats', { headers }).then(r => r.json()).catch(() => ({ success: false })),
+        fetchApi<any>('/inventory'),
+        fetchApi<any>('/employees'),
+        fetchApi<any>('/orders'),
+        fetchApi<any>('/dispatches'),
+      ]);
+
+      if (batchesRes.success) {
+        setActiveBatches(batchesRes.data.slice(0, 10));
+      }
+      if (statsRes.success) setStats(statsRes.data);
+
+      // Calculate real KPIs
+      const totalProduction = statsRes.success ? (statsRes.data?.totalQuantity || 0) : 0;
+      const inventoryItems = inventoryRes.success ? (Array.isArray(inventoryRes.data) ? inventoryRes.data : (inventoryRes.data?.inventory || [])) : [];
+      const totalStock = inventoryItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 0), 0);
+      const employees = employeesRes.success ? (Array.isArray(employeesRes.data) ? employeesRes.data : (employeesRes.data?.employees || [])) : [];
+      const activeEmployees = employees.filter((e: any) => e.status === 'ACTIVE').length;
+      const totalEmployees = employees.length;
+      const dispatches = dispatchRes.success ? (Array.isArray(dispatchRes.data) ? dispatchRes.data : (dispatchRes.data?.dispatches || [])) : [];
+      const pendingDispatches = dispatches.filter((d: any) => d.status === 'PREPARING' || d.status === 'PENDING').length;
+
+      const orders = ordersRes.success ? (Array.isArray(ordersRes.data) ? ordersRes.data : (ordersRes.data?.orders || [])) : [];
+      const revenue = orders.reduce((sum: number, o: any) => sum + (Number(o.totalAmount) || 0), 0);
+
+      setKpi({ production: totalProduction, inventory: totalStock, activeEmployees, totalEmployees, pendingDispatches, revenue });
+    } catch (error) {
+      console.error('Failed to fetch dashboard data', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  const productionColumns: Column<Production>[] = [
     {
-      key: 'batchNo',
+      key: 'batchNumber',
       header: <span className="text-black font-bold">Batch No</span>,
       render: (r) => (
         <span className="font-mono font-bold text-orange-600 text-xs px-2 py-0.5 rounded bg-orange-50 border border-orange-200">
-          {r.batchNo}
+          {r.batchNumber}
         </span>
       ),
     },
     {
-      key: 'item',
+      key: 'productName',
       header: <span className="text-black font-bold">Product Item</span>,
-      render: (r) => <span className="font-semibold text-black">{r.item}</span>,
+      render: (r) => <span className="font-semibold text-black">{r.productName}</span>,
     },
     {
-      key: 'quantity',
+      key: 'quantityProduced',
       header: <span className="text-black font-bold">Quantity</span>,
-      render: (r) => <span className="font-medium text-black">{`${formatNumber(r.quantity)} ${r.unit}`}</span>,
+      render: (r) => <span className="font-medium text-black">{`${formatNumber(r.quantityProduced)} ${r.unit}`}</span>,
     },
     {
-      key: 'manager',
+      key: 'supervisor',
       header: <span className="text-black font-bold">Line manager</span>,
-      render: (r) => <span className="text-gray-700 font-medium">{r.manager}</span>,
+      render: (r) => <span className="text-gray-700 font-medium">{r.supervisor}</span>,
     },
     {
-      key: 'time',
-      header: <span className="text-black font-bold">Timestamp</span>,
-      render: (r) => <span className="text-gray-600">{r.time}</span>,
+      key: 'productionDate',
+      header: <span className="text-black font-bold">Date</span>,
+      render: (r) => <span className="text-gray-600">{r.productionDate}</span>,
     },
     {
       key: 'status',
       header: <span className="text-black font-bold">Status</span>,
       render: (r) => {
-        if (r.status === 'in_progress') {
+        if (r.status === 'IN_PROGRESS') {
           return (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-950 border border-orange-300">
               IN PROGRESS
             </span>
           );
         }
-        if (r.status === 'completed') {
+        if (r.status === 'COMPLETED') {
           return (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-black border border-gray-300">
               COMPLETED
@@ -96,7 +132,7 @@ export default function AdminDashboardPage() {
         }
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-50 text-gray-800 border border-gray-200">
-            SCHEDULED
+            {r.status || 'PLANNED'}
           </span>
         );
       },
@@ -111,22 +147,8 @@ export default function AdminDashboardPage() {
             title="Admin Control Center"
             description="Real-time plant metrics, production overview, and ERP operational status"
             breadcrumbs={[{ label: 'Admin Dashboard' }]}
-            primaryAction={{
-              label: 'Log New Batch',
-              icon: <Plus className="w-4 h-4 text-black" />,
-              variant: 'orange',
-              className: 'bg-orange-500 hover:bg-gray-200 text-black font-bold border border-orange-600/30 transition-colors',
-              onClick: () => setIsModalOpen(true),
-            }}
-            secondaryActions={[
-              {
-                label: 'Export ERP Report',
-                icon: <Download className="w-4 h-4 text-black" />,
-                variant: 'outline',
-                className: 'bg-white hover:bg-gray-100 text-black font-medium border border-gray-300 transition-colors',
-                onClick: () => alert('Generating ERP Summary Report...'),
-              },
-            ]}
+
+
           />
 
           {/* Top KPI Cards */}
@@ -136,10 +158,10 @@ export default function AdminDashboardPage() {
                 <div>
                   <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Today&apos;s Production</p>
                   <h3 className="text-2xl font-extrabold text-black mt-1">
-                    48,500 <span className="text-xs font-medium text-gray-600">Liters</span>
+                    {formatNumber(kpi.production || stats.totalQuantity || 0)} <span className="text-xs font-medium text-gray-600">Liters</span>
                   </h3>
                   <p className="text-xs text-orange-700 font-bold mt-1 flex items-center gap-1">
-                    <ArrowUpRight className="w-3.5 h-3.5" /> +12.4% vs yesterday
+                    <ArrowUpRight className="w-3.5 h-3.5" /> {stats.completedBatches || 0} batches completed
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-orange-50 text-orange-600 border border-orange-200">
@@ -153,10 +175,10 @@ export default function AdminDashboardPage() {
                 <div>
                   <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Finished Stock</p>
                   <h3 className="text-2xl font-extrabold text-black mt-1">
-                    14,250 <span className="text-xs font-medium text-gray-600">Jars</span>
+                    {formatNumber(kpi.inventory || 0)} <span className="text-xs font-medium text-gray-600">Units</span>
                   </h3>
                   <p className="text-xs text-black font-semibold mt-1 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-black" /> Stock level optimal
+                    <CheckCircle2 className="w-3.5 h-3.5 text-black" /> Stock level live
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-gray-100 text-black border border-gray-300">
@@ -168,10 +190,10 @@ export default function AdminDashboardPage() {
             <div className="p-5 rounded-xl border border-gray-200 bg-white border-l-4 border-l-orange-600 shadow-xs hover:border-gray-400 hover:bg-gray-50/70 transition-all duration-150 cursor-pointer">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Daily Sales Revenue</p>
-                  <h3 className="text-2xl font-extrabold text-black mt-1">{formatCurrency(184500)}</h3>
+                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Order Revenue</p>
+                  <h3 className="text-2xl font-extrabold text-black mt-1">{formatCurrency(kpi.revenue || 0)}</h3>
                   <p className="text-xs text-orange-700 font-bold mt-1 flex items-center gap-1">
-                    <ArrowUpRight className="w-3.5 h-3.5" /> +8.5% this week
+                    <ArrowUpRight className="w-3.5 h-3.5" /> Live billing orders
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-orange-50 text-orange-600 border border-orange-200">
@@ -184,8 +206,8 @@ export default function AdminDashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Active Staff</p>
-                  <h3 className="text-2xl font-extrabold text-black mt-1">42 / 45</h3>
-                  <p className="text-xs text-gray-700 font-medium mt-1">Shift 1 active</p>
+                  <h3 className="text-2xl font-extrabold text-black mt-1">{kpi.activeEmployees || 0} / {kpi.totalEmployees || 0}</h3>
+                  <p className="text-xs text-gray-700 font-medium mt-1">Active on duty</p>
                 </div>
                 <div className="p-3 rounded-xl bg-gray-100 text-gray-800 border border-gray-300">
                   <Users className="w-6 h-6" />
@@ -208,7 +230,7 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
                 <div className="p-0">
-                  <Table columns={productionColumns} data={MOCK_BATCHES} />
+                  <Table columns={productionColumns} data={activeBatches} />
                 </div>
               </div>
 
@@ -237,7 +259,7 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-black">Dispatch Queue</span>
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-gray-100 text-black border border-gray-300">
-                      6 Pending
+                      {kpi.pendingDispatches || 0} Pending
                     </span>
                   </div>
                   <p className="text-xs text-gray-700">Agency vehicle loading at Bay 1 & Bay 2</p>
@@ -307,57 +329,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <Modal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            title="Create Production Batch"
-            description="Log a new filling line batch into the ERP system"
-            footer={
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsModalOpen(false)}
-                  className="bg-white text-black border-gray-300 hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="orange"
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    alert('Batch created!');
-                  }}
-                  className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30 transition-colors"
-                >
-                  Submit Batch
-                </Button>
-              </>
-            }
-          >
-            <div className="space-y-4">
-              <Input
-                label="Batch Number"
-                value={newBatchNo}
-                onChange={(e) => setNewBatchNo(e.target.value)}
-                className="bg-white text-black border-gray-300 hover:border-gray-400 focus:border-orange-500 focus:ring-orange-200"
-              />
-              <Select
-                label="Product Item"
-                options={[
-                  { label: '20 Litre Water Jar', value: 'jar20' },
-                  { label: '1 Litre Packaged Bottle (12 Pcs)', value: 'b1l' },
-                  { label: '500ml Bottled Water (24 Pcs)', value: 'b500' },
-                ]}
-                className="bg-white text-black border-gray-300 hover:border-gray-400 focus:border-orange-500 focus:ring-orange-200"
-              />
-              <Input
-                label="Target Output Quantity"
-                type="number"
-                placeholder="e.g. 2500"
-                className="bg-white text-black border-gray-300 hover:border-gray-400 focus:border-orange-500 focus:ring-orange-200"
-              />
-            </div>
-          </Modal>
+
         </div>
       </DashboardLayout>
     </AuthGuard>

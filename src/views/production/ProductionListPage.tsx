@@ -84,6 +84,7 @@ export const ProductionListPage: React.FC = () => {
           COMPLETED: 'success',
           IN_PROGRESS: 'warning',
           PENDING: 'info',
+          PLANNED: 'info',
           CANCELLED: 'danger',
         };
         return <Badge variant={variantMap[b.status]}>{b.status.replace('_', ' ')}</Badge>;

@@ -71,11 +71,12 @@ export default function AdminStoreManagerDashboard() {
   useEffect(() => {
     async function loadStoreOversightData() {
       try {
-        const [invRes, lowRes, txRes, retRes] = await Promise.all([
+        const [invRes, lowRes, txRes, retRes, dispRes] = await Promise.all([
           fetchApi<{ inventory: any[] }>('/inventory'),
           fetchApi<{ lowStockItems: any[] } | any[]>('/inventory/low-stock'),
           fetchApi<{ transactions: any[] }>('/stock-transactions'),
           fetchApi<{ returns: any[] }>('/returns'),
+          fetchApi<{ dispatches: any[] }>('/dispatches'),
         ]);
 
         let skuCount = 0;
@@ -140,11 +141,17 @@ export default function AdminStoreManagerDashboard() {
           });
         }
 
+        let pendingDisp = 0;
+        if (dispRes.success && dispRes.data) {
+          const dispList = (dispRes.data as any).dispatches || (Array.isArray(dispRes.data) ? dispRes.data : []);
+          pendingDisp = dispList.filter((d: any) => d.status === 'PREPARING' || d.status === 'PENDING').length;
+        }
+
         setKpiCounts({
           currentStock: String(skuCount),
           stockIn: String(inCount),
           stockOut: String(outCount),
-          pendingDispatch: '0',
+          pendingDispatch: String(pendingDisp),
           returns: String(retCount),
           damaged: String(damCount),
           lowStock: String(lowList.length),

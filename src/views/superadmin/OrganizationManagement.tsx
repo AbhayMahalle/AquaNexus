@@ -24,7 +24,6 @@ import {
   CheckCircle2,
   Users,
   AlertTriangle,
-  RefreshCw,
   Mail,
   Phone,
   MapPin,
@@ -199,15 +198,6 @@ export default function OrganizationManagement() {
     }
   };
 
-  const handleEnterTenant = (org: OrganizationRecord) => {
-    if (org.status === 'SUSPENDED') {
-      showToast('Cannot enter a suspended organization tenant ERP', 'warning');
-      return;
-    }
-    setSelectedOrganization(org.id, org.name);
-    showToast(`Switched active tenant context to: ${org.name}`, 'info');
-    window.location.href = '/admin/dashboard';
-  };
 
   const handleToggleStatus = async () => {
     if (!selectedOrgForStatus) return;
@@ -350,18 +340,6 @@ export default function OrganizationManagement() {
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            variant={row.status === 'ACTIVE' ? 'primary' : 'outline'}
-            disabled={row.status === 'SUSPENDED'}
-            onClick={() => handleEnterTenant(row)}
-            title="Switch context into this company's ERP"
-            className="text-xs font-semibold"
-            leftIcon={<ExternalLink className="w-3.5 h-3.5" />}
-          >
-            Enter ERP
-          </Button>
-
-          <Button
-            size="sm"
             variant={row.status === 'ACTIVE' ? 'ghost' : 'outline'}
             onClick={() => {
               setSelectedOrgForStatus(row);
@@ -383,26 +361,16 @@ export default function OrganizationManagement() {
         <div className="space-y-6">
           <PageHeader
             title="Customer Organizations"
-            description="Platform SuperAdmin governance: provision client companies, manage tenant status, and enter scoped ERP environments."
+            description="Platform SuperAdmin governance: provision client companies and manage tenant status."
             action={
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchOrganizations}
-                  leftIcon={<RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />}
-                >
-                  Refresh
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setIsProvisionOpen(true)}
-                  leftIcon={<Building2 className="w-4 h-4" />}
-                >
-                  Provision Organization
-                </Button>
-              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsProvisionOpen(true)}
+                leftIcon={<Building2 className="w-4 h-4" />}
+              >
+                Provision Organization
+              </Button>
             }
           />
 
