@@ -64,6 +64,14 @@ const requirePermission = (requiredPermission) => {
       return next();
     }
 
+    // Allow MANAGER to manage employees
+    if (
+      req.user.role.name === "MANAGER" &&
+      requiredPermission.startsWith("employee.")
+    ) {
+      return next();
+    }
+
     if (!permissions.includes(requiredPermission)) {
       return sendError(
         res,

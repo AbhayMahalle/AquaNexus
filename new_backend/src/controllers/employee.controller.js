@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const prisma = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/apiResponse');
 
@@ -20,6 +21,10 @@ const getEmployees = async (req, res) => {
 
     const where = {
       organizationId: req.organizationId,
+      NOT: [
+        { designation: { in: ['Company Administrator', 'Administrator', 'Admin'] } },
+        { user: { userRoles: { some: { role: { name: { in: ['ADMIN', 'SUPER_ADMIN'] } } } } } }
+      ]
     };
 
     if (req.user && req.user.role?.name === 'EMPLOYEE') {
@@ -164,6 +169,7 @@ const createEmployee = async (req, res) => {
       firstName,
       lastName,
       email,
+      password,
       phone,
       departmentId,
       department: departmentName,
@@ -225,15 +231,69 @@ const createEmployee = async (req, res) => {
       return sendError(res, `Employee code '${code}' already exists in your organization`, 400);
     }
 
+    const finalEmail = email || `${firstName.toLowerCase()}.${Date.now().toString().slice(-4)}@aquanexus.com`;
+    let createdUserId = null;
+
+    // Provision User account if password is provided
+    if (password) {
+      if (password.length < 6) {
+        return sendError(res, 'Password must be at least 6 characters', 400);
+      }
+
+      const existingUser = await prisma.user.findFirst({
+        where: { email: finalEmail }
+      });
+      if (existingUser) {
+        return sendError(res, `A user account with email '${finalEmail}' already exists`, 409);
+      }
+
+      const employeeRole = await prisma.role.findFirst({
+        where: { name: 'EMPLOYEE' }
+      });
+
+      if (employeeRole) {
+        const passwordHash = await bcrypt.hash(password, 10);
+        let usernameBase = finalEmail.split('@')[0].trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+        const existingUsername = await prisma.user.findUnique({
+          where: { username: usernameBase }
+        });
+        const finalUsername = existingUsername ? `${usernameBase}_${Date.now().toString().slice(-4)}` : usernameBase;
+
+        const newUser = await prisma.user.create({
+          data: {
+            username: finalUsername,
+            email: finalEmail,
+            passwordHash,
+            firstName,
+            lastName,
+            phone: phone || '9876543210',
+            status: 'ACTIVE',
+            organizationId: req.organizationId,
+            isSuperAdmin: false,
+          }
+        });
+
+        await prisma.userRole.create({
+          data: {
+            userId: newUser.id,
+            roleId: employeeRole.id,
+          }
+        });
+
+        createdUserId = newUser.id;
+      }
+    }
+
     const resolvedJoiningDate = joiningDate ? new Date(joiningDate) : new Date();
 
     const newEmployee = await prisma.employee.create({
       data: {
         organizationId: req.organizationId,
         employeeCode: code,
+        userId: createdUserId,
         firstName,
         lastName,
-        email: email || `${firstName.toLowerCase()}.${Date.now().toString().slice(-4)}@aquanexus.com`,
+        email: finalEmail,
         phone: phone || '9876543210',
         departmentId: targetDept.id,
         designation,
@@ -242,7 +302,8 @@ const createEmployee = async (req, res) => {
         status
       },
       include: {
-        department: true
+        department: true,
+        user: true,
       }
     });
 

@@ -25,6 +25,7 @@ const salesRoutes = require("./routes/sales.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const auditRoutes = require("./routes/audit.routes");
 const organizationRoutes = require("./routes/organization.routes");
+const platformRoutes = require("./routes/platform.routes");
 const p2pRoutes = require("./routes/p2p.routes");
 
 const app = express();
@@ -40,6 +41,7 @@ app.get("/api", (req, res) => {
 
 // Register routes
 app.use("/api/auth", authRoutes);
+app.use("/api", platformRoutes);
 app.use("/api/platform", organizationRoutes);
 app.use("/api", organizationRoutes);
 app.use("/api", adminRoutes); // Includes /api/users, /api/roles, /api/permissions

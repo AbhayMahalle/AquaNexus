@@ -108,6 +108,7 @@ describe('AquaNexus Phase 1: Multi-Tenancy Test Suite', () => {
     await cleanTestOrgs();
 
     const passwordHash = await bcrypt.hash('Password@123', 10);
+    await prisma.user.updateMany({ where: { email: 'superadmin@aquanexus.com' }, data: { passwordHash } });
 
     // 4. Create Organization A and Organization B
     await prisma.organization.create({

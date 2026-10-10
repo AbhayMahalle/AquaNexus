@@ -29,16 +29,7 @@ interface UserRecord {
   joinDate?: string;
 }
 
-const INITIAL_USERS: UserRecord[] = [
-  { id: '1', name: 'Mrudula Lead', email: 'admin@aquanexus.com', role: 'admin', roleTitle: 'System Lead / Frontend', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43210', joinDate: '2024-01-15' },
-  { id: '2', name: 'Suresh Patil', email: 'manager@aquanexus.com', role: 'manager', roleTitle: 'Plant Operations Manager', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43211', joinDate: '2024-02-01' },
-  { id: '3', name: 'Ram Store', email: 'store@aquanexus.com', role: 'store_manager', roleTitle: 'Store & Inventory Lead', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43212', joinDate: '2024-03-10' },
-  { id: '4', name: 'Yash Finance', email: 'finance@aquanexus.com', role: 'accountant', roleTitle: 'Chief Accountant', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43213', joinDate: '2024-04-05' },
-  { id: '5', name: 'Niranjan Dist', email: 'distributor@aquanexus.com', role: 'distributor', roleTitle: 'Distributor Agency Lead', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43214', joinDate: '2024-05-20' },
-  { id: '6', name: 'Ramesh K.', email: 'ramesh@aquanexus.com', role: 'employee', roleTitle: 'Line Operator', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43215', joinDate: '2024-06-01' },
-  { id: '7', name: 'Sunil P.', email: 'sunil@aquanexus.com', role: 'employee', roleTitle: 'Filling Line Technician', status: 'active', plant: 'AquaNexus Unit #1', phone: '+91 98765 43216', joinDate: '2024-06-15' },
-  { id: '8', name: 'Priya M.', email: 'priya@aquanexus.com', role: 'manager', roleTitle: 'Quality Manager', status: 'inactive', plant: 'AquaNexus Unit #2', phone: '+91 98765 43217', joinDate: '2024-07-01' },
-];
+const INITIAL_USERS: UserRecord[] = [];
 
 const ITEMS_PER_PAGE = 5;
 
@@ -64,6 +55,7 @@ const ROLE_VARIANTS: Record<UserRole, 'primary' | 'secondary' | 'success' | 'war
 
 export default function UserManagementPage() {
   const { user: currentUser } = useAuth();
+  const isManager = currentUser?.role === 'manager';
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -77,10 +69,31 @@ export default function UserManagementPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
 
+  // Subscription Entitlement State
+  const [subscription, setSubscription] = useState<any>(null);
+
   // Form state
-  const [formData, setFormData] = useState({ name: '', email: '', role: 'employee' as UserRole, phone: '', plant: 'AquaNexus Unit #1' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'employee' as UserRole,
+    phone: '',
+    plant: 'AquaNexus Unit #1',
+  });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+
+  const fetchSubscription = async () => {
+    try {
+      const res = await fetchApi<any>('/company/subscription');
+      if (res.success && res.data) {
+        setSubscription(res.data.subscription || res.data);
+      }
+    } catch (e) {
+      console.error('Failed to load company subscription:', e);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -96,13 +109,14 @@ export default function UserManagementPage() {
           else if (roleName === 'store_manager') mappedRole = 'store_manager';
           else if (roleName === 'accountant') mappedRole = 'accountant';
           else if (roleName === 'distributor') mappedRole = 'distributor';
+          else if (roleName === 'supplier' || roleName === 'vendor') mappedRole = 'supplier';
 
           return {
             id: u.id,
             name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username || u.email,
             email: u.email,
             role: mappedRole,
-            roleTitle: u.role?.description || u.role?.name || mappedRole,
+            roleTitle: mappedRole === 'admin' ? 'Company Administrator' : mappedRole === 'super_admin' ? 'Platform SuperAdmin' : u.role?.name === 'SUPPLIER' ? 'Vendor / Supplier' : (u.role?.description || u.role?.name || (mappedRole === 'supplier' ? 'Vendor / Supplier' : mappedRole)),
             status: u.status === 'ACTIVE' ? 'active' : 'inactive',
             plant: 'AquaNexus Unit #1',
             phone: u.phone || '',
@@ -118,6 +132,7 @@ export default function UserManagementPage() {
 
   useEffect(() => {
     fetchUsers();
+    fetchSubscription();
   }, []);
 
   // Filtering and search
@@ -154,34 +169,36 @@ export default function UserManagementPage() {
   const hasActiveFilters = search || roleFilter || statusFilter;
 
   // Validation
-  const validateForm = (): boolean => {
+  const validateForm = (isNewUser = false): boolean => {
     const errors: Record<string, string> = {};
     if (!formData.name.trim()) errors.name = 'Full name is required';
     if (!formData.email.trim()) errors.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Invalid email format';
+    if (isNewUser) {
+      if (!formData.password) errors.password = 'Initial password is required';
+      else if (formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-
-
   // Create user
   const handleCreate = async () => {
-    if (!validateForm()) return;
+    if (!validateForm(true)) return;
     setIsSaving(true);
     try {
       const names = formData.name.trim().split(/\s+/);
       const firstName = names[0] || 'User';
       const lastName = names.slice(1).join(' ') || firstName;
-      const roleName = formData.role.toUpperCase();
+      const roleName = isManager ? 'EMPLOYEE' : formData.role.toUpperCase();
 
       const payload = {
         username: (formData.email.split('@')[0] + Date.now().toString().slice(-4)).toLowerCase(),
         email: formData.email,
-        password: 'Password@123',
+        password: formData.password,
         firstName,
         lastName,
-        phone: formData.phone || '9876543210',
+        phone: formData.phone || '',
         roleId: roleName,
       };
 
@@ -192,11 +209,13 @@ export default function UserManagementPage() {
 
       if (res.success) {
         await fetchUsers();
+        await fetchSubscription();
         setIsCreateOpen(false);
         resetForm();
         showToast(`User "${formData.name}" created successfully`, 'success');
       } else {
-        showToast(res.message || 'Failed to create user', 'error');
+        const errorMsg = (res as any).message || (res as any).error || 'Failed to create user';
+        showToast(errorMsg, 'error');
       }
     } finally {
       setIsSaving(false);
@@ -205,8 +224,12 @@ export default function UserManagementPage() {
 
   // Edit user
   const openEdit = (user: UserRecord) => {
+    if (isManager && user.role !== 'employee') {
+      showToast('Managers are only permitted to modify Employee accounts', 'error');
+      return;
+    }
     setSelectedUser(user);
-    setFormData({ name: user.name, email: user.email, role: user.role, phone: user.phone || '', plant: user.plant });
+    setFormData({ name: user.name, email: user.email, password: '', role: user.role, phone: user.phone || '', plant: user.plant });
     setFormErrors({});
     setIsEditOpen(true);
   };
@@ -218,7 +241,7 @@ export default function UserManagementPage() {
       const names = formData.name.trim().split(/\s+/);
       const firstName = names[0];
       const lastName = names.slice(1).join(' ') || firstName;
-      const roleId = formData.role.toUpperCase();
+      const roleId = isManager ? 'EMPLOYEE' : formData.role.toUpperCase();
 
       const res = await fetchApi<any>(`/users/${selectedUser.id}`, {
         method: 'PATCH',
@@ -249,7 +272,14 @@ export default function UserManagementPage() {
   const openView = (user: UserRecord) => { setSelectedUser(user); setIsViewOpen(true); };
 
   // Delete user
-  const openDelete = (user: UserRecord) => { setSelectedUser(user); setIsDeleteOpen(true); };
+  const openDelete = (user: UserRecord) => {
+    if (isManager && user.role !== 'employee') {
+      showToast('Managers are only permitted to remove Employee accounts', 'error');
+      return;
+    }
+    setSelectedUser(user);
+    setIsDeleteOpen(true);
+  };
   const handleDelete = async () => {
     if (!selectedUser) return;
     setIsSaving(true);
@@ -273,6 +303,9 @@ export default function UserManagementPage() {
 
   // Toggle status
   const toggleStatus = async (user: UserRecord) => {
+    if (isManager && user.role !== 'employee') {
+      return;
+    }
     const newStatus = user.status === 'active' ? 'INACTIVE' : 'ACTIVE';
     const res = await fetchApi<any>(`/users/${user.id}`, {
       method: 'PATCH',
@@ -287,37 +320,43 @@ export default function UserManagementPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', role: 'employee', phone: '', plant: 'AquaNexus Unit #1' });
+    setFormData({ name: '', email: '', password: '', role: 'employee', phone: '', plant: 'AquaNexus Unit #1' });
     setFormErrors({});
   };
 
   // Export
   const handleExport = () => {
     exportToCSV(filteredUsers, [
-      { key: 'name', header: 'Name' },
+      { key: 'name', header: 'Full Name' },
       { key: 'email', header: 'Email' },
       { key: 'role', header: 'Role' },
       { key: 'roleTitle', header: 'Title' },
       { key: 'status', header: 'Status' },
-      { key: 'plant', header: 'Plant' },
     ], 'aquanexus_users');
   };
 
   const columns: Column<UserRecord>[] = [
-    { key: 'name', header: 'Employee', render: (u) => <span className="font-bold text-[#172033]">{u.name}</span> },
+    { key: 'name', header: 'Full Name', render: (u) => <span className="font-bold text-[#172033]">{u.name}</span> },
     { key: 'email', header: 'Email Address', render: (u) => <span className="text-[#64748B] flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-[#94A3B8] shrink-0" />{u.email}</span> },
     {
       key: 'role',
       header: 'System Role',
-      render: (u) => <Badge variant={ROLE_VARIANTS[u.role]}>{u.role.replace('_', ' ').toUpperCase()}</Badge>
+      render: (u) => (
+        <Badge variant={ROLE_VARIANTS[u.role]}>
+          {u.role === 'supplier' ? 'VENDOR / SUPPLIER' : u.role.replace('_', ' ').toUpperCase()}
+        </Badge>
+      ),
     },
     { key: 'roleTitle', header: 'Position / Department' },
-    { key: 'plant', header: 'Operating Unit' },
     {
       key: 'status',
       header: 'Status',
       render: (u) => (
-        <button onClick={() => toggleStatus(u)} className="cursor-pointer">
+        <button
+          onClick={() => (!isManager || u.role === 'employee') && toggleStatus(u)}
+          className={(!isManager || u.role === 'employee') ? "cursor-pointer" : "cursor-default"}
+          title={isManager && u.role !== 'employee' ? "Only admin can toggle non-employee accounts" : undefined}
+        >
           <Badge variant={u.status === 'active' ? 'success' : 'neutral'}>{u.status.toUpperCase()}</Badge>
         </button>
       )
@@ -331,12 +370,16 @@ export default function UserManagementPage() {
           <button onClick={() => openView(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-[#EFF3F8] transition-colors" title="View Details">
             <Eye className="w-4 h-4" />
           </button>
-          <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F4C81] hover:bg-[#E6EFF7] transition-colors" title="Edit User">
-            <Edit className="w-4 h-4" />
-          </button>
-          <button onClick={() => openDelete(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors" title="Delete User">
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {(!isManager || u.role === 'employee') && (
+            <>
+              <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F4C81] hover:bg-[#E6EFF7] transition-colors" title="Edit User">
+                <Edit className="w-4 h-4" />
+              </button>
+              <button onClick={() => openDelete(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors" title="Delete User">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       ),
     },
@@ -346,8 +389,62 @@ export default function UserManagementPage() {
     <div className="space-y-4">
       <Input label="Full Name" placeholder="e.g. Aniket Sharma" required value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))} error={formErrors.name} />
       <Input label="Email Address" type="email" placeholder="e.g. aniket@aquanexus.com" required value={formData.email} onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))} error={formErrors.email} />
+      {isCreateOpen && (
+        <Input
+          label="Account Password"
+          type="password"
+          placeholder="••••••••"
+          required
+          value={formData.password}
+          onChange={(e) => setFormData(f => ({ ...f, password: e.target.value }))}
+          error={formErrors.password}
+          helperText="Minimum 6 characters"
+        />
+      )}
       <Input label="Phone Number" type="tel" placeholder="+91 98765 43210" value={formData.phone} onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))} />
-      <Select label="Assigned System Role" value={formData.role} onChange={(e) => setFormData(f => ({ ...f, role: e.target.value as UserRole }))} options={ROLE_OPTIONS.filter((option) => currentUser?.role === 'super_admin' || option.value !== 'super_admin')} />
+      <Select
+        label="Assigned System Role"
+        value={formData.role}
+        disabled={isManager}
+        onChange={(e) => setFormData(f => ({ ...f, role: e.target.value as UserRole }))}
+        options={
+          isManager
+            ? [{ label: '⚙️ Employee', value: 'employee' }]
+            : ROLE_OPTIONS.filter((option) => currentUser?.role === 'super_admin' || option.value !== 'super_admin')
+        }
+      />
+      
+      {/* Role Quota Indicator */}
+      {formData.role === 'employee' ? (
+        <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+          <span>✓</span>
+          <span>Unlimited role: Employees never consume subscription quota on any plan.</span>
+        </div>
+      ) : formData.role === 'admin' ? (
+        <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2">
+          <span>ℹ</span>
+          <span>Single-Admin Rule: Exactly 1 company Admin is permitted per organization.</span>
+        </div>
+      ) : subscription?.roleLimits?.[formData.role.toUpperCase()] ? (
+        (() => {
+          const rLimit = subscription.roleLimits[formData.role.toUpperCase()];
+          return (
+            <div className={`p-2.5 rounded-lg text-xs flex items-center justify-between gap-2 border ${
+              rLimit.isLimitReached
+                ? 'bg-amber-50 border-amber-200 text-amber-900'
+                : 'bg-blue-50/60 border-blue-100 text-blue-900'
+            }`}>
+              <span>Quota for {rLimit.roleName}: <strong>{rLimit.currentUsage} / {rLimit.maxLimit}</strong> accounts</span>
+              {rLimit.isLimitReached && (
+                <span className="font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded text-[11px]">
+                  Limit Reached • Upgrade Required
+                </span>
+              )}
+            </div>
+          );
+        })()
+      ) : null}
+
       <Input label="Plant Location" value={formData.plant} onChange={(e) => setFormData(f => ({ ...f, plant: e.target.value }))} />
     </div>
   );
@@ -362,7 +459,11 @@ export default function UserManagementPage() {
           primaryAction={{
             label: 'Add New User',
             icon: <UserPlus className="w-4 h-4" />,
-            onClick: () => { resetForm(); setIsCreateOpen(true); },
+            variant: 'primary',
+            onClick: () => {
+              resetForm();
+              setIsCreateOpen(true);
+            },
           }}
           secondaryActions={[
             {
@@ -373,6 +474,61 @@ export default function UserManagementPage() {
             }
           ]}
         />
+
+        {/* Subscription Entitlement Bar with Per-Role Breakdown */}
+        {subscription && (
+          <div className="mb-6 p-4 rounded-xl border border-blue-100 bg-blue-50/50 flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Plan:</span>
+                <Badge variant={subscription.plan?.code === 'PRO_MAX' ? 'primary' : subscription.plan?.code === 'PRO' ? 'success' : 'neutral'} className="font-bold">
+                  {subscription.plan?.name || 'Basic Plan'}
+                </Badge>
+                <Badge variant={subscription.status === 'ACTIVE' ? 'success' : 'danger'}>
+                  {subscription.status}
+                </Badge>
+                <span className="text-xs text-gray-500">
+                  {subscription.plan?.code === 'BASIC'
+                    ? '1 Admin • Unlimited Employees • Max 1 user per business role'
+                    : subscription.plan?.code === 'PRO'
+                      ? '1 Admin • Unlimited Employees • Max 5 users per business role'
+                      : '1 Admin • Unlimited Employees • Custom per-role limits'}
+                </span>
+              </div>
+            </div>
+
+            {/* Per-role entitlement pills */}
+            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-blue-100/60">
+              <span className="text-xs font-medium text-gray-600">Role Entitlements:</span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white border border-gray-200 text-gray-700 shadow-sm">
+                👑 Admin: <strong className="text-primary">1 / 1</strong>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-sm">
+                ⚙️ Employees: <strong>Unlimited</strong> ({subscription.employeeCount ?? 0} active)
+              </span>
+              {subscription.roleBreakdown?.filter((r: any) => r.isBusinessRole).map((r: any) => (
+                <span
+                  key={r.roleName}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium shadow-sm ${
+                    r.isLimitReached
+                      ? 'bg-amber-50 border border-amber-300 text-amber-900 font-semibold'
+                      : 'bg-white border border-gray-200 text-gray-700'
+                  }`}
+                >
+                  <span>{r.roleName}:</span>
+                  <strong className={r.isLimitReached ? 'text-amber-700' : 'text-gray-900'}>
+                    {r.currentUsage} / {r.maxLimit}
+                  </strong>
+                  {r.isLimitReached && (
+                    <span className="text-[10px] px-1 py-0.2 bg-amber-200 text-amber-900 rounded font-bold uppercase">
+                      Full
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Card className="mb-6">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3">
@@ -401,8 +557,10 @@ export default function UserManagementPage() {
                     { label: 'Store Manager', value: 'store_manager' },
                     { label: 'Accountant', value: 'accountant' },
                     { label: 'Distributor', value: 'distributor' },
+                    { label: 'Vendor / Supplier', value: 'supplier' },
+                    { label: 'Employee', value: 'employee' },
                   ]}
-                  className="!w-36"
+                  className="!w-44"
                 />
                 <Select
                   value={statusFilter}
@@ -488,7 +646,9 @@ export default function UserManagementPage() {
                 <div>
                   <p className="text-base font-bold text-[#172033]">{selectedUser.name}</p>
                   <p className="text-xs text-[#64748B]">{selectedUser.roleTitle}</p>
-                  <Badge variant={ROLE_VARIANTS[selectedUser.role]} size="sm" className="mt-1">{selectedUser.role.replace('_', ' ').toUpperCase()}</Badge>
+                  <Badge variant={ROLE_VARIANTS[selectedUser.role]} size="sm" className="mt-1">
+                    {selectedUser.role === 'supplier' ? 'VENDOR / SUPPLIER' : selectedUser.role.replace('_', ' ').toUpperCase()}
+                  </Badge>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">

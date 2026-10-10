@@ -13,8 +13,14 @@ import { EmployeeDashboardPage } from '@/pages/employee/EmployeeDashboard';
 import { ProfilePage } from '@/pages/shared/ProfilePage';
 import { EmployeeNotificationsPage } from '@/pages/employee/EmployeeNotificationsPage';
 import AdminUsersPage from '@/app/(dashboard)/admin/users/page';
-import AdminRolesPage from '@/app/(dashboard)/admin/roles/page';
 import SuperAdminOrganizationsPage from '@/app/(dashboard)/superadmin/organizations/page';
+import SuperAdminDashboardPage from '@/app/(dashboard)/super-admin/dashboard/page';
+import SuperAdminCompaniesPage from '@/app/(dashboard)/super-admin/companies/page';
+import SuperAdminSubscriptionsPage from '@/app/(dashboard)/super-admin/subscriptions/page';
+import SuperAdminPlansPage from '@/app/(dashboard)/super-admin/plans/page';
+import SuperAdminPaymentsPage from '@/app/(dashboard)/super-admin/payments/page';
+import SuperAdminSettingsPage from '@/app/(dashboard)/super-admin/settings/page';
+import SuperAdminProfilePage from '@/app/(dashboard)/super-admin/profile/page';
 import AdminStoreManagerDashboardPage from '@/app/(dashboard)/admin/store-manager-oversight/dashboard/page';
 
 import AdminManagerDashboardPage from '@/app/(dashboard)/admin/manager-dashboard/page';
@@ -119,12 +125,12 @@ export function AppRoutes() {
           </AuthGuard>
         }
       >
-        {/* SuperAdmin Only */}
+        {/* SuperAdmin Only (Platform Governance) */}
         <Route
           path="/superadmin"
           element={
             <AuthGuard allowedRoles={['super_admin']}>
-              <Navigate to="/superadmin/organizations" replace />
+              <Navigate to="/super-admin/dashboard" replace />
             </AuthGuard>
           }
         />
@@ -132,13 +138,76 @@ export function AppRoutes() {
           path="/superadmin/organizations"
           element={
             <AuthGuard allowedRoles={['super_admin']}>
-              <SuperAdminOrganizationsPage />
+              <Navigate to="/super-admin/companies" replace />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/super-admin"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <Navigate to="/super-admin/dashboard" replace />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/super-admin/dashboard"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <SuperAdminDashboardPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/super-admin/companies"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <SuperAdminCompaniesPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/super-admin/subscriptions"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <SuperAdminSubscriptionsPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/super-admin/plans"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <SuperAdminPlansPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/super-admin/payments"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <SuperAdminPaymentsPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/super-admin/settings"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <SuperAdminSettingsPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/super-admin/profile"
+          element={
+            <AuthGuard allowedRoles={['super_admin']}>
+              <SuperAdminProfilePage />
             </AuthGuard>
           }
         />
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
-        <Route path="/admin/roles" element={<AdminRolesPage />} />
         <Route path="/admin/managers" element={<AdminUsersPage />} />
         <Route path="/admin/employees" element={<EmployeesListPage />} />
         <Route path="/admin/employees/add" element={<AddEmployeePage />} />
@@ -257,7 +326,7 @@ export function AppRoutes() {
         <Route path="/manager/p2p" element={<ManagerP2PPage />} />
         <Route path="/store/p2p" element={<StoreP2PPage />} />
         <Route path="/supplier/p2p" element={<SupplierP2PPage />} />
-        <Route path="/vendor/p2p" element={<SupplierP2PPage />} />
+        <Route path="/vendor/p2p" element={<Navigate to="/supplier/p2p" replace />} />
         <Route path="/accountant/p2p" element={<AccountantP2PPage />} />
 
 

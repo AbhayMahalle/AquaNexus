@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
@@ -20,6 +20,7 @@ export const AddEmployeePage: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [departments, setDepartments] = useState<{ id: string; name: string; code: string }[]>([]);
 
   const [formData, setFormData] = useState({
     employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -28,16 +29,47 @@ export const AddEmployeePage: React.FC = () => {
     designation: 'Plant Operator',
     contactNumber: '',
     email: '',
+    password: '',
     joiningDate: new Date().toISOString().split('T')[0],
     status: 'ACTIVE' as EmployeeStatus,
     salary: 25000,
     address: '',
   });
 
+  useEffect(() => {
+    let mounted = true;
+    employeeService.getDepartments().then((res) => {
+      if (mounted && res.success && res.data && res.data.length > 0) {
+        setDepartments(res.data);
+        setFormData((prev) => ({
+          ...prev,
+          department: prev.department && prev.department !== 'Production' ? prev.department : res.data[0].id,
+        }));
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const departmentOptions = departments.length > 0
+    ? departments.map((d) => ({ value: d.id, label: d.name }))
+    : [
+        { value: 'Production', label: 'Production' },
+        { value: 'Quality Assurance', label: 'Quality Assurance' },
+        { value: 'Store', label: 'Store & Warehouse' },
+        { value: 'Maintenance', label: 'Maintenance' },
+        { value: 'Administration', label: 'Administration' },
+      ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
       setErrorMsg('Please enter the employee full name.');
+      return;
+    }
+    if (!formData.password || formData.password.length < 6) {
+      setErrorMsg('Login password is required and must be at least 6 characters.');
       return;
     }
     setErrorMsg('');
@@ -59,7 +91,7 @@ export const AddEmployeePage: React.FC = () => {
         title="Add New Employee"
         description="Register a new plant staff member into the internal management system."
         breadcrumbs={[
-          { label: 'Employees', href: listHref },
+          { label: isManager ? 'Manager' : 'Employees', href: listHref },
           { label: 'Add Employee' },
         ]}
         action={
@@ -102,13 +134,7 @@ export const AddEmployeePage: React.FC = () => {
               label="Department"
               value={formData.department}
               onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              options={[
-                { value: 'Production', label: 'Production' },
-                { value: 'Quality Assurance', label: 'Quality Assurance' },
-                { value: 'Store', label: 'Store & Warehouse' },
-                { value: 'Maintenance', label: 'Maintenance' },
-                { value: 'Administration', label: 'Administration' },
-              ]}
+              options={departmentOptions}
             />
 
             <Input
@@ -134,6 +160,16 @@ export const AddEmployeePage: React.FC = () => {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
+            />
+
+            <Input
+              label="Login Password"
+              type="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              required
+              helperText="Minimum 6 characters for portal access"
             />
 
             <Input

@@ -104,13 +104,13 @@ export const employeeService = {
     };
   },
 
-  async createEmployee(employeeData: Omit<Employee, 'id'>): Promise<ApiResponse<Employee>> {
+  async createEmployee(employeeData: Omit<Employee, 'id'> & { password?: string }): Promise<ApiResponse<Employee>> {
     const names = (employeeData.name || '').trim().split(/\s+/);
     const firstName = names[0] || 'Employee';
     const lastName = names.slice(1).join(' ') || firstName;
     const departmentId = await getDepartmentIdByName(employeeData.department || 'Production');
 
-    const payload = {
+    const payload: any = {
       firstName,
       lastName,
       employeeCode: employeeData.employeeId || undefined,
@@ -121,6 +121,10 @@ export const employeeService = {
       joiningDate: employeeData.joiningDate || new Date().toISOString(),
       status: employeeData.status || 'ACTIVE',
     };
+
+    if (employeeData.password) {
+      payload.password = employeeData.password;
+    }
 
     const realResponse = await fetchApi<any>('/employees', {
       method: 'POST',

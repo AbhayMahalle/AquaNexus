@@ -20,6 +20,7 @@ const { validate } = require("../utils/validate");
 const router = express.Router();
 
 const adminOnly = [requireAuth, requireTenantContext, requireRole(["ADMIN"])];
+const adminOrManager = [requireAuth, requireTenantContext, requireRole(["ADMIN", "MANAGER"])];
 
 // Users
 router.get("/users", ...adminOnly, getUsers);

@@ -28,6 +28,9 @@ import {
   Phone,
   MapPin,
   Calendar,
+  Trash2,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 
 interface OrganizationRecord {
@@ -38,8 +41,32 @@ interface OrganizationRecord {
   contactEmail?: string;
   contactPhone?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  gstNumber?: string;
+  companyType?: string;
   createdAt: string;
   updatedAt: string;
+  subscription?: {
+    id: string;
+    status: string;
+    planName?: string;
+    planCode?: string;
+    plan?: {
+      name: string;
+      code: string;
+      tier?: string;
+      maxUsers: number;
+      priceMonthly?: number;
+    };
+    maxUsers?: number;
+    customMaxUsers?: number;
+    customPrice?: number;
+    price?: number;
+    startDate?: string;
+    endDate?: string;
+    expiresAt?: string;
+  };
   users?: Array<{
     id: string;
     username: string;
@@ -86,17 +113,52 @@ export default function OrganizationManagement() {
     contactEmail: '',
     contactPhone: '',
     address: '',
+    city: '',
+    state: '',
+    gstNumber: '',
+    planCode: 'BASIC',
+    customPrice: '',
+    customMaxUsers: '25',
     adminFirstName: '',
     adminLastName: '',
     adminUsername: '',
     adminEmail: '',
-    adminPassword: 'Password@123',
+    adminPassword: '',
   });
 
   // Status Modal State
   const [selectedOrgForStatus, setSelectedOrgForStatus] = useState<OrganizationRecord | null>(null);
   const [statusModalReason, setStatusModalReason] = useState('');
   const [isStatusSubmitting, setIsStatusSubmitting] = useState(false);
+
+  // Delete Company Modal State
+  const [selectedOrgForDelete, setSelectedOrgForDelete] = useState<OrganizationRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Update Plan Modal State
+  const [selectedOrgForPlan, setSelectedOrgForPlan] = useState<OrganizationRecord | null>(null);
+  const [isUpdatingPlan, setIsUpdatingPlan] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+  const [planFormData, setPlanFormData] = useState({
+    planCode: 'BASIC',
+    billingCycle: 'MONTHLY',
+    durationDays: 30,
+    customPrice: '',
+    customMaxUsers: '',
+    notes: '',
+  });
+
+  const fetchPlans = async () => {
+    try {
+      const res = await apiRequest<any>('/platform/plans');
+      if (res.ok && res.data) {
+        const rawPlans = res.data.plans || res.data || [];
+        setAvailablePlans(rawPlans);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch subscription plans:', err);
+    }
+  };
 
   const fetchOrganizations = async () => {
     setIsLoading(true);
@@ -118,6 +180,7 @@ export default function OrganizationManagement() {
 
   useEffect(() => {
     fetchOrganizations();
+    fetchPlans();
   }, []);
 
   const filteredOrgs = useMemo(() => {
@@ -181,11 +244,17 @@ export default function OrganizationManagement() {
           contactEmail: '',
           contactPhone: '',
           address: '',
+          city: '',
+          state: '',
+          gstNumber: '',
+          planCode: 'BASIC',
+          customPrice: '',
+          customMaxUsers: '25',
           adminFirstName: '',
           adminLastName: '',
           adminUsername: '',
           adminEmail: '',
-          adminPassword: 'Password@123',
+          adminPassword: '',
         });
         fetchOrganizations();
       } else {
@@ -227,6 +296,86 @@ export default function OrganizationManagement() {
     }
   };
 
+  const handleDeleteCompany = async () => {
+    if (!selectedOrgForDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await apiRequest(`/platform/companies/${selectedOrgForDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        showToast(
+          `Company "${selectedOrgForDelete.name}", its administrators, and all associated user accounts deleted successfully.`,
+          'success'
+        );
+        setSelectedOrgForDelete(null);
+        fetchOrganizations();
+      } else {
+        showToast(res.error || 'Failed to delete company', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error deleting company', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleOpenPlanModal = (org: OrganizationRecord) => {
+    setSelectedOrgForPlan(org);
+    const existingPlan = org.subscription?.planCode || org.subscription?.plan?.code || 'BASIC';
+    const matchedPlan = availablePlans.find((p) => p.code?.toUpperCase() === existingPlan.toUpperCase());
+
+    setPlanFormData({
+      planCode: existingPlan,
+      billingCycle: matchedPlan?.billingCycle || 'MONTHLY',
+      durationDays: 30,
+      customPrice: org.subscription?.price !== undefined ? String(org.subscription.price) : (matchedPlan?.price !== undefined ? String(matchedPlan.price) : ''),
+      customMaxUsers: org.subscription?.maxUsers !== undefined ? String(org.subscription.maxUsers) : (matchedPlan?.maxUsers !== undefined ? String(matchedPlan.maxUsers) : ''),
+      notes: '',
+    });
+  };
+
+  const handleUpdatePlanSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrgForPlan) return;
+
+    setIsUpdatingPlan(true);
+    try {
+      const body: any = {
+        companyId: selectedOrgForPlan.id,
+        planCode: planFormData.planCode,
+        billingCycle: planFormData.billingCycle,
+        durationDays: Number(planFormData.durationDays) || 30,
+        notes: planFormData.notes || `Plan updated to ${planFormData.planCode} by SuperAdmin`,
+      };
+
+      if (planFormData.customPrice) {
+        body.customPrice = Number(planFormData.customPrice);
+      }
+      if (planFormData.customMaxUsers) {
+        body.maxUsers = parseInt(planFormData.customMaxUsers, 10);
+      }
+
+      const res = await apiRequest(`/platform/companies/${selectedOrgForPlan.id}/subscription`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        showToast(`Plan successfully updated to ${planFormData.planCode} for "${selectedOrgForPlan.name}"!`, 'success');
+        setSelectedOrgForPlan(null);
+        fetchOrganizations();
+      } else {
+        showToast(res.error || 'Failed to update plan', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error updating plan', 'error');
+    } finally {
+      setIsUpdatingPlan(false);
+    }
+  };
+
   const columns: Column<OrganizationRecord>[] = [
     {
       key: 'company',
@@ -249,6 +398,58 @@ export default function OrganizationManagement() {
           </div>
         </div>
       ),
+    },
+    {
+      key: 'plan',
+      header: 'Subscription Plan',
+      accessor: (row) => {
+        const sub = row.subscription;
+        if (!sub) {
+          return (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400">Not assigned</span>
+              <button
+                type="button"
+                onClick={() => handleOpenPlanModal(row)}
+                className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold underline"
+              >
+                + Assign Plan
+              </button>
+            </div>
+          );
+        }
+        const planCode = sub.planCode || sub.plan?.code || 'BASIC';
+        const planName = sub.planName || sub.plan?.name || planCode;
+        const color =
+          planCode === 'PRO_MAX'
+            ? 'bg-purple-100 text-purple-800 border-purple-200'
+            : planCode === 'PRO'
+            ? 'bg-blue-100 text-blue-800 border-blue-200'
+            : planCode === 'PLUS'
+            ? 'bg-indigo-100 text-indigo-800 border-indigo-200'
+            : 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        return (
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${color}`}>
+                {planName}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleOpenPlanModal(row)}
+                className="text-[11px] text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-0.5"
+                title="Update Plan"
+              >
+                <Sparkles className="w-3 h-3" />
+                Change
+              </button>
+            </div>
+            <div className="text-[11px] text-gray-500">
+              Capacity: {sub.maxUsers || sub.customMaxUsers || sub.plan?.maxUsers || 1} accounts
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'administrator',
@@ -337,7 +538,17 @@ export default function OrganizationManagement() {
       key: 'actions',
       header: 'Actions',
       accessor: (row) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleOpenPlanModal(row)}
+            title="Update Subscription Plan"
+            className="text-blue-700 hover:bg-blue-50 border-blue-200 p-1.5 h-8 w-8 flex items-center justify-center"
+          >
+            <Layers className="w-3.5 h-3.5" />
+          </Button>
+
           <Button
             size="sm"
             variant={row.status === 'ACTIVE' ? 'ghost' : 'outline'}
@@ -346,9 +557,19 @@ export default function OrganizationManagement() {
               setStatusModalReason('');
             }}
             title={row.status === 'ACTIVE' ? 'Suspend Organization' : 'Activate Organization'}
-            className={row.status === 'ACTIVE' ? 'text-red-600 hover:bg-red-50 border border-red-200' : 'text-emerald-700 hover:bg-emerald-50 border border-emerald-200'}
+            className={row.status === 'ACTIVE' ? 'text-amber-600 hover:bg-amber-50 border border-amber-200 p-1.5 h-8 w-8 flex items-center justify-center' : 'text-emerald-700 hover:bg-emerald-50 border border-emerald-200 p-1.5 h-8 w-8 flex items-center justify-center'}
           >
             {row.status === 'ACTIVE' ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSelectedOrgForDelete(row)}
+            title="Delete Company (Cascade Deletes Admin & All Users)"
+            className="text-red-600 hover:bg-red-50 hover:text-red-700 border border-red-200 p-1.5 h-8 w-8 flex items-center justify-center"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
       ),
@@ -555,6 +776,79 @@ export default function OrganizationManagement() {
           </div>
 
           <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                Subscription Plan from Database ({availablePlans.length} Available)
+              </h4>
+              <button
+                type="button"
+                onClick={() => navigate('/super-admin/plans')}
+                className="text-[11px] text-blue-600 hover:text-blue-800 font-medium underline flex items-center gap-1"
+              >
+                + Create Custom Plan in DB
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[220px] overflow-y-auto p-0.5">
+              {(availablePlans.length > 0 ? availablePlans : [
+                { code: 'BASIC', name: 'Basic Plan', price: 999, maxUsers: 1, billingCycle: 'MONTHLY', isCustom: false },
+                { code: 'PLUS', name: 'Plus Plan', price: 1999, maxUsers: 2, billingCycle: 'MONTHLY', isCustom: false },
+                { code: 'PRO', name: 'Pro Plan', price: 2999, maxUsers: 5, billingCycle: 'MONTHLY', isCustom: false },
+                { code: 'PRO_MAX', name: 'Pro Max', price: 9999, maxUsers: 50, billingCycle: 'MONTHLY', isCustom: false },
+              ]).map((p) => (
+                <div
+                  key={p.code}
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      planCode: p.code,
+                      customMaxUsers: String(p.maxUsers || 1),
+                      customPrice: String(p.price || 0),
+                    })
+                  }
+                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    formData.planCode.toUpperCase() === p.code.toUpperCase()
+                      ? 'border-blue-600 bg-blue-50/70 ring-2 ring-blue-500/20'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-gray-900">{p.name}</span>
+                    {p.isCustom && (
+                      <span className="text-[9px] bg-purple-100 text-purple-800 px-1 py-0.2 rounded font-bold">
+                        Custom
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs font-semibold text-blue-600 mt-0.5">₹{p.price} / {p.billingCycle?.toLowerCase() || 'mo'}</div>
+                  <div className="text-[11px] text-gray-500 mt-1">{p.maxUsers} Account Limit</div>
+                </div>
+              ))}
+            </div>
+
+            {(formData.planCode === 'PRO_MAX' || formData.planCode === 'CUSTOM' || availablePlans.find(p => p.code === formData.planCode)?.isCustom) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-purple-50/60 border border-purple-200 rounded-xl">
+                <Input
+                  label="Custom User Limit *"
+                  type="number"
+                  placeholder="e.g. 25"
+                  value={formData.customMaxUsers}
+                  onChange={(e) => setFormData({ ...formData, customMaxUsers: e.target.value })}
+                  required
+                />
+                <Input
+                  label="Custom Monthly Price (₹) *"
+                  type="number"
+                  placeholder="e.g. 9999"
+                  value={formData.customPrice}
+                  onChange={(e) => setFormData({ ...formData, customPrice: e.target.value })}
+                  required
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4 pt-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100 pb-1">
               Initial Company Administrator
             </h4>
@@ -592,13 +886,30 @@ export default function OrganizationManagement() {
               />
             </div>
 
-            <Input
-              label="Temporary Password *"
-              type="text"
-              value={formData.adminPassword}
-              onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
-              required
-            />
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-gray-700">Initial Password *</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+                    let pass = '';
+                    for (let i = 0; i < 12; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
+                    setFormData({ ...formData, adminPassword: pass });
+                  }}
+                  className="text-[11px] text-blue-600 hover:underline font-medium"
+                >
+                  Generate Strong Password
+                </button>
+              </div>
+              <Input
+                type="text"
+                placeholder="Enter a secure password (min 8 chars)"
+                value={formData.adminPassword}
+                onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
+                required
+              />
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-200">
@@ -662,6 +973,233 @@ export default function OrganizationManagement() {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Delete Organization Modal */}
+      <Modal
+        isOpen={!!selectedOrgForDelete}
+        onClose={() => {
+          if (!isDeleting) setSelectedOrgForDelete(null);
+        }}
+        title="Delete Company & All Users"
+        description="Permanently remove this company, its administrator, and all associated accounts."
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-900 text-sm space-y-2">
+            <div className="flex items-center gap-2 font-bold text-red-700">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <span>Permanent Cascading Deletion</span>
+            </div>
+            <p className="text-xs leading-relaxed text-red-800">
+              You are about to delete <strong>"{selectedOrgForDelete?.name}"</strong> (slug: <code className="text-[11px] font-mono bg-red-100 px-1 py-0.5 rounded">{selectedOrgForDelete?.slug}</code>).
+            </p>
+            <p className="text-xs leading-relaxed text-red-800">
+              This action <strong>CANNOT be undone</strong>. The following records will be permanently deleted:
+            </p>
+            <ul className="list-disc pl-5 text-xs space-y-1 text-red-800 font-medium">
+              <li>
+                <strong>Company Admin Account:</strong> {selectedOrgForDelete?.admins?.[0]?.email || 'Assigned Administrator'}
+              </li>
+              <li>
+                <strong>All User Accounts:</strong> {selectedOrgForDelete?.stats?.userCount ?? selectedOrgForDelete?._count?.users ?? selectedOrgForDelete?.users?.length ?? 0} total accounts (Managers, Accountants, Staff, Distributors, Suppliers)
+              </li>
+              <li>
+                <strong>All Operational Tenant Data:</strong> Subscriptions, Employees, Inventory, Products, Orders, Production batches, and financial records.
+              </li>
+            </ul>
+          </div>
+
+          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs text-gray-600">
+            Please confirm that you want to delete this company and all its associated personnel.
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedOrgForDelete(null)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteCompany}
+              loading={isDeleting}
+              leftIcon={<Trash2 className="w-4 h-4" />}
+            >
+              Yes, Delete Company & All Users
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Update Plan Modal */}
+      <Modal
+        isOpen={!!selectedOrgForPlan}
+        onClose={() => {
+          if (!isUpdatingPlan) setSelectedOrgForPlan(null);
+        }}
+        title={`Update Subscription Plan — ${selectedOrgForPlan?.name}`}
+        description="Select and apply a new subscription plan for this company."
+      >
+        <form onSubmit={handleUpdatePlanSubmit} className="space-y-4">
+          <div className="p-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-xs">
+            <div className="flex items-center gap-1.5 font-bold mb-1">
+              <Sparkles className="w-4 h-4 text-blue-600" />
+              <span>Current Subscription: {selectedOrgForPlan?.subscription?.planName || selectedOrgForPlan?.subscription?.planCode || 'None'}</span>
+            </div>
+            <p className="text-gray-600">
+              Updating the plan will immediately adjust user capacity limits, role entitlements, and feature access for all accounts in this organization.
+            </p>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-gray-700">
+                Select Plan from Database ({availablePlans.length} Available) *
+              </label>
+              <button
+                type="button"
+                onClick={() => navigate('/super-admin/plans')}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium underline flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Create New Custom Plan in DB
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[260px] overflow-y-auto p-1">
+              {(availablePlans.length > 0 ? availablePlans : [
+                { code: 'BASIC', name: 'Basic Plan', price: 999, maxUsers: 1, billingCycle: 'MONTHLY', isCustom: false, description: 'Starter single-user plan' },
+                { code: 'PLUS', name: 'Plus Plan', price: 1999, maxUsers: 2, billingCycle: 'MONTHLY', isCustom: false, description: 'Small plant operations' },
+                { code: 'PRO', name: 'Pro Plan', price: 2999, maxUsers: 5, billingCycle: 'MONTHLY', isCustom: false, description: 'Growing plant operations' },
+                { code: 'PRO_MAX', name: 'Pro Max Plan', price: 9999, maxUsers: 50, billingCycle: 'MONTHLY', isCustom: false, description: 'Enterprise operations' },
+              ]).map((plan) => (
+                <div
+                  key={plan.id || plan.code}
+                  onClick={() =>
+                    setPlanFormData({
+                      ...planFormData,
+                      planCode: plan.code,
+                      customMaxUsers: String(plan.maxUsers || 1),
+                      customPrice: String(plan.price || 0),
+                      billingCycle: plan.billingCycle || planFormData.billingCycle,
+                    })
+                  }
+                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                    planFormData.planCode.toUpperCase() === plan.code.toUpperCase()
+                      ? 'border-blue-600 bg-blue-50/70 shadow-xs ring-2 ring-blue-500/20'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-gray-900">{plan.name}</span>
+                    <span className="text-xs font-bold text-blue-700">₹{plan.price}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] font-mono font-semibold bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+                      {plan.code}
+                    </span>
+                    {plan.isCustom && (
+                      <span className="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-bold">
+                        Custom Plan
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-gray-600 mt-1">
+                    Capacity: <strong>{plan.maxUsers}</strong> accounts
+                  </div>
+                  {plan.description && (
+                    <div className="text-[10px] text-gray-400 mt-0.5 truncate">{plan.description}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-gray-700 block mb-1">Billing Cycle</label>
+              <select
+                className="w-full text-xs border border-gray-300 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={planFormData.billingCycle}
+                onChange={(e) => {
+                  const cycle = e.target.value;
+                  let days = 30;
+                  if (cycle === 'QUARTERLY') days = 90;
+                  if (cycle === 'ANNUAL') days = 365;
+                  setPlanFormData({ ...planFormData, billingCycle: cycle, durationDays: days });
+                }}
+              >
+                <option value="MONTHLY">Monthly (30 Days)</option>
+                <option value="QUARTERLY">Quarterly (90 Days)</option>
+                <option value="ANNUAL">Annual (365 Days)</option>
+                <option value="CUSTOM">Custom Duration</option>
+              </select>
+            </div>
+
+            <div>
+              <Input
+                label="Duration (Days)"
+                type="number"
+                min="1"
+                value={planFormData.durationDays}
+                onChange={(e) => setPlanFormData({ ...planFormData, durationDays: parseInt(e.target.value, 10) || 30 })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Input
+                label="Custom Price Override (₹, Optional)"
+                placeholder="Leave blank for plan price"
+                type="number"
+                min="0"
+                value={planFormData.customPrice}
+                onChange={(e) => setPlanFormData({ ...planFormData, customPrice: e.target.value })}
+              />
+            </div>
+            <div>
+              <Input
+                label="Custom Max Users (Optional)"
+                placeholder="Leave blank for plan limit"
+                type="number"
+                min="1"
+                value={planFormData.customMaxUsers}
+                onChange={(e) => setPlanFormData({ ...planFormData, customMaxUsers: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Input
+              label="Notes / Reason for Plan Change"
+              placeholder="e.g. Upgraded to Pro Plan upon client request"
+              value={planFormData.notes}
+              onChange={(e) => setPlanFormData({ ...planFormData, notes: e.target.value })}
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-200">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setSelectedOrgForPlan(null)}
+              disabled={isUpdatingPlan}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              loading={isUpdatingPlan}
+              leftIcon={<Layers className="w-4 h-4" />}
+            >
+              Apply Subscription Plan
+            </Button>
+          </div>
+        </form>
       </Modal>
       </DashboardLayout>
     </AuthGuard>

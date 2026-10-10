@@ -40,6 +40,7 @@ import {
   CalendarOff,
   Clock,
   Boxes,
+  Settings,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -75,6 +76,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Bell: <Bell className="w-5 h-5" />,
   Wallet: <Wallet className="w-5 h-5" />,
   MinusCircle: <MinusCircle className="w-5 h-5" />,
+  Settings: <Settings className="w-5 h-5" />,
 };
 
 interface SidebarProps {

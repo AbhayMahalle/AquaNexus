@@ -52,6 +52,35 @@ const requireTenantContext = async (req, res, next) => {
       return sendError(res, "Organization is inactive", 403);
     }
 
+    // Check subscription active state for mutating operations
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+      const activeSub = await prisma.companySubscription.findFirst({
+        where: { organizationId: req.user.organizationId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (activeSub) {
+        const isExpired =
+          activeSub.status === "EXPIRED" ||
+          (activeSub.endDate && new Date(activeSub.endDate) < new Date());
+
+        if (activeSub.status === "SUSPENDED") {
+          return res.status(403).json({
+            success: false,
+            error: "Company subscription is suspended. Mutating operations are disabled until reactivated.",
+            code: "SUBSCRIPTION_SUSPENDED",
+          });
+        }
+        if (isExpired) {
+          return res.status(403).json({
+            success: false,
+            error: "Company subscription has expired. Please renew your plan to perform updates.",
+            code: "SUBSCRIPTION_EXPIRED",
+          });
+        }
+      }
+    }
+
     req.organizationId = req.user.organizationId;
     req.organization = org;
     return next();

@@ -33,6 +33,7 @@ export default function AdminDashboardPage() {
   const [activeBatches, setActiveBatches] = useState<Production[]>([]);
   const [stats, setStats] = useState<any>({ totalQuantity: 0, completedBatches: 0, inProgressBatches: 0 });
   const [kpi, setKpi] = useState<any>({ production: 0, inventory: 0, employees: 0, pendingDispatches: 0, revenue: 0 });
+  const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,14 +46,19 @@ export default function AdminDashboardPage() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [batchesRes, statsRes, inventoryRes, employeesRes, ordersRes, dispatchRes] = await Promise.all([
+      const [batchesRes, statsRes, inventoryRes, employeesRes, ordersRes, dispatchRes, subRes] = await Promise.all([
         productionService.getProductionBatches({}),
         fetch('/api/production/stats', { headers }).then(r => r.json()).catch(() => ({ success: false })),
         fetchApi<any>('/inventory'),
         fetchApi<any>('/employees'),
         fetchApi<any>('/orders'),
         fetchApi<any>('/dispatches'),
+        fetchApi<any>('/company/subscription'),
       ]);
+
+      if (subRes.success && subRes.data) {
+        setSubscription(subRes.data.subscription || subRes.data);
+      }
 
       if (batchesRes.success) {
         setActiveBatches(batchesRes.data.slice(0, 10));
@@ -147,9 +153,97 @@ export default function AdminDashboardPage() {
             title="Admin Control Center"
             description="Real-time plant metrics, production overview, and ERP operational status"
             breadcrumbs={[{ label: 'Admin Dashboard' }]}
-
-
           />
+
+          {/* Company Subscription & SaaS Status Widget */}
+          {subscription && (() => {
+            const roleBreakdown = subscription.roleBreakdown || [];
+            const businessRoles = roleBreakdown.filter((r: any) => r.isBusinessRole);
+            const totalBusinessCapacity = subscription.totalBusinessCapacity ?? (
+              businessRoles.length > 0
+                ? businessRoles.reduce((sum: number, r: any) => sum + (typeof r.maxLimit === 'number' ? r.maxLimit : 1), 0)
+                : (subscription.maxUsers && subscription.maxUsers > 1 ? subscription.maxUsers : 5)
+            );
+            const businessUsage = subscription.businessUserCount ?? subscription.currentUsage ?? 0;
+            const isFull = subscription.isLimitReached || businessUsage >= totalBusinessCapacity;
+
+            return (
+              <div className="mb-6 p-5 rounded-xl border border-gray-200 bg-white shadow-xs">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 shrink-0">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-black">{subscription.organizationName || 'Company'} Subscription</h4>
+                        <Badge variant={subscription.plan?.code === 'PRO_MAX' ? 'primary' : subscription.plan?.code === 'PRO' ? 'success' : 'neutral'} className="font-bold">
+                          {subscription.plan?.name || 'Basic Plan'}
+                        </Badge>
+                        <Badge variant={subscription.status === 'ACTIVE' ? 'success' : 'danger'}>
+                          {subscription.status}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Billing Cycle: <strong className="text-black">{subscription.plan?.billingCycle || 'Monthly'}</strong> • Plan Entitlement: <strong className="text-black">{totalBusinessCapacity}</strong> authorized business staff roles (1 Admin • Unlimited Employees).
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div className="text-left sm:text-right">
+                      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Business Role Usage</p>
+                      <p className="text-sm font-extrabold text-black mt-0.5">
+                        {businessUsage} <span className="text-xs font-normal text-gray-500">/ {totalBusinessCapacity} accounts assigned</span>
+                      </p>
+                    </div>
+                    <div className="w-full sm:w-36 bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className={`h-2.5 rounded-full ${isFull ? 'bg-danger' : 'bg-orange-500'}`}
+                        style={{ width: `${Math.min(100, Math.round((businessUsage / Math.max(1, totalBusinessCapacity)) * 100))}%` }}
+                      />
+                    </div>
+                    <div>
+                      {isFull ? (
+                        <span className="text-xs font-bold text-danger flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Quota Reached
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold text-success">
+                          {Math.max(0, totalBusinessCapacity - businessUsage)} free
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Per-role entitlement pills */}
+                {roleBreakdown.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap pt-3 mt-3 border-t border-gray-100 text-xs">
+                    <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mr-1">Role Quotas:</span>
+                    <span className="px-2 py-0.5 rounded bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-medium">
+                      👑 Admin: <strong>1/1</strong>
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-medium">
+                      ⚙️ Employees: <strong>Unlimited</strong> ({subscription.employeeCount ?? 0} active)
+                    </span>
+                    {businessRoles.map((r: any) => (
+                      <span
+                        key={r.roleName}
+                        className={`px-2 py-0.5 rounded border text-[11px] font-medium ${
+                          r.isLimitReached
+                            ? 'bg-amber-50 border-amber-200 text-amber-900 font-semibold'
+                            : 'bg-gray-50 border-gray-200 text-gray-700'
+                        }`}
+                      >
+                        {r.roleName}: <strong>{r.currentUsage}/{r.maxLimit}</strong>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Top KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

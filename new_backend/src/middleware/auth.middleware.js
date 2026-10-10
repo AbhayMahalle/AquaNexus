@@ -3,6 +3,7 @@ const { sendError } = require("../utils/apiResponse");
 const prisma = require("../config/db");
 
 const getUserWithRetry = async (userId, maxRetries = 2) => {
+  if (!userId) return null;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await prisma.user.findUnique({
@@ -64,7 +65,7 @@ const requireAuth = async (req, res, next) => {
     }
 
     // Load the shared access context used by protected modules (with resilient retry on stale connection)
-    const user = await getUserWithRetry(decoded.id);
+    const user = await getUserWithRetry(decoded.id || decoded.userId);
 
     if (!user) {
       return sendError(res, "User not found", 401);

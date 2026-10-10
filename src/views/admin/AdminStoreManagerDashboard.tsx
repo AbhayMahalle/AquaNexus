@@ -275,11 +275,6 @@ export default function AdminStoreManagerDashboard() {
               label: 'Admin Inventory Master',
               href: '/admin/inventory',
               icon: <Boxes className="w-4 h-4" />,
-            },
-            {
-              label: 'Roles & Security',
-              href: '/admin/roles',
-              icon: <ShieldCheck className="w-4 h-4" />,
             }
           ]}
         />

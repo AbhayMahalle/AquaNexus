@@ -2,7 +2,7 @@ import { User, UserRole } from '@/types/auth';
 import { NavSection } from '@/types/navigation';
 
 export const ROLE_ROUTES: Record<UserRole, string> = {
-  super_admin: '/superadmin/organizations',
+  super_admin: '/super-admin/dashboard',
   admin: '/admin/dashboard',
   manager: '/manager/dashboard',
   store_manager: '/store/dashboard',
@@ -20,7 +20,13 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
   {
     sectionTitle: 'PLATFORM GOVERNANCE',
     items: [
-      { title: 'Customer Organizations', href: '/superadmin/organizations', iconName: 'Building2', roles: ['super_admin'] },
+      { title: 'Platform Overview', href: '/super-admin/dashboard', iconName: 'LayoutDashboard', roles: ['super_admin'] },
+      { title: 'Customer Companies', href: '/super-admin/companies', iconName: 'Building2', roles: ['super_admin'] },
+      { title: 'Subscriptions', href: '/super-admin/subscriptions', iconName: 'ShieldCheck', roles: ['super_admin'] },
+      { title: 'Plans & Pricing', href: '/super-admin/plans', iconName: 'Layers', roles: ['super_admin'] },
+      { title: 'Payments & Revenue', href: '/super-admin/payments', iconName: 'CreditCard', roles: ['super_admin'] },
+      { title: 'Platform Settings', href: '/super-admin/settings', iconName: 'Settings', roles: ['super_admin'] },
+      { title: 'Admin Profile', href: '/super-admin/profile', iconName: 'User', roles: ['super_admin'] },
     ],
   },
   {
@@ -38,7 +44,6 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
     sectionTitle: 'ADMIN & SYSTEM',
     items: [
       { title: 'User Management', href: '/admin/users', iconName: 'Users', roles: ['admin'] },
-      { title: 'Roles & Security', href: '/admin/roles', iconName: 'ShieldCheck', roles: ['admin'] },
       { title: 'Employees', href: '/admin/employees', iconName: 'Users2', roles: ['admin'] },
     ],
   },
@@ -61,7 +66,7 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
       { title: 'P2P Command Center', href: '/admin/p2p', iconName: 'Layers', roles: ['admin', 'super_admin'] },
       { title: 'Rate Finalisation & Approval', href: '/manager/p2p', iconName: 'ShieldCheck', roles: ['manager'] },
       { title: 'Requisitions & Goods Received', href: '/store/p2p', iconName: 'PackageCheck', roles: ['store_manager'] },
-      { title: 'Vendor Portal & Dispatch', href: '/supplier/p2p', iconName: 'Truck', roles: ['supplier'] },
+      { title: 'Vendor / Supplier Portal & Dispatch', href: '/supplier/p2p', iconName: 'Truck', roles: ['supplier'] },
       { title: 'Invoices & Payments (P2P)', href: '/accountant/p2p', iconName: 'CreditCard', roles: ['accountant'] },
     ],
   },
@@ -127,12 +132,13 @@ export function getNavigationForUser(user: User | null): NavSection[] {
       {
         sectionTitle: 'PLATFORM GOVERNANCE',
         items: [
-          {
-            title: 'Customer Organizations',
-            href: '/superadmin/organizations',
-            iconName: 'Building2',
-            roles: ['super_admin'],
-          },
+          { title: 'Platform Overview', href: '/super-admin/dashboard', iconName: 'LayoutDashboard', roles: ['super_admin'] },
+          { title: 'Customer Companies', href: '/super-admin/companies', iconName: 'Building2', roles: ['super_admin'] },
+          { title: 'Subscriptions', href: '/super-admin/subscriptions', iconName: 'ShieldCheck', roles: ['super_admin'] },
+          { title: 'Plans & Pricing', href: '/super-admin/plans', iconName: 'Layers', roles: ['super_admin'] },
+          { title: 'Payments & Revenue', href: '/super-admin/payments', iconName: 'CreditCard', roles: ['super_admin'] },
+          { title: 'Platform Settings', href: '/super-admin/settings', iconName: 'Settings', roles: ['super_admin'] },
+          { title: 'Admin Profile', href: '/super-admin/profile', iconName: 'User', roles: ['super_admin'] },
         ],
       },
     ];

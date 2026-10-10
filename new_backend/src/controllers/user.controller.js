@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const prisma = require("../config/db");
 const { sendSuccess, sendError } = require("../utils/apiResponse");
+const { assertCanAddUser } = require("../services/subscription.service");
 
 const userInclude = {
   organization: true,
@@ -94,6 +95,13 @@ const getUser = async (req, res) => {
       return sendError(res, "User not found in selected organization", 404);
     }
 
+    if (req.user.role?.name === "MANAGER") {
+      const isEmployee = user.userRoles?.some((ur) => ur.role?.name === "EMPLOYEE");
+      if (!isEmployee) {
+        return sendError(res, "Managers are only permitted to view Employee accounts", 403);
+      }
+    }
+
     return sendSuccess(
       res,
       { user: formatUser(user) },
@@ -166,6 +174,15 @@ const createUser = async (req, res) => {
       return sendError(res, "Role not found", 400);
     }
 
+    // Managers can only create users with the EMPLOYEE role
+    if (req.user.role?.name === "MANAGER" && role.name !== "EMPLOYEE") {
+      return sendError(
+        res,
+        "Managers are only permitted to create Employee accounts",
+        403,
+      );
+    }
+
     // Admins cannot create or promote to SuperAdmin
     if (role.name === "SUPER_ADMIN") {
       return sendError(
@@ -188,24 +205,75 @@ const createUser = async (req, res) => {
       finalUsername = `${finalUsername}_${Date.now().toString().slice(-4)}`;
     }
 
-    const user = await prisma.$transaction(async (transaction) => {
-      return transaction.user.create({
-        data: {
-          username: finalUsername,
-          email,
-          passwordHash: await bcrypt.hash(password, 10),
-          firstName,
-          lastName,
-          phone,
-          status: "ACTIVE",
-          organizationId: targetOrgId,
-          isSuperAdmin: false,
-          superAdminSlot: null,
-          userRoles: { create: { roleId: role.id } },
-        },
-        include: userInclude,
-      });
-    });
+    // Hash password outside transaction to prevent connection holding and timeout
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await prisma.$transaction(
+      async (transaction) => {
+        // Concurrency-safe backend subscription entitlement enforcement per role
+        if (targetOrgId) {
+          await assertCanAddUser(targetOrgId, role.name, transaction);
+        }
+
+        const newUser = await transaction.user.create({
+          data: {
+            username: finalUsername,
+            email,
+            passwordHash,
+            firstName,
+            lastName,
+            phone,
+            status: "ACTIVE",
+            organizationId: targetOrgId,
+            isSuperAdmin: false,
+            superAdminSlot: null,
+          },
+        });
+
+        await transaction.userRole.create({
+          data: {
+            userId: newUser.id,
+            roleId: role.id,
+          },
+        });
+
+        // If the created user is an employee, provision the corresponding Employee record
+        if (role.name === "EMPLOYEE") {
+          const defaultDept = await transaction.department.findFirst({
+            where: { organizationId: targetOrgId, status: "ACTIVE" },
+            orderBy: { createdAt: "asc" },
+          });
+          if (defaultDept) {
+            const count = await transaction.employee.count({
+              where: { organizationId: targetOrgId },
+            });
+            const code = `EMP${String(count + 1).padStart(3, "0")}`;
+            await transaction.employee.create({
+              data: {
+                organizationId: targetOrgId,
+                employeeCode: code,
+                userId: newUser.id,
+                firstName,
+                lastName,
+                email,
+                phone: phone || "9876543210",
+                departmentId: defaultDept.id,
+                designation: "Staff",
+                joiningDate: new Date(),
+                employmentType: "PERMANENT",
+                status: "ACTIVE",
+              },
+            });
+          }
+        }
+
+        return transaction.user.findUnique({
+          where: { id: newUser.id },
+          include: userInclude,
+        });
+      },
+      { timeout: 30000, maxWait: 20000 }
+    );
 
     return sendSuccess(
       res,
@@ -214,6 +282,22 @@ const createUser = async (req, res) => {
       201,
     );
   } catch (error) {
+    if (
+      error.code === "SUBSCRIPTION_LIMIT_REACHED" ||
+      error.code === "ROLE_LIMIT_REACHED" ||
+      error.code === "ADMIN_LIMIT_EXCEEDED" ||
+      error.code === "SUBSCRIPTION_EXPIRED" ||
+      error.code === "SUBSCRIPTION_SUSPENDED" ||
+      error.code === "NO_SUBSCRIPTION" ||
+      error.code === "CANNOT_ASSIGN_SUPER_ADMIN"
+    ) {
+      return res.status(error.statusCode || 403).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+        data: error.details || null,
+      });
+    }
     if (error.code === "P2002") {
       return sendError(
         res,
@@ -222,7 +306,7 @@ const createUser = async (req, res) => {
       );
     }
     console.error("createUser error:", error);
-    return sendError(res, "Failed to create user", 500);
+    return sendError(res, error.message || "Failed to create user", error.statusCode || 500);
   }
 };
 
@@ -253,6 +337,22 @@ const updateUser = async (req, res) => {
       }
       if (req.body.organizationId && req.body.organizationId !== req.user.organizationId) {
         return sendError(res, "Admins cannot move users between organizations", 403);
+      }
+    }
+
+    if (req.user.role?.name === "MANAGER") {
+      const isEmployee = existing.userRoles?.some((ur) => ur.role?.name === "EMPLOYEE");
+      if (!isEmployee) {
+        return sendError(res, "Managers are only permitted to update Employee accounts", 403);
+      }
+      if (req.body.roleId) {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.body.roleId || '');
+        const role = isUuid
+          ? await prisma.role.findUnique({ where: { id: req.body.roleId } })
+          : await prisma.role.findUnique({ where: { name: (req.body.roleId || '').toUpperCase() } });
+        if (role && role.name !== "EMPLOYEE") {
+          return sendError(res, "Managers are only permitted to assign the Employee role", 403);
+        }
       }
     }
 
@@ -295,6 +395,12 @@ const updateUser = async (req, res) => {
           throw error;
         }
 
+        // Check if role is changing, enforce subscription role limits and single-admin rule
+        const currentRoleName = existing.userRoles[0]?.role?.name;
+        if (currentRoleName !== role.name && existing.organizationId) {
+          await assertCanAddUser(existing.organizationId, role.name, transaction, id);
+        }
+
         await transaction.userRole.deleteMany({ where: { userId: id } });
         await transaction.userRole.create({ data: { userId: id, roleId: role.id } });
       }
@@ -304,7 +410,7 @@ const updateUser = async (req, res) => {
         data,
         include: userInclude,
       });
-    });
+    }, { timeout: 30000, maxWait: 20000 });
 
     return sendSuccess(
       res,
@@ -312,6 +418,22 @@ const updateUser = async (req, res) => {
       "User updated successfully",
     );
   } catch (error) {
+    if (
+      error.code === "SUBSCRIPTION_LIMIT_REACHED" ||
+      error.code === "ROLE_LIMIT_REACHED" ||
+      error.code === "ADMIN_LIMIT_EXCEEDED" ||
+      error.code === "SUBSCRIPTION_EXPIRED" ||
+      error.code === "SUBSCRIPTION_SUSPENDED" ||
+      error.code === "NO_SUBSCRIPTION" ||
+      error.code === "CANNOT_ASSIGN_SUPER_ADMIN"
+    ) {
+      return res.status(error.statusCode || 403).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+        data: error.details || null,
+      });
+    }
     if (error.statusCode) {
       return sendError(res, error.message, error.statusCode);
     }
