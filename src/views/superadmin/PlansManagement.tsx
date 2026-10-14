@@ -104,7 +104,11 @@ export default function PlansManagement() {
 
       const res = await apiRequest(endpoint, {
         method,
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          price: parseFloat(String(formData.price || 0)) || 0,
+          maxUsers: parseInt(String(formData.maxUsers || 1), 10) || 1,
+        }),
       });
 
       if (res.ok) {
@@ -302,16 +306,16 @@ export default function PlansManagement() {
                   label="Monthly Base Price (₹)"
                   type="number"
                   required
-                  value={formData.price}
-                  onChange={(e) => setFormData((f) => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
+                  value={formData.price ?? ''}
+                  onChange={(e) => setFormData((f) => ({ ...f, price: e.target.value === '' ? ('' as any) : parseFloat(e.target.value) || 0 }))}
                 />
 
                 <Input
                   label="Allowed Role/Account Limit"
                   type="number"
                   required
-                  value={formData.maxUsers}
-                  onChange={(e) => setFormData((f) => ({ ...f, maxUsers: parseInt(e.target.value, 10) || 1 }))}
+                  value={formData.maxUsers ?? ''}
+                  onChange={(e) => setFormData((f) => ({ ...f, maxUsers: e.target.value === '' ? ('' as any) : parseInt(e.target.value, 10) || 0 }))}
                 />
               </div>
 

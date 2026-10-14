@@ -26,7 +26,7 @@ export const DistributorSales: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [customerName, setCustomerName] = useState('');
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number | ''>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -65,8 +65,14 @@ export const DistributorSales: React.FC = () => {
     e.preventDefault();
     setErrorMsg('');
 
+    const numQty = Number(quantity);
+    if (!quantity || numQty < 1) {
+      setErrorMsg('Please specify a valid quantity of at least 1.');
+      return;
+    }
+
     const currentStockItem = stock.find((s) => s.productId === selectedProductId);
-    if (!currentStockItem || currentStockItem.quantity < quantity) {
+    if (!currentStockItem || currentStockItem.quantity < numQty) {
       setErrorMsg(`Insufficient stock. You only have ${currentStockItem?.quantity || 0} units available.`);
       return;
     }
@@ -300,7 +306,7 @@ export const DistributorSales: React.FC = () => {
               min="1"
               max={selectedStockItem ? selectedStockItem.quantity : undefined}
               value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+              onChange={(e) => setQuantity(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
               required
             />
             {selectedStockItem && (
@@ -317,7 +323,7 @@ export const DistributorSales: React.FC = () => {
             <Button
               type="submit"
               isLoading={isSubmitting}
-              disabled={stock.length === 0 || (selectedStockItem ? selectedStockItem.quantity < quantity : true)}
+              disabled={stock.length === 0 || !quantity || (selectedStockItem ? selectedStockItem.quantity < Number(quantity) : true)}
               icon={ShoppingBag}
             >
               Record & Deduct Stock

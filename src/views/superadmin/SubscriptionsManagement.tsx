@@ -67,7 +67,17 @@ export default function SubscriptionsManagement() {
     fetchData();
   }, []);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    companyId: string;
+    planCode: string;
+    maxUsers: number | '';
+    roleLimits: Record<string, number | ''>;
+    customPrice: string;
+    billingCycle: string;
+    durationDays: number | '';
+    status: string;
+    notes: string;
+  }>({
     companyId: '',
     planCode: 'BASIC',
     maxUsers: 1,
@@ -77,7 +87,7 @@ export default function SubscriptionsManagement() {
       ACCOUNTANT: 5,
       DISTRIBUTOR: 10,
       SUPPLIER: 10,
-    } as Record<string, number>,
+    },
     customPrice: '',
     billingCycle: 'MONTHLY',
     durationDays: 30,
@@ -147,15 +157,19 @@ export default function SubscriptionsManagement() {
       const payload: any = {
         companyId: formData.companyId,
         planCode: formData.planCode,
-        maxUsers: parseInt(String(formData.maxUsers), 10),
+        maxUsers: parseInt(String(formData.maxUsers || 1), 10),
         customPrice: formData.customPrice ? Number(formData.customPrice) : undefined,
         billingCycle: formData.billingCycle,
-        durationDays: parseInt(String(formData.durationDays), 10),
+        durationDays: parseInt(String(formData.durationDays || 30), 10),
         notes: formData.notes,
       };
 
       if (formData.planCode === 'PRO_MAX') {
-        payload.roleLimits = formData.roleLimits;
+        const sanitizedLimits: any = {};
+        for (const [k, v] of Object.entries(formData.roleLimits || {})) {
+          sanitizedLimits[k] = parseInt(String(v || 1), 10);
+        }
+        payload.roleLimits = sanitizedLimits;
       }
 
       const res = await apiRequest('/platform/subscriptions/assign', {
@@ -419,8 +433,8 @@ export default function SubscriptionsManagement() {
                   label="Allowed Staff/Role Limit"
                   type="number"
                   required
-                  value={formData.maxUsers}
-                  onChange={(e) => setFormData((f) => ({ ...f, maxUsers: parseInt(e.target.value, 10) || 1 }))}
+                  value={formData.maxUsers ?? ''}
+                  onChange={(e) => setFormData((f) => ({ ...f, maxUsers: e.target.value === '' ? ('' as any) : parseInt(e.target.value, 10) || 0 }))}
                   helperText={
                     formData.planCode === 'BASIC'
                       ? 'Basic plan: 1 user per business role'
@@ -462,9 +476,9 @@ export default function SubscriptionsManagement() {
                         key={r.key}
                         label={`${r.label} Limit`}
                         type="number"
-                        value={formData.roleLimits[r.key] ?? 10}
+                        value={formData.roleLimits[r.key] ?? ''}
                         onChange={(e) => {
-                          const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                          const val = e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0;
                           setFormData((f) => ({
                             ...f,
                             roleLimits: { ...f.roleLimits, [r.key]: val },
@@ -492,8 +506,8 @@ export default function SubscriptionsManagement() {
                 <Input
                   label="Subscription Duration (Days)"
                   type="number"
-                  value={formData.durationDays}
-                  onChange={(e) => setFormData((f) => ({ ...f, durationDays: parseInt(e.target.value, 10) || 30 }))}
+                  value={formData.durationDays ?? ''}
+                  onChange={(e) => setFormData((f) => ({ ...f, durationDays: e.target.value === '' ? ('' as any) : parseInt(e.target.value, 10) || 0 }))}
                 />
               </div>
 

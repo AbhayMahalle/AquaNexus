@@ -38,7 +38,7 @@ export const AccountantPayments: React.FC = () => {
   // Record Payment Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number | ''>(0);
   const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'UPI' | 'CASH' | 'CHEQUE'>('BANK_TRANSFER');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
@@ -90,7 +90,7 @@ export const AccountantPayments: React.FC = () => {
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    if (amount <= 0) {
+    if (!amount || Number(amount) <= 0) {
       setErrorMsg('Payment amount must be greater than zero');
       return;
     }
@@ -99,6 +99,11 @@ export const AccountantPayments: React.FC = () => {
     try {
       if (!selectedInvoiceId) {
         setErrorMsg('Please select a valid billed invoice');
+        setIsSubmitting(false);
+        return;
+      }
+      if (!amount || Number(amount) <= 0) {
+        setErrorMsg('Payment amount must be greater than zero.');
         setIsSubmitting(false);
         return;
       }
@@ -390,8 +395,8 @@ export const AccountantPayments: React.FC = () => {
               type="number"
               min="1"
               max={selectedInvoice && selectedInvoice.outstandingAmount > 0 ? selectedInvoice.outstandingAmount : undefined}
-              value={amount || ''}
-              onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
               required
             />
             {selectedInvoice && (

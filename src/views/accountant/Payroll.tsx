@@ -33,9 +33,9 @@ export const AccountantPayroll: React.FC = () => {
   const [payPeriodEnd, setPayPeriodEnd] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
   );
-  const [basicSalary, setBasicSalary] = useState<number>(25000);
-  const [overtimeAmount, setOvertimeAmount] = useState<number>(0);
-  const [deductions, setDeductions] = useState<number>(0);
+  const [basicSalary, setBasicSalary] = useState<number | ''>(25000);
+  const [overtimeAmount, setOvertimeAmount] = useState<number | ''>(0);
+  const [deductions, setDeductions] = useState<number | ''>(0);
   const [isSubmittingNew, setIsSubmittingNew] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -97,9 +97,9 @@ export const AccountantPayroll: React.FC = () => {
         employeeId: selectedEmployeeId,
         payPeriodStart,
         payPeriodEnd,
-        basicSalary: Number(basicSalary),
-        overtimeAmount: Number(overtimeAmount),
-        deductions: Number(deductions),
+        basicSalary: Number(basicSalary) || 0,
+        overtimeAmount: Number(overtimeAmount) || 0,
+        deductions: Number(deductions) || 0,
         status: 'DRAFT',
       });
 
@@ -418,7 +418,7 @@ export const AccountantPayroll: React.FC = () => {
             type="number"
             min="0"
             value={basicSalary}
-            onChange={(e) => setBasicSalary(parseFloat(e.target.value) || 0)}
+            onChange={(e) => setBasicSalary(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
             required
           />
 
@@ -428,21 +428,21 @@ export const AccountantPayroll: React.FC = () => {
               type="number"
               min="0"
               value={overtimeAmount}
-              onChange={(e) => setOvertimeAmount(parseFloat(e.target.value) || 0)}
+              onChange={(e) => setOvertimeAmount(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
             />
             <Input
               label="Deductions (PF/Tax) (₹)"
               type="number"
               min="0"
               value={deductions}
-              onChange={(e) => setDeductions(parseFloat(e.target.value) || 0)}
+              onChange={(e) => setDeductions(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
             />
           </div>
 
           <div className="p-3 bg-bgMain rounded-lg border border-border flex justify-between items-center text-sm font-bold">
             <span>Calculated Net Salary:</span>
             <span className="text-primary text-base">
-              {formatCurrency(Math.max(0, basicSalary + overtimeAmount - deductions))}
+              {formatCurrency(Math.max(0, (Number(basicSalary) || 0) + (Number(overtimeAmount) || 0) - (Number(deductions) || 0)))}
             </span>
           </div>
 

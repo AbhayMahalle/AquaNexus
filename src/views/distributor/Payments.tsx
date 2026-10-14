@@ -22,7 +22,7 @@ export const DistributorPayments: React.FC = () => {
 
   // Form state
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number | ''>(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('ONLINE_UPI');
   const [referenceId, setReferenceId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +58,11 @@ export const DistributorPayments: React.FC = () => {
 
   const handleMakePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    const numAmount = Number(amount);
+    if (!amount || numAmount <= 0) {
+      alert('Please enter a valid payment amount');
+      return;
+    }
     setIsSubmitting(true);
 
     const inv = invoices.find(i => i.id === selectedInvoiceId);
@@ -69,7 +74,7 @@ export const DistributorPayments: React.FC = () => {
       payerName: distributor?.name || 'Authorized Distributor Agency',
       paymentType: 'DISTRIBUTOR_PAYMENT',
       paymentMethod,
-      amount,
+      amount: numAmount,
       notes: 'Distributor Online Settlement',
     });
 
@@ -160,7 +165,7 @@ export const DistributorPayments: React.FC = () => {
             type="number"
             min="1"
             value={amount}
-            onChange={e => setAmount(parseFloat(e.target.value) || 0)}
+            onChange={e => setAmount(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
             required
           />
           <Select

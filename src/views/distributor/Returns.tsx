@@ -26,7 +26,7 @@ export const DistributorReturns: React.FC = () => {
 
   // Form state
   const [selectedProductId, setSelectedProductId] = useState('');
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number | ''>(1);
   const [reason, setReason] = useState<'DAMAGED' | 'EXPIRED' | 'EXCESS' | 'DEFECTIVE'>('DAMAGED');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -64,6 +64,12 @@ export const DistributorReturns: React.FC = () => {
 
   const handleReturnSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const numQty = Number(quantity);
+    if (!quantity || numQty < 1) {
+      setErrorMsg('Please specify a valid return quantity of at least 1.');
+      return;
+    }
+
     setErrorMsg('');
     setIsSubmitting(true);
     const prod = products.find((p) => p.id === selectedProductId);
@@ -74,7 +80,7 @@ export const DistributorReturns: React.FC = () => {
         distributorName: distributorName || 'Distributor Agency',
         productId: selectedProductId,
         productName: prod ? prod.name : 'Water Product',
-        quantity,
+        quantity: numQty,
         reason,
         condition: reason === 'EXCESS' ? 'GOOD' : 'DAMAGED',
       });
@@ -285,7 +291,7 @@ export const DistributorReturns: React.FC = () => {
               type="number"
               min="1"
               value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+              onChange={(e) => setQuantity(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
               required
             />
             {selectedStockItem && (

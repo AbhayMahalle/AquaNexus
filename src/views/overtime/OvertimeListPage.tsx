@@ -83,7 +83,7 @@ export const OvertimeListPage: React.FC = () => {
       employeeName: emp.name,
       department: emp.department,
       date: formData.date,
-      hours: Number(formData.hours),
+      hours: Number(formData.hours) || 0,
       rateMultiplier: Number(formData.rateMultiplier),
       notes: formData.notes,
     });
@@ -281,8 +281,9 @@ export const OvertimeListPage: React.FC = () => {
               label="Overtime Hours"
               type="number"
               step="0.5"
-              value={formData.hours}
-              onChange={(e) => setFormData({ ...formData, hours: Number(e.target.value) })}
+              min="0"
+              value={formData.hours ?? ''}
+              onChange={(e) => setFormData({ ...formData, hours: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
               required
             />
 

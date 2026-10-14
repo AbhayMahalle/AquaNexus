@@ -22,7 +22,7 @@ export const AccountantOutstanding: React.FC = () => {
   // Collect Payment Modal
   const [selectedDistributorId, setSelectedDistributorId] = useState<string | null>(null);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>('');
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number | ''>(0);
   const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'UPI' | 'CASH' | 'CHEQUE'>('BANK_TRANSFER');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +66,8 @@ export const AccountantOutstanding: React.FC = () => {
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedInvoiceId || amount <= 0) {
+    const numAmount = Number(amount);
+    if (!selectedInvoiceId || !amount || numAmount <= 0) {
       setErrorMsg('Please select a valid invoice and enter amount');
       return;
     }
@@ -254,8 +255,8 @@ export const AccountantOutstanding: React.FC = () => {
                   label="Payment Amount (₹)"
                   type="number"
                   min="1"
-                  value={amount || ''}
-                  onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
                   required
                 />
 

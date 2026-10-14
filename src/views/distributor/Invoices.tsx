@@ -23,7 +23,7 @@ export const DistributorInvoices: React.FC = () => {
 
   // Pay Invoice Modal State
   const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentAmount, setPaymentAmount] = useState<number | ''>(0);
   const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'UPI' | 'CHEQUE' | 'CASH'>('BANK_TRANSFER');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
@@ -57,11 +57,12 @@ export const DistributorInvoices: React.FC = () => {
     if (!payingInvoice) return;
     setPaymentError('');
 
-    if (paymentAmount <= 0) {
+    const numAmount = Number(paymentAmount);
+    if (!paymentAmount || numAmount <= 0) {
       setPaymentError('Payment amount must be greater than zero');
       return;
     }
-    if (paymentAmount > payingInvoice.outstandingAmount) {
+    if (numAmount > payingInvoice.outstandingAmount) {
       setPaymentError(`Payment amount cannot exceed outstanding amount of ${formatCurrency(payingInvoice.outstandingAmount)}`);
       return;
     }
@@ -71,7 +72,7 @@ export const DistributorInvoices: React.FC = () => {
       const res = await apiClient.recordPayment({
         invoiceId: payingInvoice.id,
         invoiceNumber: payingInvoice.invoiceNumber,
-        amount: Number(paymentAmount),
+        amount: numAmount,
         paymentMethod: paymentMethod as any,
         referenceId: referenceNumber.trim() || `TXN-${Date.now().toString().slice(-6)}`,
         notes: paymentNotes || 'Invoice Settlement',
@@ -291,8 +292,8 @@ export const DistributorInvoices: React.FC = () => {
                 type="number"
                 min="1"
                 max={payingInvoice.outstandingAmount}
-                value={paymentAmount || ''}
-                onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
                 required
               />
               <span className="text-[11px] text-textSecondary mt-0.5 block">

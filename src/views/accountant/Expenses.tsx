@@ -25,7 +25,7 @@ export const AccountantExpenses: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [category, setCategory] = useState<ExpenseCategory>('UTILITIES');
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number | ''>(0);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -57,11 +57,12 @@ export const AccountantExpenses: React.FC = () => {
   }, [location]);
 
   const handleAddExpense = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (amount <= 0) {
+    const numAmount = Number(amount);
+    if (!amount || numAmount <= 0) {
       setErrorMsg('Please enter a valid expense amount greater than 0');
       return;
     }
+
     setErrorMsg('');
     setIsSubmitting(true);
 
@@ -69,7 +70,7 @@ export const AccountantExpenses: React.FC = () => {
       const res = await apiClient.addExpense({
         category,
         description: description.trim(),
-        amount: Number(amount),
+        amount: numAmount,
         createdBy: 'Plant Accountant',
         supplierId: selectedSupplierId || undefined,
       });
@@ -274,9 +275,9 @@ export const AccountantExpenses: React.FC = () => {
             label="Expense Amount (₹)"
             type="number"
             min="1"
-            value={amount || ''}
+            value={amount}
             placeholder="e.g. 15000"
-            onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+            onChange={(e) => setAmount(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
             required
           />
 

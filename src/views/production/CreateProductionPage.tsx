@@ -28,7 +28,7 @@ export const CreateProductionPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     productId: PLANT_PRODUCTS[0]?.productId || '',
-    quantityProduced: 1000,
+    quantityProduced: 1000 as number | '',
     productionDate: new Date().toISOString().split('T')[0],
     shift: 'MORNING' as 'MORNING' | 'AFTERNOON' | 'NIGHT',
     supervisor: 'Suresh Kumar',
@@ -57,7 +57,8 @@ export const CreateProductionPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.quantityProduced <= 0) {
+    const numQty = Number(formData.quantityProduced);
+    if (!formData.quantityProduced || numQty <= 0) {
       setErrorMsg('Production quantity must be greater than zero.');
       return;
     }
@@ -71,7 +72,7 @@ export const CreateProductionPage: React.FC = () => {
       batchNumber: `BATCH-${Date.now().toString().slice(-6)}`,
       productId: selectedProd.id || selectedProd.productId,
       productName: selectedProd.name,
-      quantityProduced: Number(formData.quantityProduced),
+      quantityProduced: numQty,
       unit: selectedProd.unit,
       productionDate: formData.productionDate,
       shift: formData.shift,
@@ -131,8 +132,9 @@ export const CreateProductionPage: React.FC = () => {
             <Input
               label="Target Output Quantity"
               type="number"
-              value={formData.quantityProduced}
-              onChange={(e) => setFormData({ ...formData, quantityProduced: Number(e.target.value) })}
+              min="1"
+              value={formData.quantityProduced ?? ''}
+              onChange={(e) => setFormData({ ...formData, quantityProduced: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
               required
             />
 

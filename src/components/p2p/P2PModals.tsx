@@ -332,7 +332,7 @@ export function FinalizeRatesModal({ isOpen, onClose, requisition, onSuccess }: 
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [remarks, setRemarks] = useState('');
-  const [rates, setRates] = useState<Record<string, number>>({});
+  const [rates, setRates] = useState<Record<string, number | ''>>({});
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -349,7 +349,7 @@ export function FinalizeRatesModal({ isOpen, onClose, requisition, onSuccess }: 
         }
       });
 
-      const initialRates: Record<string, number> = {};
+      const initialRates: Record<string, number | ''> = {};
       requisition.items?.forEach((it) => {
         initialRates[it.id] = Number(it.finalizedRate || it.targetRate || 0);
       });
@@ -363,7 +363,7 @@ export function FinalizeRatesModal({ isOpen, onClose, requisition, onSuccess }: 
   if (!requisition) return null;
 
   const totalFinalized = requisition.items?.reduce((sum, it) => {
-    const rate = rates[it.id] || 0;
+    const rate = Number(rates[it.id]) || 0;
     return sum + rate * it.requestedQuantity;
   }, 0) || 0;
 
@@ -492,7 +492,7 @@ export function FinalizeRatesModal({ isOpen, onClose, requisition, onSuccess }: 
               <div className="p-3 space-y-2 bg-white max-h-56 overflow-y-auto">
                 {requisition.items?.map((it) => {
                   const currentRate = rates[it.id] !== undefined ? rates[it.id] : (it.targetRate || 0);
-                  const lineTotal = currentRate * it.requestedQuantity;
+                  const lineTotal = (Number(currentRate) || 0) * it.requestedQuantity;
 
                   return (
                     <div key={it.id} className="p-2.5 rounded-lg border border-gray-100 bg-gray-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
@@ -514,7 +514,7 @@ export function FinalizeRatesModal({ isOpen, onClose, requisition, onSuccess }: 
                             onChange={(e) =>
                               setRates((prev) => ({
                                 ...prev,
-                                [it.id]: parseFloat(e.target.value) || 0,
+                                [it.id]: e.target.value === '' ? '' : parseFloat(e.target.value) || 0,
                               }))
                             }
                           />
@@ -1407,9 +1407,9 @@ export function SubmitInvoiceModal({ isOpen, onClose, order, onSuccess }: Submit
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [subtotal, setSubtotal] = useState(0);
-  const [taxAmount, setTaxAmount] = useState(0);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [subtotal, setSubtotal] = useState<number | ''>(0);
+  const [taxAmount, setTaxAmount] = useState<number | ''>(0);
+  const [totalAmount, setTotalAmount] = useState<number | ''>(0);
   const [remarks, setRemarks] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -1447,9 +1447,9 @@ export function SubmitInvoiceModal({ isOpen, onClose, order, onSuccess }: Submit
         invoiceNumber,
         invoiceDate,
         dueDate,
-        subtotal,
-        taxAmount,
-        totalAmount,
+        subtotal: Number(subtotal) || 0,
+        taxAmount: Number(taxAmount) || 0,
+        totalAmount: Number(totalAmount) || 0,
         accountantRemarks: remarks,
       });
 
@@ -1518,9 +1518,15 @@ export function SubmitInvoiceModal({ isOpen, onClose, order, onSuccess }: Submit
             required
             value={subtotal}
             onChange={(e) => {
-              const sub = parseFloat(e.target.value) || 0;
-              setSubtotal(sub);
-              setTotalAmount(sub + taxAmount);
+              const val = e.target.value;
+              if (val === '') {
+                setSubtotal('');
+                setTotalAmount(Number(taxAmount) || 0);
+              } else {
+                const sub = parseFloat(val) || 0;
+                setSubtotal(sub);
+                setTotalAmount(sub + (Number(taxAmount) || 0));
+              }
             }}
           />
           <Input
@@ -1529,9 +1535,15 @@ export function SubmitInvoiceModal({ isOpen, onClose, order, onSuccess }: Submit
             step="0.01"
             value={taxAmount}
             onChange={(e) => {
-              const tx = parseFloat(e.target.value) || 0;
-              setTaxAmount(tx);
-              setTotalAmount(subtotal + tx);
+              const val = e.target.value;
+              if (val === '') {
+                setTaxAmount('');
+                setTotalAmount(Number(subtotal) || 0);
+              } else {
+                const tx = parseFloat(val) || 0;
+                setTaxAmount(tx);
+                setTotalAmount((Number(subtotal) || 0) + tx);
+              }
             }}
           />
           <Input
@@ -1540,7 +1552,7 @@ export function SubmitInvoiceModal({ isOpen, onClose, order, onSuccess }: Submit
             step="0.01"
             required
             value={totalAmount}
-            onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)}
+            onChange={(e) => setTotalAmount(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
           />
         </div>
 
@@ -1578,7 +1590,7 @@ export function ReviewInvoiceModal({ isOpen, onClose, invoice, onSuccess }: Revi
   const [actionTab, setActionTab] = useState<'MATCH' | 'PAYMENT' | 'REJECT'>('MATCH');
   const [reviewRemarks, setReviewRemarks] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
-  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentAmount, setPaymentAmount] = useState<number | ''>(0);
   const [paymentMethod, setPaymentMethod] = useState('BANK_TRANSFER');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [paymentRemarks, setPaymentRemarks] = useState('');
@@ -1655,7 +1667,7 @@ export function ReviewInvoiceModal({ isOpen, onClose, invoice, onSuccess }: Revi
     setError('');
     try {
       const res = await apiClient.recordP2PPayment(invoice.id, {
-        amount: paymentAmount,
+        amount: Number(paymentAmount) || 0,
         paymentMethod,
         referenceNumber,
         remarks: paymentRemarks,
@@ -1826,7 +1838,7 @@ export function ReviewInvoiceModal({ isOpen, onClose, invoice, onSuccess }: Revi
                 step="0.01"
                 required
                 value={paymentAmount}
-                onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setPaymentAmount(e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
               />
               <Select
                 label="Payment Method"

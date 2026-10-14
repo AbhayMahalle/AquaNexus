@@ -139,7 +139,14 @@ export default function OrganizationManagement() {
   const [selectedOrgForPlan, setSelectedOrgForPlan] = useState<OrganizationRecord | null>(null);
   const [isUpdatingPlan, setIsUpdatingPlan] = useState(false);
   const [availablePlans, setAvailablePlans] = useState<any[]>([]);
-  const [planFormData, setPlanFormData] = useState({
+  const [planFormData, setPlanFormData] = useState<{
+    planCode: string;
+    billingCycle: string;
+    durationDays: number | '';
+    customPrice: string;
+    customMaxUsers: string;
+    notes: string;
+  }>({
     planCode: 'BASIC',
     billingCycle: 'MONTHLY',
     durationDays: 30,
@@ -1143,8 +1150,8 @@ export default function OrganizationManagement() {
                 label="Duration (Days)"
                 type="number"
                 min="1"
-                value={planFormData.durationDays}
-                onChange={(e) => setPlanFormData({ ...planFormData, durationDays: parseInt(e.target.value, 10) || 30 })}
+                value={planFormData.durationDays ?? ''}
+                onChange={(e) => setPlanFormData({ ...planFormData, durationDays: e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0 })}
               />
             </div>
           </div>

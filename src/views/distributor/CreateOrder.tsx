@@ -14,7 +14,7 @@ import { formatCurrency } from '@/lib/utils';
 
 interface OrderItemForm {
   productId: string;
-  quantity: number;
+  quantity: number | '';
 }
 
 export const CreateOrder: React.FC = () => {
@@ -77,7 +77,7 @@ export const CreateOrder: React.FC = () => {
   const calculatedItems = items.map(item => {
     const prod = products.find(p => p.id === item.productId);
     const unitPrice = prod ? prod.unitPrice : 0;
-    const totalPrice = unitPrice * (item.quantity || 0);
+    const totalPrice = unitPrice * (Number(item.quantity) || 0);
     return { ...item, prod, unitPrice, totalPrice };
   });
 
@@ -89,7 +89,9 @@ export const CreateOrder: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const validItems = items.filter(i => i.productId && i.quantity > 0);
+    const validItems = items
+      .filter(i => i.productId && Number(i.quantity) > 0)
+      .map(i => ({ productId: i.productId, quantity: Number(i.quantity) }));
     if (validItems.length === 0) {
       alert('Please add at least one valid product item.');
       setIsSubmitting(false);
@@ -160,7 +162,7 @@ export const CreateOrder: React.FC = () => {
                         type="number"
                         min="1"
                         value={item.quantity}
-                        onChange={e => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
+                        onChange={e => updateItem(idx, 'quantity', e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
                       />
                     </div>
                     <div className="w-full sm:w-32 text-right py-2">

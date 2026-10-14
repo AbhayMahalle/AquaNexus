@@ -38,7 +38,10 @@ export const EditEmployeePage: React.FC = () => {
     setIsSubmitting(true);
     setErrorMsg('');
 
-    const res = await employeeService.updateEmployee(id, formData);
+    const res = await employeeService.updateEmployee(id, {
+      ...formData,
+      salary: Number(formData.salary) || 0,
+    });
     setIsSubmitting(false);
 
     if (res.success) {
@@ -154,8 +157,8 @@ export const EditEmployeePage: React.FC = () => {
               type="number"
               step="any"
               min="0"
-              value={formData.salary !== undefined ? formData.salary : 0}
-              onChange={(e) => setFormData({ ...formData, salary: Number(e.target.value) })}
+              value={formData.salary ?? ''}
+              onChange={(e) => setFormData({ ...formData, salary: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
               required
             />
           </div>
