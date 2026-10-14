@@ -161,6 +161,9 @@ export const employeeService = {
     if (updates.department) {
       payload.departmentId = await getDepartmentIdByName(updates.department);
     }
+    if (updates.salary !== undefined && !Number.isNaN(Number(updates.salary))) {
+      payload.salary = Number(updates.salary);
+    }
 
     const realResponse = await fetchApi<any>(`/employees/${id}`, {
       method: 'PATCH',

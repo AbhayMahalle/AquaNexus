@@ -72,6 +72,13 @@ const getEmployees = async (req, res) => {
               name: true,
               code: true
             }
+          },
+          payrolls: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              basicSalary: true
+            }
           }
         },
         orderBy: { createdAt: 'desc' }
@@ -79,9 +86,14 @@ const getEmployees = async (req, res) => {
       prisma.employee.count({ where })
     ]);
 
+    const employeesWithSalary = employees.map((emp) => ({
+      ...emp,
+      salary: emp.payrolls?.[0]?.basicSalary != null ? Number(emp.payrolls[0].basicSalary) : 0
+    }));
+
     return sendSuccess(res, {
-      employees,
-      data: employees,
+      employees: employeesWithSalary,
+      data: employeesWithSalary,
       pagination: {
         total,
         page: parseInt(page),
@@ -144,6 +156,10 @@ const getEmployeeById = async (req, res) => {
         overtimes: {
           take: 10,
           orderBy: { createdAt: 'desc' }
+        },
+        payrolls: {
+          take: 1,
+          orderBy: { createdAt: 'desc' }
         }
       }
     });
@@ -152,7 +168,12 @@ const getEmployeeById = async (req, res) => {
       return sendError(res, 'Employee not found', 404);
     }
 
-    return sendSuccess(res, { employee, data: employee }, 'Employee details retrieved successfully');
+    const employeeWithSalary = {
+      ...employee,
+      salary: employee.payrolls?.[0]?.basicSalary != null ? Number(employee.payrolls[0].basicSalary) : 0
+    };
+
+    return sendSuccess(res, { employee: employeeWithSalary, data: employeeWithSalary }, 'Employee details retrieved successfully');
   } catch (error) {
     console.error('getEmployeeById error:', error);
     return sendError(res, 'Failed to retrieve employee details', 500);
@@ -329,7 +350,8 @@ const updateEmployee = async (req, res) => {
       designation,
       joiningDate,
       employmentType,
-      status
+      status,
+      salary
     } = req.body;
 
     const existing = await prisma.employee.findFirst({
@@ -348,8 +370,53 @@ const updateEmployee = async (req, res) => {
       }
     }
 
+    if (salary !== undefined) {
+      const numericSalary = Number(salary);
+      if (!Number.isFinite(numericSalary) || numericSalary < 0) {
+        return sendError(res, 'Monthly base salary must be a valid positive number or zero', 400);
+      }
+
+      const draftPayroll = await prisma.payroll.findFirst({
+        where: {
+          employeeId: existing.id,
+          organizationId: req.organizationId,
+          status: 'DRAFT'
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (draftPayroll) {
+        const netSalary = numericSalary + Number(draftPayroll.overtimeAmount) - Number(draftPayroll.deductions);
+        await prisma.payroll.update({
+          where: { id: draftPayroll.id },
+          data: {
+            basicSalary: numericSalary,
+            netSalary: Math.max(0, netSalary)
+          }
+        });
+      } else {
+        const now = new Date();
+        const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+        const endOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0));
+
+        await prisma.payroll.create({
+          data: {
+            organizationId: req.organizationId,
+            employeeId: existing.id,
+            payPeriodStart: startOfMonth,
+            payPeriodEnd: endOfMonth,
+            basicSalary: numericSalary,
+            overtimeAmount: 0,
+            deductions: 0,
+            netSalary: numericSalary,
+            status: 'DRAFT'
+          }
+        });
+      }
+    }
+
     const updatedEmployee = await prisma.employee.update({
-      where: { id },
+      where: { id: existing.id },
       data: {
         ...(firstName && { firstName }),
         ...(lastName && { lastName }),
@@ -362,11 +429,20 @@ const updateEmployee = async (req, res) => {
         ...(status && { status })
       },
       include: {
-        department: true
+        department: true,
+        payrolls: {
+          take: 1,
+          orderBy: { createdAt: 'desc' }
+        }
       }
     });
 
-    return sendSuccess(res, { employee: updatedEmployee, data: updatedEmployee }, 'Employee updated successfully');
+    const employeeWithSalary = {
+      ...updatedEmployee,
+      salary: updatedEmployee.payrolls?.[0]?.basicSalary != null ? Number(updatedEmployee.payrolls[0].basicSalary) : 0
+    };
+
+    return sendSuccess(res, { employee: employeeWithSalary, data: employeeWithSalary }, 'Employee updated successfully');
   } catch (error) {
     console.error('updateEmployee error:', error);
     return sendError(res, 'Failed to update employee', 500);

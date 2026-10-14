@@ -67,35 +67,36 @@ export default function DispatchPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Load distributors and products for dropdowns
-  useEffect(() => {
-    async function loadDropdownData() {
-      try {
-        const [distRes, prodRes] = await Promise.all([
-          apiRequest<any>('/api/distributors'),
-          apiRequest<any>('/api/products?limit=100'),
-        ]);
+  const loadDropdownData = useCallback(async () => {
+    try {
+      const [distRes, prodRes] = await Promise.all([
+        apiRequest<any>('/api/distributors'),
+        apiRequest<any>('/api/products?limit=100'),
+      ]);
 
-        if (distRes.ok && distRes.data) {
-          const list = distRes.data.distributors || (Array.isArray(distRes.data) ? distRes.data : []);
-          setDistributors(list);
-          if (list.length > 0) {
-            setFormDistributorId(list[0].id);
-          }
+      if (distRes.ok && distRes.data) {
+        const list = distRes.data.distributors || (Array.isArray(distRes.data) ? distRes.data : []);
+        setDistributors(list);
+        if (list.length > 0) {
+          setFormDistributorId((prev) => prev || list[0].id);
         }
-
-        if (prodRes.ok && prodRes.data) {
-          const list = prodRes.data.products || (Array.isArray(prodRes.data) ? prodRes.data : []);
-          setProducts(list);
-          if (list.length > 0) {
-            setFormProductId(list[0].id);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load dropdown data:', err);
       }
+
+      if (prodRes.ok && prodRes.data) {
+        const list = prodRes.data.products || (Array.isArray(prodRes.data) ? prodRes.data : []);
+        setProducts(list);
+        if (list.length > 0) {
+          setFormProductId((prev) => prev || list[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load dropdown data:', err);
     }
-    loadDropdownData();
   }, []);
+
+  useEffect(() => {
+    loadDropdownData();
+  }, [loadDropdownData]);
 
   // Load dispatch records from backend
   const loadDispatches = useCallback(async () => {
@@ -387,7 +388,12 @@ export default function DispatchPage() {
           primaryAction={{
             label: 'Stage Outbound Dispatch',
             icon: <Plus className="w-4 h-4" />,
-            onClick: () => setIsEntryModalOpen(true),
+            onClick: () => {
+              if (distributors.length === 0 || products.length === 0) {
+                loadDropdownData();
+              }
+              setIsEntryModalOpen(true);
+            },
           }}
         />
 
@@ -513,6 +519,7 @@ export default function DispatchPage() {
                   label: `${d.name} (${d.distributorCode || 'Distributor'}${d.salesArea ? ` - ${d.salesArea.name}` : ''})`,
                   value: d.id,
                 }))}
+                placeholder={distributors.length === 0 ? "No distributors available" : "Select distributor destination"}
               />
 
               <Select
@@ -524,6 +531,7 @@ export default function DispatchPage() {
                   label: `${p.name} (Stock: ${p.inventory?.quantity ?? 0} ${p.unit || 'Units'})`,
                   value: p.id,
                 }))}
+                placeholder={products.length === 0 ? "No products available" : "Select product"}
               />
             </div>
 

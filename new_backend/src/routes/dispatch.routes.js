@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.use(requireAuth);
 router.use(requireTenantContext);
-router.use(requireManagerArea("DISTRIBUTION"));
+router.use(requireManagerArea("DISTRIBUTION", "STORE"));
 
 router.get("/", requireRole(["ADMIN", "MANAGER", "STORE_MANAGER", "DISTRIBUTOR"]), getDispatches);
 router.post("/", requireRole(["ADMIN", "MANAGER", "STORE_MANAGER"]), createDispatch);

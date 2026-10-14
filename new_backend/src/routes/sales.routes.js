@@ -14,6 +14,7 @@ const { requireManagerArea } = require("../middleware/managerAccess.middleware")
 
 const router = express.Router();
 const salesGuards = [requireAuth, requireTenantContext, requireManagerArea("DISTRIBUTION")];
+const returnsGuards = [requireAuth, requireTenantContext, requireManagerArea("DISTRIBUTION", "STORE")];
 
 router.get(
   "/sales",
@@ -29,19 +30,19 @@ router.post(
 );
 router.get(
   "/returns",
-  salesGuards,
+  returnsGuards,
   requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "STORE_MANAGER"]),
   getReturns,
 );
 router.post(
   "/returns",
-  salesGuards,
+  returnsGuards,
   requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "STORE_MANAGER"]),
   createReturn,
 );
 router.patch(
   "/returns/:id/status",
-  salesGuards,
+  returnsGuards,
   requireRole(["ADMIN", "MANAGER", "DISTRIBUTOR", "STORE_MANAGER"]),
   updateReturnStatus,
 );

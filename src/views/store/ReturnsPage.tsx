@@ -76,31 +76,32 @@ export default function ReturnsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Load distributors and products for dropdowns
-  useEffect(() => {
-    async function loadDropdowns() {
-      try {
-        const [distRes, prodRes] = await Promise.all([
-          apiRequest<any>('/api/distributors'),
-          apiRequest<any>('/api/products?limit=100'),
-        ]);
+  const loadDropdowns = useCallback(async () => {
+    try {
+      const [distRes, prodRes] = await Promise.all([
+        apiRequest<any>('/api/distributors'),
+        apiRequest<any>('/api/products?limit=100'),
+      ]);
 
-        if (distRes.ok && distRes.data) {
-          const list = distRes.data.distributors || (Array.isArray(distRes.data) ? distRes.data : []);
-          setDistributors(list);
-          if (list.length > 0) setFormDistributorId(list[0].id);
-        }
-
-        if (prodRes.ok && prodRes.data) {
-          const list = prodRes.data.products || (Array.isArray(prodRes.data) ? prodRes.data : []);
-          setProducts(list);
-          if (list.length > 0) setFormProductId(list[0].id);
-        }
-      } catch (err) {
-        console.error('Failed to load dropdown data for returns:', err);
+      if (distRes.ok && distRes.data) {
+        const list = distRes.data.distributors || (Array.isArray(distRes.data) ? distRes.data : []);
+        setDistributors(list);
+        if (list.length > 0) setFormDistributorId((prev) => prev || list[0].id);
       }
+
+      if (prodRes.ok && prodRes.data) {
+        const list = prodRes.data.products || (Array.isArray(prodRes.data) ? prodRes.data : []);
+        setProducts(list);
+        if (list.length > 0) setFormProductId((prev) => prev || list[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to load dropdown data for returns:', err);
     }
-    loadDropdowns();
   }, []);
+
+  useEffect(() => {
+    loadDropdowns();
+  }, [loadDropdowns]);
 
   // Load returns from backend
   const loadReturns = useCallback(async () => {
@@ -395,7 +396,12 @@ export default function ReturnsPage() {
           primaryAction={{
             label: 'Receive Inward Return',
             icon: <Plus className="w-4 h-4" />,
-            onClick: () => setIsEntryModalOpen(true),
+            onClick: () => {
+              if (distributors.length === 0 || products.length === 0) {
+                loadDropdowns();
+              }
+              setIsEntryModalOpen(true);
+            },
           }}
         />
 
@@ -540,9 +546,10 @@ export default function ReturnsPage() {
                 value={formDistributorId}
                 onChange={(e) => setFormDistributorId(e.target.value)}
                 options={distributors.map((d) => ({
-                  label: `${d.name} (${d.distributorCode})`,
+                  label: `${d.name} (${d.distributorCode || 'Distributor'})`,
                   value: d.id,
                 }))}
+                placeholder={distributors.length === 0 ? "No distributors available" : "Select distributor or route customer"}
               />
 
               <Input
@@ -563,6 +570,7 @@ export default function ReturnsPage() {
                   label: `${p.name} (${p.sku})`,
                   value: p.id,
                 }))}
+                placeholder={products.length === 0 ? "No products available" : "Select product"}
               />
 
               <Input

@@ -23,7 +23,11 @@ router.post(
   createSalesArea,
 );
 
-router.get("/distributors", distributionGuards, getDistributors);
+router.get(
+  "/distributors",
+  [requireAuth, requireTenantContext, requireManagerArea("DISTRIBUTION", "STORE")],
+  getDistributors
+);
 router.post(
   "/distributors",
   distributionGuards,

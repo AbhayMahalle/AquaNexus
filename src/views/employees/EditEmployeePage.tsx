@@ -152,7 +152,9 @@ export const EditEmployeePage: React.FC = () => {
             <Input
               label="Monthly Base Salary (₹)"
               type="number"
-              value={formData.salary || 0}
+              step="any"
+              min="0"
+              value={formData.salary !== undefined ? formData.salary : 0}
               onChange={(e) => setFormData({ ...formData, salary: Number(e.target.value) })}
               required
             />

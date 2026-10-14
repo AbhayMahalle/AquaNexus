@@ -131,6 +131,7 @@ export default function InventoryListPage() {
         queryParams.append('limit', '10');
         if (searchQuery) queryParams.append('search', searchQuery);
         if (categoryFilter !== 'all') queryParams.append('category', categoryFilter);
+        if (statusFilter !== 'all') queryParams.append('status', statusFilter);
 
         const res = await apiRequest<any>(`/api/inventory?${queryParams.toString()}`);
         if (res.ok && res.data) {
@@ -171,7 +172,7 @@ export default function InventoryListPage() {
     }
     loadData();
     return () => { isMounted = false; };
-  }, [currentPage, searchQuery, categoryFilter]);
+  }, [currentPage, searchQuery, categoryFilter, statusFilter]);
 
   const categoryOptions = [
     { label: 'All Categories', value: 'all' },
@@ -246,7 +247,10 @@ export default function InventoryListPage() {
                 <Select
                   label="Category Filter"
                   value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  onChange={(e) => {
+                    setCategoryFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   options={categoryOptions}
                 />
               </div>
@@ -256,7 +260,10 @@ export default function InventoryListPage() {
                   <Select
                     label="Stock Status"
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     options={statusOptions}
                   />
                 </div>

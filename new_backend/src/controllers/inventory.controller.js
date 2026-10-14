@@ -6,7 +6,7 @@ const { sendSuccess, sendError } = require('../utils/apiResponse');
  */
 const getInventory = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search, category, lowStockOnly } = req.query;
+    const { page = 1, limit = 20, search, category, lowStockOnly, status } = req.query;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
@@ -43,14 +43,28 @@ const getInventory = async (req, res) => {
       orderBy: { updatedAt: 'desc' }
     });
 
-    let items = inventoryList.map(inv => ({
-      ...inv,
-      availableQuantity: inv.quantity - inv.reservedQuantity,
-      isLowStock: inv.quantity <= inv.reorderLevel
-    }));
+    let items = inventoryList.map(inv => {
+      const qty = Number(inv.quantity) || 0;
+      const reorder = Number(inv.reorderLevel ?? inv.product?.minimumStock ?? 0);
+      let stockStatus = 'optimal';
+      if (qty <= 0) stockStatus = 'out_of_stock';
+      else if (qty <= reorder * 0.3) stockStatus = 'critical';
+      else if (qty <= reorder) stockStatus = 'low';
+
+      return {
+        ...inv,
+        status: stockStatus,
+        availableQuantity: inv.quantity - inv.reservedQuantity,
+        isLowStock: inv.quantity <= inv.reorderLevel
+      };
+    });
 
     if (lowStockOnly === 'true') {
       items = items.filter(item => item.isLowStock);
+    }
+
+    if (status && status !== 'all') {
+      items = items.filter(item => item.status === status);
     }
 
     const total = items.length;

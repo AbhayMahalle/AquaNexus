@@ -6,7 +6,8 @@ const { sendError } = require("../utils/apiResponse");
  * 
  * @param {string} requiredArea - The ManagerArea enum value required (e.g., "PRODUCTION", "STORE", "DISTRIBUTION")
  */
-const requireManagerArea = (requiredArea) => {
+const requireManagerArea = (...requiredAreas) => {
+  const allowed = requiredAreas.flat();
   return (req, res, next) => {
     if (!req.user || !req.user.role) {
       return sendError(res, "Access denied", 403);
@@ -18,12 +19,12 @@ const requireManagerArea = (requiredArea) => {
       return next();
     }
 
-    // Check if the user has an active manager assignment for the required area
+    // Check if the user has an active manager assignment for any of the required areas
     const assignments = req.user.managerAssignments || [];
-    const hasArea = assignments.some(assignment => assignment.area === requiredArea);
+    const hasArea = assignments.some(assignment => allowed.includes(assignment.area));
 
     if (!hasArea) {
-      return sendError(res, `Forbidden: Requires manager assignment for ${requiredArea}`, 403);
+      return sendError(res, `Forbidden: Requires manager assignment for ${allowed.join(' or ')}`, 403);
     }
 
     next();
