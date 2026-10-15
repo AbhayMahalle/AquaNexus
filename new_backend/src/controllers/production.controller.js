@@ -302,7 +302,8 @@ const createProduction = async (req, res) => {
 const updateProductionStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, remarks } = req.body;
+    const { status, remarks, reason, cancellationReason } = req.body;
+    const finalRemarks = remarks || reason || cancellationReason;
 
     let resolvedStatus = status;
     if (resolvedStatus === 'PENDING') resolvedStatus = 'PLANNED';
@@ -311,8 +312,14 @@ const updateProductionStatus = async (req, res) => {
       return sendError(res, 'Invalid production status', 400);
     }
 
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     const existingProduction = await prisma.production.findFirst({
-      where: { id, organizationId: req.organizationId },
+      where: {
+        organizationId: req.organizationId,
+        ...(isUuid
+          ? { OR: [{ id }, { batchNumber: id }, { productionNumber: id }] }
+          : { OR: [{ batchNumber: id }, { productionNumber: id }] })
+      },
       include: { product: true }
     });
     
@@ -335,7 +342,7 @@ const updateProductionStatus = async (req, res) => {
     }
 
     // Ensure remarks provided if cancelling from IN_PROGRESS
-    if (currentStatus === 'IN_PROGRESS' && resolvedStatus === 'CANCELLED' && !remarks) {
+    if (currentStatus === 'IN_PROGRESS' && resolvedStatus === 'CANCELLED' && !finalRemarks) {
       return sendError(res, 'Remarks are required when cancelling an in-progress batch', 400);
     }
 
@@ -344,10 +351,10 @@ const updateProductionStatus = async (req, res) => {
 
     await prisma.$transaction(async (tx) => {
       updatedProduction = await tx.production.update({
-        where: { id },
+        where: { id: existingProduction.id },
         data: {
           status: resolvedStatus,
-          ...(remarks !== undefined && { remarks })
+          ...(finalRemarks !== undefined && { remarks: finalRemarks })
         },
         include: { product: true }
       });

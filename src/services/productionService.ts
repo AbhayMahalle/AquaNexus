@@ -123,10 +123,20 @@ export const productionService = {
     };
   },
 
-  async updateProductionStatus(id: string, status: Production['status']): Promise<ApiResponse<Production>> {
+  async updateProductionStatus(
+    id: string,
+    status: Production['status'],
+    remarks?: string
+  ): Promise<ApiResponse<Production>> {
+    const payload: any = { status };
+    if (remarks !== undefined && remarks !== null && remarks !== '') {
+      payload.remarks = remarks;
+      payload.reason = remarks;
+    }
+
     const realResponse = await fetchApi<any>(`/production/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(payload),
     });
 
     if (realResponse.success && realResponse.data) {

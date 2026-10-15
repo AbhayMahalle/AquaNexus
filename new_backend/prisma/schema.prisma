@@ -438,6 +438,7 @@ model Employee {
   phone          String?        @db.VarChar(20)
   departmentId   String         @map("department_id") @db.Uuid
   designation    String         @db.VarChar(100)
+  address        String?        @db.Text
   joiningDate    DateTime       @map("joining_date") @db.Date
   employmentType EmploymentType @map("employment_type")
   status         EmployeeStatus @default(ACTIVE)

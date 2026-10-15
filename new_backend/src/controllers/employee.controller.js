@@ -197,7 +197,9 @@ const createEmployee = async (req, res) => {
       designation = 'Staff',
       joiningDate,
       employmentType = 'PERMANENT',
-      status = 'ACTIVE'
+      status = 'ACTIVE',
+      address,
+      salary
     } = req.body;
 
     if (!firstName || !lastName) {
@@ -318,6 +320,7 @@ const createEmployee = async (req, res) => {
         phone: phone || '9876543210',
         departmentId: targetDept.id,
         designation,
+        address: address ? address.trim() : null,
         joiningDate: resolvedJoiningDate,
         employmentType,
         status
@@ -328,7 +331,38 @@ const createEmployee = async (req, res) => {
       }
     });
 
-    return sendSuccess(res, { employee: newEmployee, data: newEmployee }, 'Employee created successfully', 201);
+    if (salary !== undefined && !Number.isNaN(Number(salary))) {
+      try {
+        const numericSalary = Number(salary);
+        const now = new Date();
+        const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+        const endOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0));
+
+        await prisma.payroll.create({
+          data: {
+            organizationId: req.organizationId,
+            employeeId: newEmployee.id,
+            payPeriodStart: startOfMonth,
+            payPeriodEnd: endOfMonth,
+            basicSalary: numericSalary,
+            overtimeAmount: 0,
+            deductions: 0,
+            netSalary: numericSalary,
+            status: 'DRAFT'
+          }
+        });
+      } catch (payrollErr) {
+        console.warn('Initial payroll creation skipped:', payrollErr?.message);
+      }
+    }
+
+    const employeeResponse = {
+      ...newEmployee,
+      salary: salary !== undefined ? Number(salary) : 0,
+      address: newEmployee.address || ''
+    };
+
+    return sendSuccess(res, { employee: employeeResponse, data: employeeResponse }, 'Employee created successfully', 201);
   } catch (error) {
     console.error('createEmployee error:', error);
     return sendError(res, 'Failed to create employee', 500);
@@ -351,7 +385,8 @@ const updateEmployee = async (req, res) => {
       joiningDate,
       employmentType,
       status,
-      salary
+      salary,
+      address
     } = req.body;
 
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -440,6 +475,7 @@ const updateEmployee = async (req, res) => {
         ...(phone !== undefined && { phone }),
         ...(resolvedDepartmentId && { departmentId: resolvedDepartmentId }),
         ...(designation && { designation }),
+        ...(address !== undefined && { address: address ? address.trim() : null }),
         ...(joiningDate && { joiningDate: new Date(joiningDate) }),
         ...(employmentType && { employmentType }),
         ...(status && { status })

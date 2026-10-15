@@ -7,6 +7,8 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Modal } from '../../components/ui/Modal';
+import { showToast } from '@/lib/api';
 import { productionService } from '../../services/productionService';
 import type { Production, ProductionStatus } from '../../types';
 
@@ -21,20 +23,76 @@ export const ProductionDetailPage: React.FC = () => {
     : '/production';
   const [batch, setBatch] = useState<Production | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Cancellation Modal state
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+
+  const loadBatch = async (batchId: string) => {
+    const res = await productionService.getProductionById(batchId);
+    if (res.success && res.data) {
+      setBatch(res.data);
+    }
+    setIsLoading(false);
+  };
 
   useEffect(() => {
     if (id) {
-      productionService.getProductionById(id).then((res) => {
-        if (res.success) setBatch(res.data);
-        setIsLoading(false);
-      });
+      loadBatch(id);
     }
   }, [id]);
 
-  const handleStatusUpdate = async (newStatus: ProductionStatus) => {
-    if (!id) return;
-    const res = await productionService.updateProductionStatus(id, newStatus);
-    if (res.success) setBatch(res.data);
+  const handleStatusUpdate = async (newStatus: ProductionStatus, remarks?: string) => {
+    const targetId = batch?.id || id;
+    if (!targetId) return;
+
+    setIsUpdatingStatus(true);
+    const res = await productionService.updateProductionStatus(targetId, newStatus, remarks);
+    setIsUpdatingStatus(false);
+
+    if (res.success && res.data) {
+      setBatch(res.data);
+      showToast(`Batch status updated to ${newStatus.replace('_', ' ')}`, 'success');
+    } else {
+      showToast(res.message || 'Failed to update batch status', 'error');
+    }
+  };
+
+  const openCancelModal = () => {
+    setCancellationReason('');
+    setCancelError('');
+    setIsCancelModalOpen(true);
+  };
+
+  const handleCancelSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetId = batch?.id || id;
+    if (!targetId) return;
+
+    const trimmedReason = cancellationReason.trim();
+    if (!trimmedReason) {
+      setCancelError('Please provide a reason for cancelling this batch.');
+      return;
+    }
+
+    setIsCancelling(true);
+    setCancelError('');
+
+    const res = await productionService.updateProductionStatus(targetId, 'CANCELLED', trimmedReason);
+    setIsCancelling(false);
+
+    if (res.success && res.data) {
+      setBatch(res.data);
+      setIsCancelModalOpen(false);
+      showToast(`Batch #${batch?.batchNumber || ''} cancelled successfully`, 'success');
+    } else {
+      const err = res.message || 'Failed to cancel production batch';
+      setCancelError(err);
+      showToast(err, 'error');
+    }
   };
 
   if (isLoading) {
@@ -151,6 +209,8 @@ export const ProductionDetailPage: React.FC = () => {
                     <Button
                       variant="success"
                       size="sm"
+                      disabled={isUpdatingStatus}
+                      isLoading={isUpdatingStatus}
                       onClick={() => handleStatusUpdate('COMPLETED')}
                       icon={<CheckCircle2 className="w-4 h-4" />}
                     >
@@ -159,10 +219,8 @@ export const ProductionDetailPage: React.FC = () => {
                     <Button
                       variant="danger"
                       size="sm"
-                      onClick={() => {
-                        const reason = prompt('Reason for cancellation?');
-                        if (reason) handleStatusUpdate('CANCELLED');
-                      }}
+                      disabled={isUpdatingStatus}
+                      onClick={openCancelModal}
                     >
                       Cancel Batch
                     </Button>
@@ -173,6 +231,8 @@ export const ProductionDetailPage: React.FC = () => {
                     <Button
                       variant="primary"
                       size="sm"
+                      disabled={isUpdatingStatus}
+                      isLoading={isUpdatingStatus}
                       onClick={() => handleStatusUpdate('IN_PROGRESS')}
                     >
                       Start Production
@@ -180,9 +240,10 @@ export const ProductionDetailPage: React.FC = () => {
                     <Button
                       variant="danger"
                       size="sm"
-                      onClick={() => handleStatusUpdate('CANCELLED')}
+                      disabled={isUpdatingStatus}
+                      onClick={openCancelModal}
                     >
-                      Cancel
+                      Cancel Batch
                     </Button>
                   </>
                 )}
@@ -220,6 +281,55 @@ export const ProductionDetailPage: React.FC = () => {
           </div>
         </Card>
       </div>
+
+      {/* Cancellation Reason Modal */}
+      <Modal
+        isOpen={isCancelModalOpen}
+        onClose={() => !isCancelling && setIsCancelModalOpen(false)}
+        title="Cancel Production Batch"
+        subtitle={`Batch #${batch.batchNumber} • ${batch.productName}`}
+      >
+        <form onSubmit={handleCancelSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-text-primary mb-1.5">
+              Reason for Cancellation <span className="text-danger">*</span>
+            </label>
+            <textarea
+              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none h-24"
+              placeholder="Please describe why this production batch is being cancelled (e.g., equipment breakdown, packaging shortage, contaminated water test)..."
+              value={cancellationReason}
+              onChange={(e) => {
+                setCancellationReason(e.target.value);
+                if (cancelError) setCancelError('');
+              }}
+              disabled={isCancelling}
+              autoFocus
+            />
+            {cancelError && (
+              <p className="mt-1.5 text-xs text-danger font-medium">{cancelError}</p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsCancelModalOpen(false)}
+              disabled={isCancelling}
+            >
+              Back
+            </Button>
+            <Button
+              type="submit"
+              variant="danger"
+              isLoading={isCancelling}
+              disabled={isCancelling || !cancellationReason.trim()}
+            >
+              Confirm Cancellation
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -122,6 +122,14 @@ export const employeeService = {
       status: employeeData.status || 'ACTIVE',
     };
 
+    if (employeeData.address !== undefined) {
+      payload.address = employeeData.address;
+    }
+
+    if (employeeData.salary !== undefined && !Number.isNaN(Number(employeeData.salary))) {
+      payload.salary = Number(employeeData.salary);
+    }
+
     if (employeeData.password) {
       payload.password = employeeData.password;
     }
