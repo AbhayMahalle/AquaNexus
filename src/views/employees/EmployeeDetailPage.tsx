@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Edit, Mail, Phone, Calendar, MapPin, IndianRupee, Briefcase, Award } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -14,6 +14,7 @@ import type { Employee } from '../../types';
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -46,13 +47,19 @@ export const EmployeeDetailPage: React.FC = () => {
     );
   }
 
+  const editHref = location.pathname.startsWith('/admin')
+    ? `/admin/employees/${employee.id}/edit`
+    : location.pathname.startsWith('/manager')
+    ? `/manager/employees/${employee.id}/edit`
+    : `/employees/${employee.id}/edit`;
+
   return (
     <div>
       <PageHeader
         title={employee.name}
         description={`ID: ${employee.employeeId} • ${employee.designation} (${employee.department})`}
         breadcrumbs={[
-          { label: 'Employees', href: '/employees' },
+          { label: 'Employees', href: location.pathname.startsWith('/admin') ? '/admin/employees' : '/employees' },
           { label: employee.name },
         ]}
         action={
@@ -67,7 +74,7 @@ export const EmployeeDetailPage: React.FC = () => {
             <Button
               variant="primary"
               icon={<Edit className="w-4 h-4" />}
-              onClick={() => navigate(-1)}
+              onClick={() => navigate(editHref)}
             >
               Edit Profile
             </Button>

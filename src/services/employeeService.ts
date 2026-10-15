@@ -158,7 +158,10 @@ export const employeeService = {
     if (updates.contactNumber) payload.phone = updates.contactNumber;
     if (updates.email) payload.email = updates.email;
     if (updates.status) payload.status = updates.status;
+    if (updates.joiningDate) payload.joiningDate = updates.joiningDate;
+    if (updates.address !== undefined) payload.address = updates.address;
     if (updates.department) {
+      payload.department = updates.department;
       payload.departmentId = await getDepartmentIdByName(updates.department);
     }
     if (updates.salary !== undefined && !Number.isNaN(Number(updates.salary))) {

@@ -354,19 +354,36 @@ const updateEmployee = async (req, res) => {
       salary
     } = req.body;
 
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     const existing = await prisma.employee.findFirst({
-      where: { id, organizationId: req.organizationId }
+      where: {
+        organizationId: req.organizationId,
+        ...(isUuid ? { OR: [{ id }, { employeeCode: id }] } : { employeeCode: id })
+      }
     });
     if (!existing) {
       return sendError(res, 'Employee not found', 404);
     }
 
+    let resolvedDepartmentId = undefined;
     if (departmentId) {
-      const deptExists = await prisma.department.findFirst({
-        where: { id: departmentId, organizationId: req.organizationId }
-      });
+      const isDeptUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(departmentId);
+      let deptExists = null;
+      if (isDeptUuid) {
+        deptExists = await prisma.department.findFirst({
+          where: { id: departmentId, organizationId: req.organizationId }
+        });
+      }
       if (!deptExists) {
-        return sendError(res, 'Invalid department ID for your organization', 400);
+        deptExists = await prisma.department.findFirst({
+          where: {
+            organizationId: req.organizationId,
+            name: { equals: departmentId, mode: 'insensitive' }
+          }
+        });
+      }
+      if (deptExists) {
+        resolvedDepartmentId = deptExists.id;
       }
     }
 
@@ -376,19 +393,18 @@ const updateEmployee = async (req, res) => {
         return sendError(res, 'Monthly base salary must be a valid positive number or zero', 400);
       }
 
-      const draftPayroll = await prisma.payroll.findFirst({
+      const latestPayroll = await prisma.payroll.findFirst({
         where: {
           employeeId: existing.id,
-          organizationId: req.organizationId,
-          status: 'DRAFT'
+          organizationId: req.organizationId
         },
         orderBy: { createdAt: 'desc' }
       });
 
-      if (draftPayroll) {
-        const netSalary = numericSalary + Number(draftPayroll.overtimeAmount) - Number(draftPayroll.deductions);
+      if (latestPayroll) {
+        const netSalary = numericSalary + Number(latestPayroll.overtimeAmount) - Number(latestPayroll.deductions);
         await prisma.payroll.update({
-          where: { id: draftPayroll.id },
+          where: { id: latestPayroll.id },
           data: {
             basicSalary: numericSalary,
             netSalary: Math.max(0, netSalary)
@@ -422,7 +438,7 @@ const updateEmployee = async (req, res) => {
         ...(lastName && { lastName }),
         ...(email !== undefined && { email }),
         ...(phone !== undefined && { phone }),
-        ...(departmentId && { departmentId }),
+        ...(resolvedDepartmentId && { departmentId: resolvedDepartmentId }),
         ...(designation && { designation }),
         ...(joiningDate && { joiningDate: new Date(joiningDate) }),
         ...(employmentType && { employmentType }),
@@ -436,6 +452,22 @@ const updateEmployee = async (req, res) => {
         }
       }
     });
+
+    if (existing.userId) {
+      try {
+        await prisma.user.update({
+          where: { id: existing.userId },
+          data: {
+            ...(firstName && { firstName }),
+            ...(lastName && { lastName }),
+            ...(email && { email }),
+            ...(phone && { phone })
+          }
+        });
+      } catch (userErr) {
+        console.warn('Could not sync user record:', userErr?.message);
+      }
+    }
 
     const employeeWithSalary = {
       ...updatedEmployee,

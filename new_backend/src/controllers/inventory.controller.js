@@ -14,11 +14,16 @@ const getInventory = async (req, res) => {
     const productWhere = {
       organizationId: req.organizationId,
     };
-    if (category) productWhere.category = category;
-    if (search) {
+    if (category && category !== 'all') {
+      const cleanCat = category.replace(/_/g, ' ');
+      productWhere.category = { contains: cleanCat, mode: 'insensitive' };
+    }
+    if (search && search.trim()) {
+      const cleanSearch = search.trim();
       productWhere.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { sku: { contains: search, mode: 'insensitive' } }
+        { name: { contains: cleanSearch, mode: 'insensitive' } },
+        { sku: { contains: cleanSearch, mode: 'insensitive' } },
+        { category: { contains: cleanSearch, mode: 'insensitive' } }
       ];
     }
 

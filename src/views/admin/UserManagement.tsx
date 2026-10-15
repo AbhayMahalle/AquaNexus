@@ -549,7 +549,6 @@ export default function UserManagementPage() {
                 <Select
                   value={roleFilter}
                   onChange={handleRoleFilter}
-                  placeholder="All Roles"
                   options={[
                     { label: 'All Roles', value: '' },
                     { label: 'Admin', value: 'admin' },
@@ -565,7 +564,6 @@ export default function UserManagementPage() {
                 <Select
                   value={statusFilter}
                   onChange={handleStatusFilter}
-                  placeholder="All Statuses"
                   options={[
                     { label: 'All Statuses', value: '' },
                     { label: 'Active', value: 'active' },

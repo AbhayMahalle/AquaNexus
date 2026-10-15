@@ -10,6 +10,7 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { employeeService } from '../../services/employeeService';
+import { showToast } from '@/lib/api';
 import type { Employee, EmployeeStatus } from '../../types';
 
 export const EditEmployeePage: React.FC = () => {
@@ -18,19 +19,39 @@ export const EditEmployeePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [departments, setDepartments] = useState<{ id: string; name: string; code: string }[]>([]);
 
   const [formData, setFormData] = useState<Partial<Employee>>({});
 
   useEffect(() => {
+    let mounted = true;
     if (id) {
       employeeService.getEmployeeById(id).then((res) => {
-        if (res.success && res.data) {
+        if (mounted && res.success && res.data) {
           setFormData(res.data);
         }
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       });
     }
+
+    employeeService.getDepartments().then((res) => {
+      if (mounted && res.success && res.data && res.data.length > 0) {
+        setDepartments(res.data);
+      }
+    });
+
+    return () => { mounted = false; };
   }, [id]);
+
+  const departmentOptions = departments.length > 0
+    ? departments.map((d) => ({ value: d.name, label: d.name }))
+    : [
+        { value: 'Production', label: 'Production' },
+        { value: 'Quality Assurance', label: 'Quality Assurance' },
+        { value: 'Store', label: 'Store & Warehouse' },
+        { value: 'Maintenance', label: 'Maintenance' },
+        { value: 'Administration', label: 'Administration' },
+      ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +66,7 @@ export const EditEmployeePage: React.FC = () => {
     setIsSubmitting(false);
 
     if (res.success) {
+      showToast('Employee details and salary updated successfully', 'success');
       navigate(-1);
     } else {
       setErrorMsg(res.message || 'Failed to update employee');
@@ -100,15 +122,9 @@ export const EditEmployeePage: React.FC = () => {
 
             <Select
               label="Department"
-              value={formData.department || 'Production'}
+              value={formData.department || (departmentOptions[0]?.value as string) || 'Production'}
               onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              options={[
-                { value: 'Production', label: 'Production' },
-                { value: 'Quality Assurance', label: 'Quality Assurance' },
-                { value: 'Store', label: 'Store & Warehouse' },
-                { value: 'Maintenance', label: 'Maintenance' },
-                { value: 'Administration', label: 'Administration' },
-              ]}
+              options={departmentOptions}
             />
 
             <Input

@@ -118,22 +118,13 @@ export default function InventoryListPage() {
 
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
 
   React.useEffect(() => {
     let isMounted = true;
     async function loadData() {
       setIsLoading(true);
       try {
-        const queryParams = new URLSearchParams();
-        queryParams.append('page', String(currentPage));
-        queryParams.append('limit', '10');
-        if (searchQuery) queryParams.append('search', searchQuery);
-        if (categoryFilter !== 'all') queryParams.append('category', categoryFilter);
-        if (statusFilter !== 'all') queryParams.append('status', statusFilter);
-
-        const res = await apiRequest<any>(`/api/inventory?${queryParams.toString()}`);
+        const res = await apiRequest<any>('/api/inventory?limit=500');
         if (res.ok && res.data) {
           const rawItems = res.data.inventory || (Array.isArray(res.data) ? res.data : []);
           const mapped: InventoryItem[] = rawItems.map((inv: any) => {
@@ -160,8 +151,6 @@ export default function InventoryListPage() {
 
           if (isMounted) {
             setInventoryItems(mapped);
-            setTotalItems(res.data.pagination?.total || mapped.length);
-            setTotalPages(res.data.pagination?.totalPages || Math.ceil(mapped.length / 10) || 1);
           }
         }
       } catch (err) {
@@ -172,17 +161,22 @@ export default function InventoryListPage() {
     }
     loadData();
     return () => { isMounted = false; };
-  }, [currentPage, searchQuery, categoryFilter, statusFilter]);
+  }, []);
 
-  const categoryOptions = [
-    { label: 'All Categories', value: 'all' },
-    { label: 'Bottled Water', value: 'Bottled Water' },
-    { label: 'Raw Materials (Preforms, Resin)', value: 'raw_materials' },
-    { label: 'Packaging (Caps, Sleeves, Cartons)', value: 'packaging' },
-    { label: 'Water Treatment Chemicals', value: 'chemicals' },
-    { label: 'Finished Water Goods (Jars, Bottles)', value: 'finished_goods' },
-    { label: 'Plant Consumables & Spares', value: 'consumables' },
-  ];
+  // Dynamically populate categories based on actual items in inventory
+  const categoryOptions = React.useMemo(() => {
+    const cats = new Set<string>();
+    inventoryItems.forEach((item) => {
+      if (item.category && item.category !== 'all') {
+        cats.add(item.category);
+      }
+    });
+    ['Finished Goods', 'Raw Materials', 'Packaging', 'Bottled Water', 'Chemicals'].forEach((c) => cats.add(c));
+    return [
+      { label: 'All Categories', value: 'all' },
+      ...Array.from(cats).sort().map((c) => ({ label: c, value: c })),
+    ];
+  }, [inventoryItems]);
 
   const statusOptions = [
     { label: 'All Statuses', value: 'all' },
@@ -191,6 +185,40 @@ export default function InventoryListPage() {
     { label: 'Critical Shortage', value: 'critical' },
     { label: 'Out of Stock', value: 'out_of_stock' },
   ];
+
+  // Instant real-time filtering across search, category, and status
+  const filteredItems = React.useMemo(() => {
+    return inventoryItems.filter((item) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesName = item.name.toLowerCase().includes(q);
+        const matchesSku = item.sku.toLowerCase().includes(q);
+        const matchesCategory = item.category.toLowerCase().includes(q);
+        const matchesLocation = item.location?.toLowerCase().includes(q) ?? false;
+        if (!matchesName && !matchesSku && !matchesCategory && !matchesLocation) return false;
+      }
+      if (categoryFilter !== 'all') {
+        const itemCat = item.category.toLowerCase();
+        const filterCat = categoryFilter.toLowerCase();
+        const matchesCat =
+          itemCat === filterCat ||
+          itemCat.includes(filterCat.replace(/_/g, ' ')) ||
+          filterCat.replace(/_/g, ' ').includes(itemCat);
+        if (!matchesCat) return false;
+      }
+      if (statusFilter !== 'all') {
+        if (item.status !== statusFilter) return false;
+      }
+      return true;
+    });
+  }, [inventoryItems, searchQuery, categoryFilter, statusFilter]);
+
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
+  const paginatedItems = React.useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage, itemsPerPage]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -232,7 +260,10 @@ export default function InventoryListPage() {
                   label="Search Inventory"
                   placeholder="Search by SKU, material name, or location..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   leftIcon={<Search className="w-4 h-4" />}
                 />
               </div>
@@ -294,7 +325,7 @@ export default function InventoryListPage() {
 
               <div className="flex items-center gap-2">
                 <Badge variant="primary" size="sm">
-                  {totalItems} Items Tracked
+                  {filteredItems.length} Items Tracked
                 </Badge>
               </div>
             </div>
@@ -302,17 +333,17 @@ export default function InventoryListPage() {
           <CardContent className="p-0">
             <Table
               columns={columns}
-              data={inventoryItems}
+              data={paginatedItems}
               loading={isLoading}
               emptyText="No inventory items available"
-              emptyDescription="Inventory catalog items will be populated from the database API. Use Stock In to record initial lot consignments."
+              emptyDescription="No inventory items match the current filters. Click reset or use Stock In to record items."
             />
 
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={10}
+              totalItems={filteredItems.length}
+              itemsPerPage={itemsPerPage}
               onPageChange={(p) => setCurrentPage(p)}
             />
           </CardContent>
