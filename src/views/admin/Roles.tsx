@@ -213,11 +213,11 @@ export default function RolesPage() {
     <AuthGuard allowedRoles={['admin']}>
       <DashboardLayout>
         <PageHeader
-          title="Roles & Security Governance"
-          description="Define role hierarchies, access levels, and module permissions"
+          title="Roles & Permissions"
+          description="Manage user roles and module access permissions."
           breadcrumbs={[{ label: 'Admin' }, { label: 'Roles' }]}
           primaryAction={{
-            label: 'Create Custom Role',
+            label: 'Add Role',
             icon: <Plus className="w-4 h-4" />,
             onClick: () => setIsCreateOpen(true),
           }}

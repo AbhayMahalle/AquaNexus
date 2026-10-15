@@ -383,26 +383,20 @@ export default function GoodsReceivedPage() {
       <DashboardLayout>
         {/* Page Header */}
         <PageHeader
-          title="Goods Received Notes (GRN)"
-          description="Acknowledge incoming production output batches and incoming raw shipments with inventory synchronization."
+          title="Goods Received"
+          description="Record and verify incoming shipments and production batches."
           breadcrumbs={[
-            { label: 'Store', href: '/store/dashboard' },
             { label: 'Goods Received' }
           ]}
           secondaryActions={[
             {
-              label: 'Manage Products',
-              href: '/store/products',
-              icon: <Package className="w-4 h-4" />,
-            },
-            {
-              label: 'Store Inventory',
+              label: 'Inventory',
               href: '/store/inventory',
               icon: <Package className="w-4 h-4" />,
             }
           ]}
           primaryAction={{
-            label: 'Receive Plant Goods (GRN)',
+            label: 'New Receipt',
             icon: <Plus className="w-4 h-4" />,
             onClick: () => setIsEntryModalOpen(true),
           }}

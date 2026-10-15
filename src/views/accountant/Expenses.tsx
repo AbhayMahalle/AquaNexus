@@ -146,24 +146,19 @@ export const AccountantExpenses: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Plant Operational Expenses"
-        description="Live records and audit of water plant expenditure across utilities, raw materials, fuel, and machinery maintenance."
+        title="Expenses"
+        description="Track and record operating expenses across utilities, materials, and maintenance."
         breadcrumb={['AquaNexus', 'Accountant', 'Expenses']}
         action={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={loadData} isLoading={isLoading} icon={RefreshCw}>
-              Refresh
-            </Button>
-            <Button
-              onClick={() => {
-                setErrorMsg('');
-                setIsModalOpen(true);
-              }}
-              icon={Plus}
-            >
-              Log New Expense
-            </Button>
-          </div>
+          <Button
+            onClick={() => {
+              setErrorMsg('');
+              setIsModalOpen(true);
+            }}
+            icon={Plus}
+          >
+            Add Expense
+          </Button>
         }
       />
 

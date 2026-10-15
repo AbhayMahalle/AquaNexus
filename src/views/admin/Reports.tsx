@@ -159,22 +159,11 @@ export default function ReportsPage() {
   return (
     <AuthGuard allowedRoles={['manager', 'admin', 'accountant', 'store_manager']}>
       <DashboardLayout>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <PageHeader
-            title="Operational Reports & Analytics"
-            description="Live exportable audit logs and records fetched directly from AquaNexus database"
-            breadcrumbs={[{ label: 'Operations' }, { label: 'Reports' }]}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchReportsData}
-            disabled={loading}
-            leftIcon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
-          >
-            Refresh Data
-          </Button>
-        </div>
+        <PageHeader
+          title="Reports"
+          description="View and export operational reports, stock ledgers, and staff logs."
+          breadcrumbs={[{ label: 'Reports' }]}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {reports.map((rep, idx) => (

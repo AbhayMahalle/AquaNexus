@@ -150,8 +150,8 @@ export default function AdminDashboardPage() {
       <DashboardLayout theme="sample">
         <div className="text-black">
           <PageHeader
-            title="Admin Control Center"
-            description="Real-time plant metrics, production overview, and ERP operational status"
+            title="Admin Dashboard"
+            description="Overview of plant production, inventory, staff, and operations."
             breadcrumbs={[{ label: 'Admin Dashboard' }]}
           />
 
@@ -168,15 +168,15 @@ export default function AdminDashboardPage() {
             const isFull = subscription.isLimitReached || businessUsage >= totalBusinessCapacity;
 
             return (
-              <div className="mb-6 p-5 rounded-xl border border-gray-200 bg-white shadow-xs">
+              <div className="mb-6 p-4 sm:p-5 rounded-xl border border-gray-200 bg-white shadow-xs">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
                     <div className="p-2.5 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 shrink-0">
                       <ShieldCheck className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-bold text-black">{subscription.organizationName || 'Company'} Subscription</h4>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-bold text-black">{subscription.organizationName || 'Company'}</h4>
                         <Badge variant={subscription.plan?.code === 'PRO_MAX' ? 'primary' : subscription.plan?.code === 'PRO' ? 'success' : 'neutral'} className="font-bold">
                           {subscription.plan?.name || 'Basic Plan'}
                         </Badge>
@@ -185,16 +185,16 @@ export default function AdminDashboardPage() {
                         </Badge>
                       </div>
                       <p className="text-xs text-gray-600 mt-1">
-                        Billing Cycle: <strong className="text-black">{subscription.plan?.billingCycle || 'Monthly'}</strong> • Plan Entitlement: <strong className="text-black">{totalBusinessCapacity}</strong> authorized business staff roles (1 Admin • Unlimited Employees).
+                        Billing: <strong className="text-black">{subscription.plan?.billingCycle || 'Monthly'}</strong> • Staff Accounts: <strong className="text-black">{totalBusinessCapacity}</strong> allowed (1 Admin • Unlimited Employees).
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-gray-50 p-2.5 sm:p-3 rounded-lg border border-gray-100">
                     <div className="text-left sm:text-right">
-                      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Business Role Usage</p>
+                      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Account Usage</p>
                       <p className="text-sm font-extrabold text-black mt-0.5">
-                        {businessUsage} <span className="text-xs font-normal text-gray-500">/ {totalBusinessCapacity} accounts assigned</span>
+                        {businessUsage} <span className="text-xs font-normal text-gray-500">/ {totalBusinessCapacity} used</span>
                       </p>
                     </div>
                     <div className="w-full sm:w-36 bg-gray-200 rounded-full h-2.5 overflow-hidden">

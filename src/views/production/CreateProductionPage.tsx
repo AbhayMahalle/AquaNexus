@@ -93,11 +93,11 @@ export const CreateProductionPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Create Production Batch"
-        description="Schedule a new water purification and bottling production run."
+        title="New Batch"
+        description="Schedule a new water bottling and production run."
         breadcrumbs={[
           { label: 'Production', href: listHref },
-          { label: 'Create Batch' },
+          { label: 'New Batch' },
         ]}
         action={
           <Button
@@ -105,7 +105,7 @@ export const CreateProductionPage: React.FC = () => {
             icon={<ArrowLeft className="w-4 h-4" />}
             onClick={() => navigate(listHref)}
           >
-            Cancel
+            Back
           </Button>
         }
       />
@@ -182,11 +182,11 @@ export const CreateProductionPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-text-primary mb-1.5">
-              Production & Quality Control Notes
+              Notes (Optional)
             </label>
             <textarea
               rows={3}
-              placeholder="RO pressure, TDS levels, lab sample verification notes..."
+              placeholder="Optional notes or instructions..."
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               className="w-full px-3 py-2 text-sm bg-surface border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-secondary/40 focus:border-secondary"
@@ -203,7 +203,7 @@ export const CreateProductionPage: React.FC = () => {
               isLoading={isSubmitting}
               icon={<Save className="w-4 h-4" />}
             >
-              Start Production Batch
+              Create Batch
             </Button>
           </div>
         </form>

@@ -128,26 +128,21 @@ export default function ManagerDashboardPage() {
     <AuthGuard allowedRoles={['manager', 'admin']}>
       <DashboardLayout>
         <PageHeader
-          title="Operations Manager Dashboard"
-          description={`Assigned Modules: ${assignments.map(a => a.toUpperCase()).join(', ')}`}
-          breadcrumbs={[{ label: 'Manager Dashboard' }]}
-          primaryAction={{
-            label: 'Refresh Status',
-            icon: <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />,
-            onClick: loadManagerData,
-          }}
+          title="Manager Overview"
+          description="Overview of production, store inventory, and distribution operations."
+          breadcrumbs={[{ label: 'Manager Overview' }]}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
           {assignments.includes('production') && (
             <Card variant="interactive" className="border-t-4 border-t-orange-600">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Factory className="w-5 h-5 text-orange-600" />
-                  <span>Production Line</span>
+                  <span>Production</span>
                 </CardTitle>
                 <Badge variant={stats.inProgressBatches > 0 ? 'warning' : 'success'}>
-                  {stats.inProgressBatches > 0 ? `${stats.inProgressBatches} In Progress` : 'Live'}
+                  {stats.inProgressBatches > 0 ? `${stats.inProgressBatches} In Progress` : 'Active'}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -156,12 +151,12 @@ export default function ManagerDashboardPage() {
                     {formatNumber(stats.productionTotal)} L
                   </p>
                   <p className="text-xs text-gray-600 mt-1">
-                    {stats.completedBatches} batches completed successfully
+                    {stats.completedBatches} batches completed
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <Link to={user?.role === 'admin' ? '/admin/production' : '/manager/production'} className="w-full">
-                    <Button variant="outline" size="sm" fullWidth>Line Details</Button>
+                    <Button variant="outline" size="sm" fullWidth>View Production</Button>
                   </Link>
                 </div>
               </CardContent>
@@ -173,10 +168,10 @@ export default function ManagerDashboardPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Package className="w-5 h-5 text-black" />
-                  <span>Store & Inventory</span>
+                  <span>Store Inventory</span>
                 </CardTitle>
                 <Badge variant="secondary">
-                  {stats.inventorySkus} SKUs
+                  {stats.inventorySkus} Items
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -184,11 +179,11 @@ export default function ManagerDashboardPage() {
                   <p className="text-2xl font-bold text-black">
                     {formatNumber(stats.inventoryUnits)} Units
                   </p>
-                  <p className="text-xs text-gray-600 mt-1">Total items in central storage</p>
+                  <p className="text-xs text-gray-600 mt-1">Items in central store</p>
                 </div>
                 <div className="flex gap-2">
                   <Link to={user?.role === 'admin' ? '/admin/store/inventory' : '/manager/store/inventory'} className="w-full">
-                    <Button variant="outline" size="sm" fullWidth>Open Store</Button>
+                    <Button variant="outline" size="sm" fullWidth>View Inventory</Button>
                   </Link>
                 </div>
               </CardContent>
@@ -200,18 +195,18 @@ export default function ManagerDashboardPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Truck className="w-5 h-5 text-orange-600" />
-                  <span>Distribution & Dispatch</span>
+                  <span>Distribution</span>
                 </CardTitle>
                 <Badge variant="success">{stats.dispatchedCount} Dispatched</Badge>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-2xl font-bold text-black">{stats.ordersCount} Orders</p>
-                  <p className="text-xs text-gray-600 mt-1">{stats.pendingDispatches} Pending loading vehicles</p>
+                  <p className="text-xs text-gray-600 mt-1">{stats.pendingDispatches} Pending delivery vehicles</p>
                 </div>
                 <div className="flex gap-2">
                   <Link to={user?.role === 'admin' ? '/admin/distribution' : '/manager/distribution'} className="w-full">
-                    <Button variant="outline" size="sm" fullWidth>Dispatch Hub</Button>
+                    <Button variant="outline" size="sm" fullWidth>View Distribution</Button>
                   </Link>
                 </div>
               </CardContent>

@@ -136,54 +136,55 @@ export const AccountantDashboard: React.FC = () => {
     <AuthGuard allowedRoles={['admin', 'manager', 'accountant']}>
       <div className="space-y-6">
       <PageHeader
-        title="Plant Financial & Payroll Dashboard"
-        description="Live overview of plant cash flows, distributor collections, supplier payments, operational expenses, and employee payroll."
-        breadcrumb={['AquaNexus', 'Accountant', 'Dashboard']}
-        action={
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={loadFinanceData} isLoading={isLoading} icon={RefreshCw}>
-              Refresh
-            </Button>
-            <Button onClick={() => navigate('/accountant/expenses?new=true', { state: { openNew: true } })} icon={Plus}>
-              Record Expense
-            </Button>
-            <Button onClick={() => navigate('/accountant/reports')} variant="secondary" icon={PieChart}>
-              Financial Reports
-            </Button>
-          </div>
-        }
+        title="Accountant Overview"
+        description="Track payments received, payroll, expenses, and customer dues."
+        breadcrumbs={[{ label: 'Accountant Overview' }]}
+        primaryAction={{
+          label: 'Add Expense',
+          icon: <Plus className="w-4 h-4" />,
+          onClick: () => navigate('/accountant/expenses?new=true', { state: { openNew: true } }),
+          variant: 'primary',
+        }}
+        secondaryActions={[
+          {
+            label: 'Reports',
+            icon: <PieChart className="w-4 h-4" />,
+            onClick: () => navigate('/accountant/reports'),
+            variant: 'outline',
+          }
+        ]}
       />
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          label="Distributor Collections"
+          label="Payments Received"
           value={formatCurrency(totalDistributorPaymentsReceived)}
-          subtitle={`${payments.length} collections recorded`}
+          subtitle={`${payments.length} payments recorded`}
           icon={DollarSign}
         />
         <KPICard
-          label="Monthly Payroll Dues"
+          label="Staff Payroll"
           value={formatCurrency(totalPayrollMonth)}
-          subtitle={`${payroll.length} Employees (${pendingPayrollCount} pending)`}
+          subtitle={`${payroll.length} staff (${pendingPayrollCount} unpaid)`}
           icon={Users}
         />
         <KPICard
-          label="Operational Expenses"
+          label="Expenses"
           value={formatCurrency(totalExpensesMonth)}
-          subtitle={`${expenses.length} expenditure entries`}
+          subtitle={`${expenses.length} entries recorded`}
           icon={Receipt}
         />
         <KPICard
-          label="Distributor Receivables"
+          label="Pending Customer Due"
           value={formatCurrency(totalOutstandingReceivables)}
-          subtitle={`Across ${invoices.length} billing invoices`}
+          subtitle={`Across ${invoices.length} invoices`}
           icon={AlertCircle}
           statusBadge={
             totalOutstandingReceivables > 0 ? (
-              <Badge variant="warning">Action Needed</Badge>
+              <Badge variant="warning">Pending Due</Badge>
             ) : (
-              <Badge variant="success">All Settled</Badge>
+              <Badge variant="success">All Paid</Badge>
             )
           }
         />

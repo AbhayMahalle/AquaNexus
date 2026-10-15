@@ -253,33 +253,28 @@ export const AccountantPayments: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Plant Financial Payments Portal"
-        description="Unified portal for distributor incoming collections, supplier outgoing payouts, and employee salary disbursements."
+        title="Payments"
+        description="Track incoming collections, supplier payouts, and staff salary disbursements."
         breadcrumb={['AquaNexus', 'Accountant', 'Payments']}
         action={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={loadData} isLoading={isLoading} icon={RefreshCw}>
-              Refresh
-            </Button>
-            <Button
-              onClick={() => {
-                setErrorMsg('');
-                if (invoices.length > 0) {
-                  const targetInv = invoices.find((i) => i.id === selectedInvoiceId) ||
-                                    invoices.find((i) => (i.outstandingAmount || 0) > 0) ||
-                                    invoices[0];
-                  if (targetInv) {
-                    setSelectedInvoiceId(targetInv.id);
-                    setAmount(targetInv.outstandingAmount > 0 ? targetInv.outstandingAmount : 0);
-                  }
+          <Button
+            onClick={() => {
+              setErrorMsg('');
+              if (invoices.length > 0) {
+                const targetInv = invoices.find((i) => i.id === selectedInvoiceId) ||
+                                  invoices.find((i) => (i.outstandingAmount || 0) > 0) ||
+                                  invoices[0];
+                if (targetInv) {
+                  setSelectedInvoiceId(targetInv.id);
+                  setAmount(targetInv.outstandingAmount > 0 ? targetInv.outstandingAmount : 0);
                 }
-                setIsModalOpen(true);
-              }}
-              icon={Plus}
-            >
-              Record Incoming Payment
-            </Button>
-          </div>
+              }
+              setIsModalOpen(true);
+            }}
+            icon={Plus}
+          >
+            Record Payment
+          </Button>
         }
       />
 

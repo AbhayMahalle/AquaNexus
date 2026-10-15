@@ -352,26 +352,20 @@ export default function DamagedGoodsPage() {
       <DashboardLayout>
         {/* Page Header */}
         <PageHeader
-          title="Damaged & Scrap Stock Write-offs"
-          description="Log damaged bottles, cracked jars, defective preforms, and expired chemicals for review and scrap disposal."
+          title="Damaged Stock"
+          description="Record and track damaged bottles, defective jars, and scrap."
           breadcrumbs={[
-            { label: 'Store', href: '/store/dashboard' },
-            { label: 'Damaged Goods' }
+            { label: 'Damaged Stock' }
           ]}
           secondaryActions={[
             {
-              label: 'Manage Products',
-              href: '/store/products',
-              icon: <Package className="w-4 h-4" />,
-            },
-            {
-              label: 'Store Inventory',
+              label: 'Inventory',
               href: '/store/inventory',
               icon: <Package className="w-4 h-4" />,
             }
           ]}
           primaryAction={{
-            label: 'Report Damaged Items',
+            label: 'Record Damage',
             icon: <Plus className="w-4 h-4" />,
             onClick: () => setIsEntryModalOpen(true),
           }}

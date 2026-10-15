@@ -66,32 +66,31 @@ export function Modal({
 
       <div
         className={cn(
-          'relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-2xl bg-surface p-5 sm:p-6 shadow-erp-modal transition-all border border-border',
+          'relative z-10 w-full max-h-[88vh] overflow-y-auto rounded-xl sm:rounded-2xl bg-surface p-4 sm:p-6 shadow-erp-modal transition-all border border-border',
           effectiveMaxWidth
         )}
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-start justify-between pb-3 sm:pb-4 border-b border-border">
-          <div>
-            {title && <h3 className="text-base sm:text-lg font-bold text-textPrimary">{title}</h3>}
-            {subText && <p className="mt-1 text-xs sm:text-sm text-textSecondary">{subText}</p>}
+        <div className="flex items-start justify-between pb-3 border-b border-border gap-2">
+          <div className="min-w-0 pr-2">
+            {title && <h3 className="text-base sm:text-lg font-bold text-textPrimary leading-snug">{title}</h3>}
+            {subText && <p className="mt-0.5 text-xs sm:text-sm text-textSecondary">{subText}</p>}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 rounded-lg text-textSecondary hover:text-textPrimary hover:bg-background"
+            className="p-1.5 sm:p-2 rounded-lg text-textSecondary hover:text-textPrimary hover:bg-gray-100 transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
-          </Button>
+          </button>
         </div>
 
-        <div className="py-4 text-sm text-textPrimary">{children}</div>
+        <div className="py-3 sm:py-4 text-sm text-textPrimary">{children}</div>
 
         {footer && (
-          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-border">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3 pt-3 border-t border-border">
             {footer}
           </div>
         )}

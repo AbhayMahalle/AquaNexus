@@ -166,7 +166,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                 Aqua<span className="text-orange-600 font-extrabold">Nexus</span>
               </span>
               <span className="text-[9px] uppercase tracking-widest font-semibold block text-gray-500">
-                Water Plant ERP
+                Plant Manager
               </span>
             </div>
           </Link>
@@ -250,8 +250,8 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         </div>
 
         <div className="p-3 border-t text-center bg-white border-gray-200">
-          <p className="text-[10px] font-medium text-gray-500">
-            AquaNexus Enterprise ERP
+          <p className="text-[11px] font-medium text-gray-500">
+            AquaNexus
           </p>
         </div>
       </aside>

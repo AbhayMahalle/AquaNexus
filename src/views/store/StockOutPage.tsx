@@ -259,21 +259,20 @@ export default function StockOutPage() {
       <DashboardLayout>
         {/* Page Header */}
         <PageHeader
-          title="Stock Outward Issuance"
-          description="Log material issuance to bottling production lines, maintenance requisitions, and authorized stock deductions."
+          title="Issue Stock"
+          description="Issue materials from warehouse to production or operational units."
           breadcrumbs={[
-            { label: 'Store', href: '/store/dashboard' },
-            { label: 'Stock Out' }
+            { label: 'Issue Stock' }
           ]}
           secondaryActions={[
             {
-              label: 'Dispatch Orders',
+              label: 'Dispatch',
               href: '/store/dispatch',
               icon: <Truck className="w-4 h-4" />,
             }
           ]}
           primaryAction={{
-            label: 'Issue Materials (OUT)',
+            label: 'Issue Stock',
             icon: <Plus className="w-4 h-4" />,
             onClick: () => setIsEntryModalOpen(true),
           }}

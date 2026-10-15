@@ -292,31 +292,25 @@ export default function StockInPage() {
       <DashboardLayout>
         {/* Page Header */}
         <PageHeader
-          title="Stock Inward Transactions"
-          description="Record incoming consignments, supplier deliveries, batch receipts, and warehouse inward material additions."
+          title="Receive Stock"
+          description="Record incoming materials and shipments into warehouse stock."
           breadcrumbs={[
-            { label: 'Store', href: '/store/dashboard' },
-            { label: 'Stock In' }
+            { label: 'Receive Stock' }
           ]}
           secondaryActions={[
             {
-              label: 'Manage Products',
-              href: '/store/products',
-              icon: <Boxes className="w-4 h-4" />,
-            },
-            {
-              label: 'Goods Received (GRN)',
+              label: 'Goods Received',
               href: '/store/goods-received',
               icon: <FileCheck2 className="w-4 h-4" />,
             },
             {
-              label: 'Current Inventory',
+              label: 'Inventory',
               href: '/store/inventory',
               icon: <Package className="w-4 h-4" />,
             }
           ]}
           primaryAction={{
-            label: 'New Stock-IN Entry',
+            label: 'Receive Stock',
             icon: <Plus className="w-4 h-4" />,
             onClick: () => setIsEntryModalOpen(true),
           }}

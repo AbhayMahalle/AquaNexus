@@ -343,36 +343,36 @@ export default function DashboardPage() {
 
   const quickActions = [
     {
-      title: 'Inward Consignment',
-      description: 'Log raw materials & vendor shipments',
+      title: 'Receive Stock',
+      description: 'Record incoming stock from suppliers or production',
       href: '/store/stock-in',
       icon: <ArrowDownToLine className="w-4 h-4 text-[#16A34A]" />,
       btnText: 'Stock In',
     },
     {
-      title: 'Issue to Bottling Line',
-      description: 'Transfer preforms, caps & chemicals',
+      title: 'Issue Stock',
+      description: 'Issue materials to production or operations',
       href: '/store/stock-out',
       icon: <ArrowUpFromLine className="w-4 h-4 text-[#1597D4]" />,
       btnText: 'Stock Out',
     },
     {
-      title: 'Generate GRN',
-      description: 'Verify vendor PO delivery challan',
+      title: 'Goods Received',
+      description: 'Record received shipments from purchase orders',
       href: '/store/goods-received',
       icon: <FileCheck2 className="w-4 h-4 text-[#0F4C81]" />,
-      btnText: 'New GRN',
+      btnText: 'New Receipt',
     },
     {
-      title: 'Manage Products',
-      description: 'Add & maintain master catalog items',
+      title: 'Products',
+      description: 'View and manage plant products',
       href: '/store/products',
       icon: <Boxes className="w-4 h-4 text-[#0F4C81]" />,
       btnText: 'Products',
     },
     {
-      title: 'Stage Outbound Dispatch',
-      description: 'Prepare finished water loading slips',
+      title: 'Dispatch',
+      description: 'Prepare outbound dispatches and delivery slips',
       href: '/store/dispatch',
       icon: <Truck className="w-4 h-4 text-[#2563EB]" />,
       btnText: 'Dispatch',
@@ -384,11 +384,10 @@ export default function DashboardPage() {
       <DashboardLayout>
         {/* Page Header with Breadcrumbs and Quick Navigation */}
         <PageHeader
-          title="Store & Inventory Dashboard"
-          description="Operational dashboard for plant material inventory, stock movements, dispatches, and warehouse threshold monitoring."
+          title="Store Overview"
+          description="Overview of inventory levels, incoming shipments, and stock movements."
           breadcrumbs={[
-            { label: 'Store', href: '/store/dashboard' },
-            { label: 'Dashboard' }
+            { label: 'Store Overview' }
           ]}
           secondaryActions={[
             {

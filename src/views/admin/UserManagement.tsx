@@ -453,11 +453,11 @@ export default function UserManagementPage() {
     <AuthGuard allowedRoles={['admin']}>
       <DashboardLayout>
         <PageHeader
-          title="User & Staff Management"
-          description="Manage system access, roles, and employee permissions across plant operations"
-          breadcrumbs={[{ label: 'Admin' }, { label: 'Users' }]}
+          title="Users & Roles"
+          description="Manage user accounts, roles, and access permissions."
+          breadcrumbs={[{ label: 'Users' }]}
           primaryAction={{
-            label: 'Add New User',
+            label: 'Add User',
             icon: <UserPlus className="w-4 h-4" />,
             variant: 'primary',
             onClick: () => {
@@ -467,7 +467,7 @@ export default function UserManagementPage() {
           }}
           secondaryActions={[
             {
-              label: 'Export CSV',
+              label: 'Export',
               icon: <Download className="w-4 h-4" />,
               variant: 'outline',
               onClick: handleExport,

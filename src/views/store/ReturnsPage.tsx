@@ -375,26 +375,20 @@ export default function ReturnsPage() {
       <DashboardLayout>
         {/* Page Header */}
         <PageHeader
-          title="Customer & Distributor Returns"
-          description="Log and manage empty reusable 20L jars, customer exchange bottles, and defective returns with inventory updates."
+          title="Returns"
+          description="Log and manage empty jar returns, exchanges, and defective products."
           breadcrumbs={[
-            { label: 'Store', href: '/store/dashboard' },
             { label: 'Returns' }
           ]}
           secondaryActions={[
             {
-              label: 'Manage Products',
-              href: '/store/products',
-              icon: <Package className="w-4 h-4" />,
-            },
-            {
-              label: 'Store Inventory',
+              label: 'Inventory',
               href: '/store/inventory',
               icon: <Package className="w-4 h-4" />,
             }
           ]}
           primaryAction={{
-            label: 'Receive Inward Return',
+            label: 'New Return',
             icon: <Plus className="w-4 h-4" />,
             onClick: () => {
               if (distributors.length === 0 || products.length === 0) {

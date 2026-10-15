@@ -191,11 +191,11 @@ export default function PaymentsManagement() {
       <DashboardLayout>
         <div className="text-black">
           <PageHeader
-            title="Subscription Payments & Invoices"
-            description="Audit all customer subscription receipts, manual payments, and gateway-confirmed transactions"
+            title="Revenue & Payments"
+            description="Audit subscription receipts and recorded payments."
             breadcrumbs={[{ label: 'Platform' }, { label: 'Payments' }]}
             primaryAction={{
-              label: 'Record Manual Payment',
+              label: 'Record Payment',
               icon: <Plus className="w-4 h-4" />,
               onClick: openRecordModal,
             }}
@@ -205,7 +205,7 @@ export default function PaymentsManagement() {
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3">
               <CardTitle className="text-base font-bold flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-green-600" />
-                <span>Subscription Payment Ledger ({filteredPayments.length})</span>
+                <span>Payment History ({filteredPayments.length})</span>
               </CardTitle>
               <div className="w-full sm:w-64">
                 <Input

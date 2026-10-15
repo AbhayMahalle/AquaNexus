@@ -115,48 +115,46 @@ export const ProductionListPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Production Batches"
-        description="Monitor plant water purification, bottling operations and output logs."
-        action={
-          <Button
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-            onClick={() => navigate(`${baseRoute}/create`)}
-          >
-            Create Production Batch
-          </Button>
-        }
+        title="Production"
+        description="Track water production batches, shifts, and output."
+        breadcrumbs={[{ label: 'Production' }]}
+        primaryAction={{
+          label: 'New Batch',
+          icon: <Plus className="w-4 h-4" />,
+          onClick: () => navigate(`${baseRoute}/create`),
+          variant: 'primary',
+        }}
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-lg text-primary">
-            <Factory className="w-6 h-6" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <Card className="flex items-center gap-3.5 p-4">
+          <div className="p-2.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg">
+            <Factory className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-text-secondary">Total Daily Output</p>
-            <h4 className="text-2xl font-bold text-text-primary">{totalQuantity.toLocaleString()} Units</h4>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Output</p>
+            <h4 className="text-2xl font-bold text-black mt-0.5">{totalQuantity.toLocaleString()} Units</h4>
           </div>
         </Card>
 
-        <Card className="flex items-center gap-4">
-          <div className="p-3 bg-emerald-100 rounded-lg text-status-success">
-            <PackageCheck className="w-6 h-6" />
+        <Card className="flex items-center gap-3.5 p-4">
+          <div className="p-2.5 bg-green-50 text-green-600 border border-green-200 rounded-lg">
+            <PackageCheck className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-text-secondary">Completed Batches</p>
-            <h4 className="text-2xl font-bold text-text-primary">{completedCount}</h4>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</p>
+            <h4 className="text-2xl font-bold text-black mt-0.5">{completedCount}</h4>
           </div>
         </Card>
 
-        <Card className="flex items-center gap-4">
-          <div className="p-3 bg-amber-100 rounded-lg text-status-warning">
-            <Clock className="w-6 h-6" />
+        <Card className="flex items-center gap-3.5 p-4">
+          <div className="p-2.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg">
+            <Clock className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-text-secondary">In-Progress Lines</p>
-            <h4 className="text-2xl font-bold text-text-primary">{inProgressCount}</h4>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">In Progress</p>
+            <h4 className="text-2xl font-bold text-black mt-0.5">{inProgressCount}</h4>
           </div>
         </Card>
       </div>

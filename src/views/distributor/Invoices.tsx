@@ -175,8 +175,8 @@ export const DistributorInvoices: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Distributor Invoices"
-        description="View generated billing invoices, payment statuses, and due dates."
+        title="Invoices"
+        description="View your invoices, payment statuses, and due dates."
         breadcrumb={['AquaNexus', 'Distributor', 'Invoices']}
       />
 

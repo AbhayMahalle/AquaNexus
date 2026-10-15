@@ -255,8 +255,9 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
   return (
     <div>
       <PageHeader
-        title={user?.role === 'employee' ? "My Attendance" : "Daily Attendance Logger"}
-        description={user?.role === 'employee' ? "View your attendance records" : "Maintain daily shift attendance for water plant personnel."}
+        title={user?.role === 'employee' ? "My Attendance" : "Attendance"}
+        description={user?.role === 'employee' ? "Your daily work hours and check-in records." : "Record and review employee attendance."}
+        breadcrumbs={[{ label: user?.role === 'employee' ? "My Attendance" : "Attendance" }]}
         action={
           user?.role !== 'employee' ? (
             <div className="flex items-center gap-2">

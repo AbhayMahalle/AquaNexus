@@ -113,17 +113,17 @@ export function Table<T>({
   };
 
   return (
-    <div className={cn('w-full overflow-x-auto rounded-xl border border-border bg-surface shadow-xs', className)}>
+    <div className={cn('w-full overflow-x-auto -webkit-overflow-scrolling-touch rounded-xl border border-border bg-surface shadow-xs', className)}>
       {effectiveSearch && (
-        <div className="p-4 border-b border-border flex items-center justify-between gap-4">
+        <div className="p-3 sm:p-4 border-b border-border flex items-center justify-between gap-3">
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted" size={16} />
             <input
               type="text"
-              placeholder={searchPlaceholder ?? 'Search records...'}
+              placeholder={searchPlaceholder ?? 'Search...'}
               value={internalTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm bg-background border border-border rounded-lg text-textPrimary placeholder:text-textMuted focus:outline-none focus:ring-2 focus:ring-secondary/40"
+              className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-sm bg-background border border-border rounded-lg text-textPrimary placeholder:text-textMuted focus:outline-none focus:ring-2 focus:ring-secondary/40"
             />
           </div>
         </div>

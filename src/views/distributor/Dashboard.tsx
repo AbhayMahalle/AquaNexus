@@ -120,41 +120,17 @@ export const DistributorDashboard: React.FC = () => {
   return (
     <AuthGuard allowedRoles={['admin', 'manager', 'distributor']}>
       <div className="space-y-6 text-black">
-      {/* Authorized Area Header Banner */}
-      <div className="bg-white text-black p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-gray-200 border-l-4 border-l-orange-500 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2 text-orange-600 text-xs font-bold uppercase tracking-wider mb-1">
-            <Shield size={16} /> Authorized Distributor Area {distributorInfo?.distributorCode ? `(${distributorInfo.distributorCode})` : ''}
-          </div>
-          <h2 className="text-xl font-extrabold tracking-tight text-black">{distributorName}</h2>
-          <p className="text-xs text-gray-700 mt-0.5">{distributorTerritory}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => loadData()}
-            variant="outline"
-            size="sm"
-            className="bg-white text-black border-gray-300 hover:bg-gray-100"
-            icon={RefreshCw}
-          >
-            Refresh
-          </Button>
-          <Button
-            onClick={() => navigate('/distributor/orders/create')}
-            variant="orange"
-            className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
-            icon={Plus}
-          >
-            Place New Order
-          </Button>
-        </div>
-      </div>
-
       {/* Page Header */}
       <PageHeader
-        title="Distributor Dashboard"
-        description="Live overview of warehouse stock, orders status, customer sales revenue, and billing balances."
-        breadcrumb={['AquaNexus', 'Distributor', 'Dashboard']}
+        title="Distributor Overview"
+        description={`${distributorName} • ${distributorTerritory}`}
+        breadcrumbs={[{ label: 'Distributor Overview' }]}
+        primaryAction={{
+          label: 'New Order',
+          icon: <Plus className="w-4 h-4" />,
+          onClick: () => navigate('/distributor/orders/create'),
+          variant: 'primary',
+        }}
       />
 
       {/* KPI Cards Row */}

@@ -372,21 +372,20 @@ export default function DispatchPage() {
       <DashboardLayout>
         {/* Page Header */}
         <PageHeader
-          title="Store Outbound Dispatch"
-          description="Manage vehicle loading manifests, finished water stock deduction, and distributor gate pass logistics."
+          title="Dispatch"
+          description="Manage vehicle loading and delivery dispatches to distributors."
           breadcrumbs={[
-            { label: 'Store', href: '/store/dashboard' },
             { label: 'Dispatch' },
           ]}
           secondaryActions={[
             {
-              label: 'Stock Out Log',
-              href: '/store/stock-out',
+              label: 'Stock History',
+              href: '/store/stock-transactions',
               icon: <Package className="w-4 h-4" />,
             },
           ]}
           primaryAction={{
-            label: 'Stage Outbound Dispatch',
+            label: 'New Dispatch',
             icon: <Plus className="w-4 h-4" />,
             onClick: () => {
               if (distributors.length === 0 || products.length === 0) {

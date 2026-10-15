@@ -157,24 +157,19 @@ export const DistributorSales: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Distributor Sales History"
-        description="Live records of product sales to supermarkets, retail stores, and commercial buyers in authorized territory."
+        title="Sales"
+        description="Record and track customer sales from your warehouse stock."
         breadcrumb={['AquaNexus', 'Distributor', 'Sales']}
         action={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={loadData} isLoading={isLoading} icon={RefreshCw}>
-              Refresh
-            </Button>
-            <Button
-              onClick={() => {
-                setErrorMsg('');
-                setIsModalOpen(true);
-              }}
-              icon={Plus}
-            >
-              Record Direct Sale
-            </Button>
-          </div>
+          <Button
+            onClick={() => {
+              setErrorMsg('');
+              setIsModalOpen(true);
+            }}
+            icon={Plus}
+          >
+            Record Sale
+          </Button>
         }
       />
 

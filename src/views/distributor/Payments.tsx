@@ -122,8 +122,8 @@ export const DistributorPayments: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Distributor Payment Transactions"
-        description="Records of payments transferred to plant central bank accounts."
+        title="Payments"
+        description="View payment history and make invoice payments."
         breadcrumb={['AquaNexus', 'Distributor', 'Payments']}
         action={
           <Button onClick={() => setIsModalOpen(true)} icon={Plus}>
@@ -136,14 +136,14 @@ export const DistributorPayments: React.FC = () => {
         columns={columns}
         data={payments}
         isLoading={loading}
-        searchPlaceholder="Search payment transactions..."
+        searchPlaceholder="Search payments..."
       />
 
       {/* Payment Settlement Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Make Invoice Settlement Payment"
+        title="Make Payment"
       >
         <form onSubmit={handleMakePayment} className="space-y-4">
           <Select

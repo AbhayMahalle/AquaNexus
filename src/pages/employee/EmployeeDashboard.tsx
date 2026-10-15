@@ -62,44 +62,50 @@ export function EmployeeDashboardPage() {
       <div className="space-y-6">
         <PageHeader
           title={`Welcome, ${profile?.firstName || 'Employee'}!`}
-          description={`${profile?.designation || 'Staff'} • ${profile?.department?.name || 'Department'}`}
-          breadcrumbs={[{ label: 'Employee Portal' }]}
+          description={`${profile?.designation || 'Staff'} • ${profile?.department?.name || 'Plant Operations'}`}
+          breadcrumbs={[{ label: 'My Workspace' }]}
           primaryAction={{
-            label: 'Refresh',
-            icon: <RefreshCw className="w-4 h-4" />,
-            onClick: loadData
+            label: 'Request Leave',
+            href: '/employee/leave',
+            variant: 'primary',
           }}
         />
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Days Present (All Time)</CardTitle>
-              <CalendarCheck className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{presents}</div>
-            </CardContent>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Days Present</p>
+                <div className="text-2xl font-bold text-black mt-1">{presents}</div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-green-50 text-green-600 border border-green-200">
+                <CalendarCheck className="h-5 w-5" />
+              </div>
+            </div>
           </Card>
           
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Approved Leaves</CardTitle>
-              <CalendarOff className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{approvedLeaves}</div>
-            </CardContent>
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Approved Leaves</p>
+                <div className="text-2xl font-bold text-black mt-1">{approvedLeaves}</div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-200">
+                <CalendarOff className="h-5 w-5" />
+              </div>
+            </div>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Pending Leaves</CardTitle>
-              <Clock className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pendingLeaves}</div>
-            </CardContent>
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Requests</p>
+                <div className="text-2xl font-bold text-black mt-1">{pendingLeaves}</div>
+              </div>
+              <div className="p-2.5 rounded-lg bg-orange-50 text-orange-600 border border-orange-200">
+                <Clock className="h-5 w-5" />
+              </div>
+            </div>
           </Card>
         </div>
 

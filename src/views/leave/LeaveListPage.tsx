@@ -128,15 +128,16 @@ export const LeaveListPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title={user?.role === 'employee' ? 'My Leave Requests' : 'Leave Management'}
-        description={user?.role === 'employee' ? 'Track your leave requests and file new applications.' : 'Track and process employee leave requests and approvals.'}
+        title={user?.role === 'employee' ? 'My Leave' : 'Leave Requests'}
+        description={user?.role === 'employee' ? 'View your leaves and submit new requests.' : 'Review and approve employee leave requests.'}
+        breadcrumbs={[{ label: user?.role === 'employee' ? 'My Leave' : 'Leave Requests' }]}
         action={
           <Button
             variant="primary"
             icon={<Plus className="w-4 h-4" />}
             onClick={() => navigate('/leave/create')}
           >
-            Apply New Leave
+            Apply Leave
           </Button>
         }
       />

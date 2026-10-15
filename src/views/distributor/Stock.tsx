@@ -83,8 +83,8 @@ export const DistributorStockPage: React.FC = () => {
   return (
     <div className="space-y-6 text-black">
       <PageHeader
-        title="Distributor Warehouse Stock"
-        description="Monitor physical inventory levels held in your authorized distributor warehouse."
+        title="Stock"
+        description="Monitor inventory levels and reorder products."
         breadcrumb={['AquaNexus', 'Distributor', 'Stock']}
         action={
           <Button

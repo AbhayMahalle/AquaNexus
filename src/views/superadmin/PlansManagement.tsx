@@ -189,11 +189,11 @@ export default function PlansManagement() {
       <DashboardLayout>
         <div className="text-black">
           <PageHeader
-            title="SaaS Subscription Plans & Pricing"
-            description="Manage Basic, Pro, Pro Max, and custom enterprise plan tiers and user entitlements"
+            title="Plans & Pricing"
+            description="Manage subscription plan tiers, pricing, and user capacity."
             breadcrumbs={[{ label: 'Platform' }, { label: 'Plans & Pricing' }]}
             primaryAction={{
-              label: 'Create Custom Plan',
+              label: 'New Plan',
               icon: <Plus className="w-4 h-4" />,
               onClick: openCreateModal,
             }}

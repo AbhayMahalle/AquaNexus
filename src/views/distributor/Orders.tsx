@@ -108,8 +108,8 @@ export const DistributorOrders: React.FC = () => {
   return (
     <div className="space-y-6 text-black">
       <PageHeader
-        title="Distributor Orders"
-        description="Track plant orders, dispatch status, and itemized delivery manifests."
+        title="Orders"
+        description="View and track your plant purchase orders and dispatch status."
         breadcrumb={['AquaNexus', 'Distributor', 'Orders']}
         action={
           <Button
@@ -118,7 +118,7 @@ export const DistributorOrders: React.FC = () => {
             variant="orange"
             className="bg-orange-500 text-black font-bold hover:bg-gray-200 border border-orange-600/30"
           >
-            Create Order
+            New Order
           </Button>
         }
       />

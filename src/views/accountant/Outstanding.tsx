@@ -158,14 +158,9 @@ export const AccountantOutstanding: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Plant Outstanding Financial Dues"
-        description="Comprehensive audit of distributor receivables aging and vendor supplier payables."
+        title="Outstanding Dues"
+        description="Monitor distributor receivables and supplier payables."
         breadcrumb={['AquaNexus', 'Accountant', 'Outstanding']}
-        action={
-          <Button variant="secondary" onClick={loadData} isLoading={isLoading} icon={RefreshCw}>
-            Refresh
-          </Button>
-        }
       />
 
       {/* Dual Financial Receivables vs Payables Banner */}
@@ -173,7 +168,7 @@ export const AccountantOutstanding: React.FC = () => {
         <Card className="bg-surface border border-border">
           <CardHeader className="pb-0">
             <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wider text-textSecondary">
-              <AlertCircle size={18} className="text-warning" /> Total Distributor Receivables
+              <AlertCircle size={18} className="text-warning" /> Distributor Receivables
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
@@ -181,7 +176,7 @@ export const AccountantOutstanding: React.FC = () => {
               {formatCurrency(summary?.totalDistributorOutstanding || 0)}
             </h3>
             <p className="text-xs text-textMuted mt-1">
-              {summary?.overdueCount || 0} invoices currently overdue past payment deadline
+              {summary?.overdueCount || 0} overdue invoices
             </p>
           </CardContent>
         </Card>
@@ -189,7 +184,7 @@ export const AccountantOutstanding: React.FC = () => {
         <Card className="bg-surface border border-border">
           <CardHeader className="pb-0">
             <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wider text-textSecondary">
-              <DollarSign size={18} className="text-primary" /> Total Supplier Payables Dues
+              <DollarSign size={18} className="text-primary" /> Supplier Payables
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
@@ -197,7 +192,7 @@ export const AccountantOutstanding: React.FC = () => {
               {formatCurrency(summary?.totalSupplierOutstanding || 0)}
             </h3>
             <p className="text-xs text-textMuted mt-1">
-              Outstanding bills due to raw material and packaging vendors
+              Pending raw material and packaging bills
             </p>
           </CardContent>
         </Card>

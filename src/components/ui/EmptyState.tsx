@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
 import { Inbox } from 'lucide-react';
@@ -25,9 +26,17 @@ export function EmptyState({ title, description, icon, action, className }: Empt
       <h3 className="text-base font-semibold text-textPrimary mb-1">{title}</h3>
       {description && <p className="text-sm text-textSecondary max-w-sm mb-5 leading-relaxed">{description}</p>}
       {action && (
-        <Button variant="primary" size="sm" onClick={action.onClick} leftIcon={action.icon}>
-          {action.label}
-        </Button>
+        action.href ? (
+          <Link to={action.href}>
+            <Button variant="primary" size="sm" leftIcon={action.icon}>
+              {action.label}
+            </Button>
+          </Link>
+        ) : (
+          <Button variant="primary" size="sm" onClick={action.onClick} leftIcon={action.icon}>
+            {action.label}
+          </Button>
+        )
       )}
     </div>
   );

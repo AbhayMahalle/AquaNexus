@@ -56,8 +56,8 @@ interface P2PHubProps {
 
 export function P2PHub({
   initialPerspective,
-  pageTitle = 'Procurement-to-Pay (P2P) Cycle',
-  pageSubtitle = 'End-to-End Enterprise Procurement Workflow: Quantity Request → Rate Approval → PO → Challan → GRN → Invoice → Payment',
+  pageTitle = 'Purchases & Orders',
+  pageSubtitle = 'Manage purchase requests, supplier orders, deliveries, and vendor bills.',
   defaultTab,
 }: P2PHubProps) {
   const { user } = useAuth();
@@ -201,31 +201,31 @@ export function P2PHub({
   const ALL_TABS_CONFIG = [
     {
       key: 'REQUISITIONS' as const,
-      label: '1. Requisitions (PR)',
+      label: '1. Requests',
       count: requisitions.length,
-      badge: `${requisitions.filter((x) => x.status === 'PENDING_RATE_APPROVAL').length} Action Needed`,
+      badge: `${requisitions.filter((x) => x.status === 'PENDING_RATE_APPROVAL').length} Pending`,
       badgeColor: 'bg-amber-100 text-amber-800',
     },
     {
       key: 'ORDERS' as const,
-      label: '2. Purchase Orders (PO)',
+      label: '2. Purchase Orders',
       count: orders.length,
       badge: `${orders.filter((x) => x.status === 'OUT_FOR_DELIVERY' || x.status === 'ISSUED').length} Active`,
       badgeColor: 'bg-orange-100 text-orange-800',
     },
     {
       key: 'CHALLANS' as const,
-      label: '3. Delivery Challans & Dispatch',
+      label: '3. Delivery Slips',
       count: orders.filter((o) => o.challans && o.challans.length > 0).length,
     },
     {
       key: 'GRN' as const,
-      label: '4. Goods Received Notes (GRN)',
+      label: '4. Goods Received',
       count: orders.filter((o) => o.goodsReceivedNotes && o.goodsReceivedNotes.length > 0).length,
     },
     {
       key: 'INVOICES' as const,
-      label: '5. Invoices, 3-Way Match & Pay',
+      label: '5. Bills & Payments',
       count: orders.filter((o) => o.vendorInvoices && o.vendorInvoices.length > 0).length,
       badge: `${orders.filter((o) => o.vendorInvoices?.some((i) => i.status === 'SUBMITTED' || i.status === 'APPROVED')).length} Pending`,
       badgeColor: 'bg-teal-100 text-teal-800',
@@ -244,11 +244,8 @@ export function P2PHub({
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
                 <span>{pageTitle}</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
-                  P2P Lifecycle
-                </span>
               </h1>
               <p className="text-xs text-gray-600 mt-0.5">{pageSubtitle}</p>
             </div>
@@ -260,7 +257,7 @@ export function P2PHub({
           {isAdmin && (
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 text-xs font-bold">
               <Shield className="w-3.5 h-3.5 text-orange-600" />
-              <span>Admin View-Only (Audit Mode)</span>
+              <span>Admin Overview (Read-Only)</span>
             </div>
           )}
 

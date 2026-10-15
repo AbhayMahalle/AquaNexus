@@ -91,8 +91,8 @@ export const AddEmployeePage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Add New Employee"
-        description="Register a new plant staff member into the internal management system."
+        title="Add Employee"
+        description="Register a new staff member and configure their account."
         breadcrumbs={[
           { label: isManager ? 'Manager' : 'Employees', href: listHref },
           { label: 'Add Employee' },
@@ -103,7 +103,7 @@ export const AddEmployeePage: React.FC = () => {
             icon={<ArrowLeft className="w-4 h-4" />}
             onClick={() => navigate(listHref)}
           >
-            Back to List
+            Back
           </Button>
         }
       />

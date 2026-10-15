@@ -588,8 +588,8 @@ export default function OrganizationManagement() {
       <DashboardLayout>
         <div className="space-y-6">
           <PageHeader
-            title="Customer Organizations"
-            description="Platform SuperAdmin governance: provision client companies and manage tenant status."
+            title="Companies"
+            description="Manage client companies, accounts, and subscription access."
             action={
               <Button
                 variant="primary"
@@ -597,7 +597,7 @@ export default function OrganizationManagement() {
                 onClick={() => setIsProvisionOpen(true)}
                 leftIcon={<Building2 className="w-4 h-4" />}
               >
-                Provision Organization
+                Add Company
               </Button>
             }
           />

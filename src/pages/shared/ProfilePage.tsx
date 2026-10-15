@@ -98,11 +98,8 @@ export function ProfilePage() {
       <div className="space-y-6">
         <PageHeader
           title="My Profile"
-          description="View and manage your personal and employment details"
-          breadcrumbs={[
-            { label: 'Dashboard', href: '/' },
-            { label: 'My Profile' }
-          ]}
+          description="Your personal information and employment details."
+          breadcrumbs={[{ label: 'My Profile' }]}
           action={
             !isEditing ? (
               <Button
@@ -127,7 +124,7 @@ export function ProfilePage() {
                   onClick={handleSave}
                   loading={saving}
                 >
-                  Save Changes
+                  Save
                 </Button>
               </div>
             )

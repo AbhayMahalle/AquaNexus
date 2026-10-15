@@ -118,12 +118,12 @@ export const CreateOrder: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Create New Plant Order"
-        description="Select products, specify dispatch quantities, and submit order to central plant store."
-        breadcrumb={['AquaNexus', 'Distributor', 'Orders', 'Create']}
+        title="New Order"
+        description="Select products and quantities to place a new order."
+        breadcrumb={['AquaNexus', 'Distributor', 'Orders', 'New']}
         action={
           <Button variant="secondary" onClick={() => navigate('/distributor/orders')} icon={ArrowLeft}>
-            Back to Orders
+            Back
           </Button>
         }
       />
@@ -133,7 +133,7 @@ export const CreateOrder: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Select Products &amp; Quantities</CardTitle>
+              <CardTitle>Products & Quantities</CardTitle>
               <Button type="button" variant="secondary" size="sm" onClick={addItemRow} icon={Plus}>
                 Add Item
               </Button>
@@ -186,22 +186,22 @@ export const CreateOrder: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Delivery &amp; Dispatch Notes</CardTitle>
+              <CardTitle>Delivery Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Input
                 label="Delivery Address"
                 value={deliveryAddress}
                 onChange={e => setDeliveryAddress(e.target.value)}
-                placeholder="Enter authorized delivery warehouse address"
+                placeholder="Enter delivery address"
                 required
               />
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-textSecondary uppercase tracking-wider">Special Instructions / Notes</label>
+                <label className="text-xs font-semibold text-textSecondary uppercase tracking-wider">Notes (Optional)</label>
                 <textarea
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder="Optional delivery timing or seal verification notes..."
+                  placeholder="Optional delivery instructions or notes..."
                   className="h-20 px-3.5 py-2 text-sm bg-surface border border-border rounded-lg text-textPrimary placeholder:text-textMuted focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
               </div>
@@ -213,7 +213,7 @@ export const CreateOrder: React.FC = () => {
         <div>
           <Card className="sticky top-20">
             <CardHeader>
-              <CardTitle>Order Cost Summary</CardTitle>
+              <CardTitle>Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2.5 text-xs pb-4 border-b border-border">
@@ -222,12 +222,12 @@ export const CreateOrder: React.FC = () => {
                   <span className="font-semibold text-textPrimary">{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-textSecondary">
-                  <span>Estimated Tax (5% GST)</span>
+                  <span>Tax (5% GST)</span>
                   <span className="font-semibold text-textPrimary">{formatCurrency(taxAmount)}</span>
                 </div>
               </div>
               <div className="flex justify-between items-center text-sm font-bold text-textPrimary pt-1">
-                <span>Grand Total</span>
+                <span>Total</span>
                 <span className="text-xl font-extrabold text-primary">{formatCurrency(grandTotal)}</span>
               </div>
               <Button
@@ -237,10 +237,10 @@ export const CreateOrder: React.FC = () => {
                 isLoading={isSubmitting}
                 icon={CheckCircle}
               >
-                Submit Plant Order
+                Submit Order
               </Button>
               <p className="text-[11px] text-textMuted text-center mt-2">
-                Order will be routed to Central Store Manager for stock allocation &amp; dispatch.
+                Order will be sent to the store manager for stock allocation and dispatch.
               </p>
             </CardContent>
           </Card>

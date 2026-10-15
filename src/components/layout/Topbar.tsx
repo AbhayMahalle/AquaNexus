@@ -36,19 +36,19 @@ export function Topbar({ onMobileToggle }: TopbarProps) {
         {user?.isSuperAdmin ? (
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-amber-50/70 border-amber-200 shadow-xs">
-              <Shield className="w-3.5 h-3.5 text-amber-700" />
-              <span className="text-xs font-bold text-amber-900">
-                Platform SuperAdmin
+              <Shield className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+              <span className="text-xs font-bold text-amber-900 truncate max-w-[130px] sm:max-w-none">
+                Platform Admin
               </span>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white border-gray-200 shadow-xs">
-            <Building2 className="w-4 h-4 text-orange-600" />
-            <span className="text-xs font-semibold text-black">
-              {user?.organizationName || user?.plantName || 'AquaNexus Primary Plant'}
+          <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg border bg-white border-gray-200 shadow-xs max-w-[200px] sm:max-w-xs">
+            <Building2 className="w-4 h-4 text-orange-600 shrink-0" />
+            <span className="text-xs font-semibold text-black truncate">
+              {user?.organizationName || user?.plantName || 'AquaNexus Plant'}
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-success" />
+            <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
           </div>
         )}
       </div>

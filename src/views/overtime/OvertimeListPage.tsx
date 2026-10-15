@@ -175,8 +175,8 @@ export const OvertimeListPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Overtime Management"
-        description="Log overtime hours worked by plant personnel and track payroll impacts."
+        title="Overtime"
+        description="Log and approve employee overtime hours."
         action={
           <Button
             variant="primary"
@@ -195,7 +195,7 @@ export const OvertimeListPage: React.FC = () => {
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs text-text-secondary">Approved Overtime Hours</p>
+            <p className="text-xs text-text-secondary">Approved Overtime</p>
             <h4 className="text-2xl font-bold text-text-primary">{totalOvertimeHours} Hours</h4>
           </div>
         </Card>
@@ -205,7 +205,7 @@ export const OvertimeListPage: React.FC = () => {
             <DollarSign className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs text-text-secondary">Total Overtime Payable</p>
+            <p className="text-xs text-text-secondary">Overtime Payable</p>
             <h4 className="text-2xl font-bold text-text-primary">₹{totalPayrollAccrued.toLocaleString()}</h4>
           </div>
         </Card>

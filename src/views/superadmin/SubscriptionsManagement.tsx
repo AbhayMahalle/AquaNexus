@@ -338,11 +338,11 @@ export default function SubscriptionsManagement() {
       <DashboardLayout>
         <div className="text-black">
           <PageHeader
-            title="SaaS Subscriptions & Tenant Entitlements"
-            description="Manage company subscription statuses, user limits, renewal dates, and commercial terms"
+            title="Subscriptions"
+            description="Manage company subscription plans, user limits, and status."
             breadcrumbs={[{ label: 'Platform' }, { label: 'Subscriptions' }]}
             primaryAction={{
-              label: 'Assign / Change Plan',
+              label: 'Assign Plan',
               icon: <Layers className="w-4 h-4" />,
               onClick: () => openAssignModal(),
             }}

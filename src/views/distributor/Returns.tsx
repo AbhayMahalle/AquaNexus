@@ -156,24 +156,19 @@ export const DistributorReturns: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Product Returns Log"
-        description="Live records of damaged, expired, or excess goods returned back to central plant store."
+        title="Returns"
+        description="Record and track returned items sent back to the plant store."
         breadcrumb={['AquaNexus', 'Distributor', 'Returns']}
         action={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={loadData} isLoading={isLoading} icon={RefreshCw}>
-              Refresh
-            </Button>
-            <Button
-              onClick={() => {
-                setErrorMsg('');
-                setIsModalOpen(true);
-              }}
-              icon={Plus}
-            >
-              Submit Return Request
-            </Button>
-          </div>
+          <Button
+            onClick={() => {
+              setErrorMsg('');
+              setIsModalOpen(true);
+            }}
+            icon={Plus}
+          >
+            New Return
+          </Button>
         }
       />
 

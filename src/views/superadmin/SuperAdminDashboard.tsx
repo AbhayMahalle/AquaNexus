@@ -123,17 +123,18 @@ export default function SuperAdminDashboard() {
       <DashboardLayout>
         <div className="text-black">
           <PageHeader
-            title="Aazira Solution — Platform Command Center"
-            description="Multi-Tenant SaaS governance, company onboarding, subscription management & platform analytics"
-            breadcrumbs={[{ label: 'Platform Owner' }, { label: 'Super Admin Dashboard' }]}
+            title="Platform Overview"
+            description="Overview of customer companies, subscriptions, and platform revenue."
+            breadcrumbs={[{ label: 'Platform Overview' }]}
             primaryAction={{
-              label: 'Onboard New Company',
+              label: 'Add Company',
               icon: <Plus className="w-4 h-4" />,
               onClick: () => navigate('/super-admin/companies'),
+              variant: 'primary',
             }}
             secondaryActions={[
               {
-                label: 'Manage Plans',
+                label: 'Plans',
                 icon: <Layers className="w-4 h-4" />,
                 variant: 'outline',
                 onClick: () => navigate('/super-admin/plans'),

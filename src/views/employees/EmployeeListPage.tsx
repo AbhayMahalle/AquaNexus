@@ -123,48 +123,46 @@ export const EmployeeListPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Employee Management"
-        description="Internal master list of water plant personnel for attendance, leave, overtime and payroll."
-        action={
-          <Button
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-            onClick={() => navigate(`${baseRoute}/add`)}
-          >
-            Add Employee
-          </Button>
-        }
+        title="Employees"
+        description="View and manage plant personnel, roles, and status."
+        breadcrumbs={[{ label: 'Employees' }]}
+        primaryAction={{
+          label: 'Add Employee',
+          icon: <Plus className="w-4 h-4" />,
+          onClick: () => navigate(`${baseRoute}/add`),
+          variant: 'primary',
+        }}
       />
 
       {/* KPI Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-lg text-primary">
-            <Users className="w-6 h-6" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <Card className="flex items-center gap-3.5 p-4">
+          <div className="p-2.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg">
+            <Users className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-text-secondary">Total Employees</p>
-            <h4 className="text-2xl font-bold text-text-primary">{totalEmployees}</h4>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Staff</p>
+            <h4 className="text-2xl font-bold text-black mt-0.5">{totalEmployees}</h4>
           </div>
         </Card>
 
-        <Card className="flex items-center gap-4">
-          <div className="p-3 bg-emerald-100 rounded-lg text-status-success">
-            <UserCheck className="w-6 h-6" />
+        <Card className="flex items-center gap-3.5 p-4">
+          <div className="p-2.5 bg-green-50 text-green-600 border border-green-200 rounded-lg">
+            <UserCheck className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-text-secondary">Active Staff</p>
-            <h4 className="text-2xl font-bold text-text-primary">{activeEmployees}</h4>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Active Staff</p>
+            <h4 className="text-2xl font-bold text-black mt-0.5">{activeEmployees}</h4>
           </div>
         </Card>
 
-        <Card className="flex items-center gap-4">
-          <div className="p-3 bg-amber-100 rounded-lg text-status-warning">
-            <UserX className="w-6 h-6" />
+        <Card className="flex items-center gap-3.5 p-4">
+          <div className="p-2.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg">
+            <UserX className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-text-secondary">On Approved Leave</p>
-            <h4 className="text-2xl font-bold text-text-primary">{onLeaveEmployees}</h4>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">On Leave</p>
+            <h4 className="text-2xl font-bold text-black mt-0.5">{onLeaveEmployees}</h4>
           </div>
         </Card>
       </div>

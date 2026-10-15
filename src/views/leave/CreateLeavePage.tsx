@@ -105,8 +105,8 @@ export const CreateLeavePage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Apply for Leave"
-        description="File an official leave request for plant employees."
+        title="Apply Leave"
+        description="Submit a leave request for supervisor review."
         breadcrumbs={[
           { label: 'Leave Requests', href: isEmp ? '/employee/leave' : '/leave' },
           { label: 'Apply Leave' },
@@ -117,7 +117,7 @@ export const CreateLeavePage: React.FC = () => {
             icon={<ArrowLeft className="w-4 h-4" />}
             onClick={() => navigate(isEmp ? '/employee/leave' : '/leave')}
           >
-            Cancel
+            Back
           </Button>
         }
       />

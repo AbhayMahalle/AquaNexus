@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { ChevronRight, Home } from 'lucide-react';
 import { BreadcrumbItem } from '@/types/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { getDashboardRoute } from '@/lib/navigation';
 
 export interface ActionConfig {
   label: string;
@@ -38,14 +40,16 @@ export function PageHeader({
   children,
   className,
 }: PageHeaderProps) {
+  const { user } = useAuth();
+  const homeRoute = user ? getDashboardRoute(user.role) : '/';
   const effectiveBreadcrumbs: BreadcrumbItem[] =
     breadcrumbs ?? (breadcrumb ? breadcrumb.map((b) => ({ label: b })) : []);
 
   return (
-    <div className={cn('mb-5 sm:mb-6 space-y-2.5 pb-4 border-b border-border', className)}>
+    <div className={cn('mb-4 sm:mb-6 space-y-2 pb-3.5 sm:pb-4 border-b border-border', className)}>
       {effectiveBreadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1.5 text-xs text-textSecondary flex-wrap">
-          <Link to="/admin/dashboard" className="hover:text-primary transition-colors flex items-center gap-1">
+          <Link to={homeRoute} className="hover:text-primary transition-colors flex items-center gap-1 font-medium">
             <Home className="w-3.5 h-3.5" />
             <span>Home</span>
           </Link>

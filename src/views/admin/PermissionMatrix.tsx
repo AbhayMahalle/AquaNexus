@@ -74,9 +74,9 @@ export default function PermissionMatrixPage() {
     <AuthGuard allowedRoles={['admin']}>
       <DashboardLayout>
         <PageHeader
-          title="Permission Matrix"
-          description="Centralized authorization mapping for all ERP modules"
-          breadcrumbs={[{ label: 'Admin' }, { label: 'Permission Matrix' }]}
+          title="Permissions Matrix"
+          description="Role permissions and module access controls."
+          breadcrumbs={[{ label: 'Admin' }, { label: 'Permissions Matrix' }]}
           primaryAction={hasChanges ? {
             label: 'Save Changes',
             icon: <Save className="w-4 h-4" />,
@@ -102,7 +102,7 @@ export default function PermissionMatrixPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <Lock className="w-5 h-5 text-[#0F4C81]" />
-              <span>Module Access Security Matrix</span>
+              <span>Module Access</span>
             </CardTitle>
             <Badge variant="primary" size="sm">Click cells to toggle</Badge>
           </CardHeader>
@@ -112,7 +112,7 @@ export default function PermissionMatrixPage() {
                 <thead>
                   <tr className="bg-[#F5F8FB] border-b border-[#E2E8F0]">
                     <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-[#64748B] min-w-[240px] whitespace-nowrap">
-                      ERP Functional Module
+                      Module
                     </th>
                     {ROLE_HEADERS.map(rh => (
                       <th key={rh.key} className="px-3 py-3 text-center whitespace-nowrap">

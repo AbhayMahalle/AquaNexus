@@ -202,28 +202,22 @@ export default function InventoryListPage() {
   return (
     <AuthGuard allowedRoles={['admin', 'manager', 'store_manager']}>
       <DashboardLayout>
-        {/* Page Header with Breadcrumbs & Inward/Outward Quick Triggers */}
+        {/* Page Header */}
         <PageHeader
-          title="Inventory Items Catalog"
-          description="Master inventory ledger for plant raw materials, preforms, caps, treatment chemicals, and finished water stock."
+          title="Inventory"
+          description="View and manage current stock levels, categories, and reorder levels."
           breadcrumbs={[
-            { label: 'Store', href: '/store/dashboard' },
             { label: 'Inventory' }
           ]}
           secondaryActions={[
             {
-              label: 'Manage Products',
-              href: '/store/products',
-              icon: <Package className="w-4 h-4" />,
-            },
-            {
-              label: 'Issue Stock OUT',
+              label: 'Issue Stock',
               href: '/store/stock-out',
               icon: <ArrowUpFromLine className="w-4 h-4" />,
             }
           ]}
           primaryAction={{
-            label: 'Stock IN Entry',
+            label: 'Receive Stock',
             href: '/store/stock-in',
             icon: <Plus className="w-4 h-4" />,
           }}

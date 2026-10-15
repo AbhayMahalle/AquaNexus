@@ -23,15 +23,15 @@ export const KPICard: React.FC<KPICardProps> = ({
   subtitle,
 }) => {
   return (
-    <Card hoverable className="relative overflow-hidden">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">{label}</p>
-          <h4 className="text-2xl font-extrabold text-black mt-1.5">{value}</h4>
+    <Card hoverable className="relative overflow-hidden p-3.5 sm:p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">{label}</p>
+          <h4 className="text-xl sm:text-2xl font-bold text-black mt-1 tracking-tight truncate">{value}</h4>
         </div>
         {Icon && (
-          <div className="p-2.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg flex items-center justify-center">
-            <Icon size={22} />
+          <div className="p-2 sm:p-2.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg flex items-center justify-center shrink-0">
+            <Icon size={20} className="w-5 h-5" />
           </div>
         )}
       </div>

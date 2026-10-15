@@ -443,26 +443,13 @@ export default function ManageProductsPage() {
       <DashboardLayout>
         {/* Page Header */}
         <PageHeader
-          title="Product Management & Catalog"
-          description="Maintain master products, packaging materials, container sizes, and unit rate cards connected to live inventory."
+          title="Products"
+          description="Manage products, bottle sizes, selling prices, and reorder levels."
           breadcrumbs={[
-            { label: 'Store', href: '/store/dashboard' },
-            { label: 'Manage Products' }
-          ]}
-          secondaryActions={[
-            {
-              label: 'Store Inventory',
-              href: '/store/inventory',
-              icon: <Package className="w-4 h-4" />
-            },
-            {
-              label: 'Stock Inward',
-              href: '/store/stock-in',
-              icon: <Boxes className="w-4 h-4" />
-            }
+            { label: 'Products' }
           ]}
           primaryAction={{
-            label: 'Add New Product',
+            label: 'Add Product',
             icon: <Plus className="w-4 h-4" />,
             onClick: handleOpenAddModal
           }}
@@ -470,53 +457,53 @@ export default function ManageProductsPage() {
 
         {/* Live Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="border-l-4 border-l-[#0F4C81]">
+          <Card className="border-l-4 border-l-orange-500">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-[#64748B]">Total Catalog Items</p>
-                <p className="text-2xl font-bold text-[#172033] mt-1">{stats.total}</p>
-                <p className="text-[11px] text-[#64748B] mt-0.5">Across all product lines</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Products</p>
+                <p className="text-2xl font-bold text-black mt-1">{stats.total}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">Catalog items</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-[#F0F7FF] flex items-center justify-center text-[#0F4C81]">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-200">
                 <Boxes className="w-5 h-5" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-[#16A34A]">
+          <Card className="border-l-4 border-l-green-600">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-[#64748B]">Active For Sale / Production</p>
-                <p className="text-2xl font-bold text-[#16A34A] mt-1">{stats.active}</p>
-                <p className="text-[11px] text-[#64748B] mt-0.5">Ready for orders & dispatch</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Active Products</p>
+                <p className="text-2xl font-bold text-green-600 mt-1">{stats.active}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">Available for orders</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-[#F0FDF4] flex items-center justify-center text-[#16A34A]">
+              <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 border border-green-200">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-[#DC2626]">
+          <Card className="border-l-4 border-l-red-500">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-[#64748B]">Low Stock Warnings</p>
-                <p className="text-2xl font-bold text-[#DC2626] mt-1">{stats.lowStock}</p>
-                <p className="text-[11px] text-[#64748B] mt-0.5">At or below reorder level</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Low Stock Items</p>
+                <p className="text-2xl font-bold text-red-600 mt-1">{stats.lowStock}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">Need reorder</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-[#FEF2F2] flex items-center justify-center text-[#DC2626]">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600 border border-red-200">
                 <AlertTriangle className="w-5 h-5" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-[#8B5CF6]">
+          <Card className="border-l-4 border-l-gray-600">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-[#64748B]">Product Categories</p>
-                <p className="text-2xl font-bold text-[#8B5CF6] mt-1">{stats.categories}</p>
-                <p className="text-[11px] text-[#64748B] mt-0.5">Active groups</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Categories</p>
+                <p className="text-2xl font-bold text-black mt-1">{stats.categories}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">Active groups</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-[#F5F3FF] flex items-center justify-center text-[#8B5CF6]">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700 border border-gray-200">
                 <Layers className="w-5 h-5" />
               </div>
             </CardContent>

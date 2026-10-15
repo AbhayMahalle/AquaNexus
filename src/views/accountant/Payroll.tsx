@@ -204,28 +204,23 @@ export const AccountantPayroll: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Plant Employee Payroll & Deductions"
-        description="Calculate employee net salaries, tax/PF deductions, overtime compensation, and execute bank salary disbursements."
+        title="Payroll"
+        description="Manage employee salaries, deductions, and salary disbursements."
         breadcrumb={['AquaNexus', 'Accountant', 'Payroll']}
         action={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={loadData} isLoading={isLoading} icon={RefreshCw}>
-              Refresh
-            </Button>
-            <Button
-              onClick={() => {
-                setErrorMsg('');
-                if ((!selectedEmployeeId || !employees.some((e) => e.id === selectedEmployeeId)) && employees.length > 0) {
-                  setSelectedEmployeeId(employees[0].id);
-                  if (employees[0].salary) setBasicSalary(Number(employees[0].salary));
-                }
-                setIsCreateModalOpen(true);
-              }}
-              icon={Plus}
-            >
-              Generate Payroll
-            </Button>
-          </div>
+          <Button
+            onClick={() => {
+              setErrorMsg('');
+              if ((!selectedEmployeeId || !employees.some((e) => e.id === selectedEmployeeId)) && employees.length > 0) {
+                setSelectedEmployeeId(employees[0].id);
+                if (employees[0].salary) setBasicSalary(Number(employees[0].salary));
+              }
+              setIsCreateModalOpen(true);
+            }}
+            icon={Plus}
+          >
+            Add Payroll
+          </Button>
         }
       />
 
