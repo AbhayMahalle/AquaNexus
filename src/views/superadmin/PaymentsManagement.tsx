@@ -21,7 +21,6 @@ import {
   Clock,
   Building2,
   Tag,
-  RefreshCw,
 } from 'lucide-react';
 
 export default function PaymentsManagement() {
@@ -209,14 +208,6 @@ export default function PaymentsManagement() {
               icon: <Plus className="w-4 h-4" />,
               onClick: openRecordModal,
             }}
-            secondaryActions={[
-              {
-                label: isLoading ? 'Recalculating...' : 'Refresh Payments',
-                icon: <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-green-600' : ''}`} />,
-                variant: 'outline',
-                onClick: fetchData,
-              },
-            ]}
           />
 
           {/* Real-time Payment Revenue Analytics KPI Cards */}

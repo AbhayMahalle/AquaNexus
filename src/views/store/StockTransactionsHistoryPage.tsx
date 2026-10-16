@@ -20,7 +20,6 @@ import {
   Package,
   Clock,
   Eye,
-  RefreshCw,
   ArrowDownToLine,
   ArrowUpFromLine,
   RotateCcw,
@@ -274,14 +273,6 @@ export default function StockTransactionsHistoryPage() {
                   leftIcon={<FilterX className="w-3.5 h-3.5" />}
                 >
                   Clear Filters
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadTransactions}
-                  leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
-                >
-                  Refresh
                 </Button>
               </div>
             </div>

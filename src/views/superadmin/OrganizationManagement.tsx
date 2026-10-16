@@ -31,7 +31,6 @@ import {
   Trash2,
   Layers,
   Sparkles,
-  RefreshCw,
 } from 'lucide-react';
 
 interface OrganizationRecord {
@@ -592,27 +591,14 @@ export default function OrganizationManagement() {
             title="Companies"
             description="Manage client companies, accounts, and subscription access."
             action={
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    fetchOrganizations();
-                    fetchPlans();
-                  }}
-                  leftIcon={<RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-orange-600' : ''}`} />}
-                >
-                  {isLoading ? 'Recalculating...' : 'Refresh'}
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setIsProvisionOpen(true)}
-                  leftIcon={<Building2 className="w-4 h-4" />}
-                >
-                  Add Company
-                </Button>
-              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsProvisionOpen(true)}
+                leftIcon={<Building2 className="w-4 h-4" />}
+              >
+                Add Company
+              </Button>
             }
           />
 

@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   Shield,
   Zap,
-  RefreshCw,
 } from 'lucide-react';
 
 export default function PlansManagement() {
@@ -198,14 +197,6 @@ export default function PlansManagement() {
               icon: <Plus className="w-4 h-4" />,
               onClick: openCreateModal,
             }}
-            secondaryActions={[
-              {
-                label: isLoading ? 'Recalculating...' : 'Refresh Plans',
-                icon: <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-orange-600' : ''}`} />,
-                variant: 'outline',
-                onClick: fetchPlans,
-              },
-            ]}
           />
 
           {/* Plan Cards Overview */}

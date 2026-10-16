@@ -10,7 +10,6 @@ import {
   TrendingUp,
   PieChart,
   Plus,
-  RefreshCw,
   Wallet,
   ArrowUpRight,
   ArrowDownLeft,

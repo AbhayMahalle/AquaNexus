@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { CalendarCheck, CalendarOff, Clock, User as UserIcon, Loader2, RefreshCw } from 'lucide-react';
+import { CalendarCheck, CalendarOff, Clock, User as UserIcon, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';

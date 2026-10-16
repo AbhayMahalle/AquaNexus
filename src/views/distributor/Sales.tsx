@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { Plus, RefreshCw, ShoppingBag, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Plus, ShoppingBag, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';

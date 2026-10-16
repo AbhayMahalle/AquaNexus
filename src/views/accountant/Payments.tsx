@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { DollarSign, Plus, RefreshCw, ArrowDownLeft, ArrowUpRight, CreditCard } from 'lucide-react';
+import { DollarSign, Plus, ArrowDownLeft, ArrowUpRight, CreditCard } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';

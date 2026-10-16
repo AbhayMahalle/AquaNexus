@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { CheckCircle2, DollarSign, Plus, RefreshCw, AlertCircle, Clock, Wallet } from 'lucide-react';
+import { CheckCircle2, DollarSign, Plus, AlertCircle, Clock, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';

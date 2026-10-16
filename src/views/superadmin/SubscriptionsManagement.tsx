@@ -23,7 +23,6 @@ import {
   Clock,
   Search,
   Filter,
-  RefreshCw,
   Building2,
 } from 'lucide-react';
 
@@ -369,14 +368,6 @@ export default function SubscriptionsManagement() {
               icon: <Layers className="w-4 h-4" />,
               onClick: () => openAssignModal(),
             }}
-            secondaryActions={[
-              {
-                label: isLoading ? 'Recalculating...' : 'Refresh Data',
-                icon: <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-blue-600' : ''}`} />,
-                variant: 'outline',
-                onClick: fetchData,
-              },
-            ]}
           />
 
           {/* Real-time Subscriptions Analytics KPI Cards */}

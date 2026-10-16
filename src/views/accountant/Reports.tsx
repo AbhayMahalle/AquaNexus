@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { Download, RefreshCw, TrendingUp, TrendingDown, DollarSign, Wallet, Receipt, PieChart } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, DollarSign, Wallet, Receipt, PieChart } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { KPICard } from '@/components/ui/KPICard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -116,14 +116,9 @@ export const AccountantReports: React.FC = () => {
         description="Authoritative financial statements, operating surplus ledger, and expenditure distribution audits."
         breadcrumb={['AquaNexus', 'Accountant', 'Reports']}
         action={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={loadReportData} isLoading={isLoading} icon={RefreshCw}>
-              Refresh
-            </Button>
-            <Button onClick={() => window.print()} icon={Download}>
-              Print / Export Report (PDF)
-            </Button>
-          </div>
+          <Button onClick={() => window.print()} icon={Download}>
+            Print / Export Report (PDF)
+          </Button>
         }
       />
 

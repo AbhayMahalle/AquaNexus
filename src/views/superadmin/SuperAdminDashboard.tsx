@@ -24,7 +24,6 @@ import {
   Settings,
   Activity,
   CheckCircle2,
-  RefreshCw,
 } from 'lucide-react';
 
 export default function SuperAdminDashboard() {
@@ -134,12 +133,6 @@ export default function SuperAdminDashboard() {
               variant: 'primary',
             }}
             secondaryActions={[
-              {
-                label: isLoading ? 'Recalculating...' : 'Refresh Realtime Data',
-                icon: <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-orange-600' : ''}`} />,
-                variant: 'outline',
-                onClick: fetchData,
-              },
               {
                 label: 'Plans',
                 icon: <Layers className="w-4 h-4" />,

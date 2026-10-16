@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, DollarSign, RefreshCw, CreditCard } from 'lucide-react';
+import { AlertCircle, DollarSign, CreditCard } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, Column } from '@/components/ui/Table';

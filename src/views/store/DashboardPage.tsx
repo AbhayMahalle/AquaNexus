@@ -24,7 +24,6 @@ import {
   ArrowRight,
   Activity,
   Plus,
-  RefreshCw,
   Clock,
   ExternalLink
 } from 'lucide-react';

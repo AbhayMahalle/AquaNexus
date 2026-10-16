@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Plus, Receipt, RefreshCw, TrendingDown, Building2, CheckCircle2 } from 'lucide-react';
+import { Plus, Receipt, TrendingDown, Building2, CheckCircle2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';

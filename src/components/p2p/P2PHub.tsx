@@ -26,7 +26,6 @@ import {
 import {
   Layers,
   FilePlus,
-  RefreshCw,
   Search,
   Filter,
   CheckCircle2,
@@ -261,15 +260,7 @@ export function P2PHub({
             </div>
           )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadData}
-            loading={isLoading}
-            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
-          >
-            Refresh
-          </Button>
+
 
           {canStoreCreatePR && (
             <Button

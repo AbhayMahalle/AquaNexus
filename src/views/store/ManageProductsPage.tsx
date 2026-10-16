@@ -22,7 +22,6 @@ import {
   Trash2,
   Package,
   AlertTriangle,
-  RefreshCw,
   CheckCircle2,
   DollarSign,
   Tag,
@@ -575,14 +574,6 @@ export default function ManageProductsPage() {
                   leftIcon={<FilterX className="w-3.5 h-3.5" />}
                 >
                   Clear Filters
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadProducts}
-                  leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
-                >
-                  Refresh
                 </Button>
               </div>
             </div>

@@ -12,8 +12,7 @@ import {
   Shield,
   Clock,
   CheckCircle2,
-  Truck,
-  RefreshCw
+  Truck
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { KPICard } from '@/components/ui/KPICard';

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { showToast, exportToCSV } from '@/lib/api';
 import { fetchApi } from '@/services/apiClient';
-import { Download, FileText, ExternalLink, RefreshCw } from 'lucide-react';
+import { Download, FileText, ExternalLink } from 'lucide-react';
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState<boolean>(true);

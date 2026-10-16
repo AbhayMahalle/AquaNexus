@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { Plus, RotateCcw, RefreshCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Plus, RotateCcw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Table, Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';

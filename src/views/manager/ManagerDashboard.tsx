@@ -14,7 +14,6 @@ import {
   Factory, 
   Package, 
   Truck, 
-  RefreshCw, 
   CheckCircle2, 
   Layers,
   Users,
