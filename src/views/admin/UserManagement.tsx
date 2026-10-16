@@ -291,22 +291,13 @@ export default function UserManagementPage() {
         await Promise.all([fetchUsers(), fetchSubscription()]);
         setIsDeleteOpen(false);
         setSelectedUser(null);
-        showToast(`User "${selectedUser.name}" deleted successfully`, 'success');
+        showToast(`User "${selectedUser.name}" deleted from database successfully`, 'success');
       } else {
-        // Fallback to INACTIVE status if hard delete is constrained by foreign records
-        const patchRes = await fetchApi<any>(`/users/${selectedUser.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ status: 'INACTIVE' }),
-        });
-        if (patchRes.success) {
-          await Promise.all([fetchUsers(), fetchSubscription()]);
-          setIsDeleteOpen(false);
-          setSelectedUser(null);
-          showToast(`User "${selectedUser.name}" deactivated successfully`, 'info');
-        } else {
-          showToast(res.message || 'Failed to remove user', 'error');
-        }
+        const errorMsg = (res as any).message || (res as any).error || 'Failed to delete user';
+        showToast(errorMsg, 'error');
       }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete user', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -769,20 +760,20 @@ export default function UserManagementPage() {
         <Modal
           isOpen={isDeleteOpen}
           onClose={() => { setIsDeleteOpen(false); setSelectedUser(null); }}
-          title="Confirm User Removal / Deletion"
-          description={`Are you sure you want to remove "${selectedUser?.name}"?`}
+          title="Confirm User Deletion"
+          description={`Are you sure you want to permanently delete "${selectedUser?.name}"?`}
           size="sm"
           footer={
             <>
               <Button variant="outline" onClick={() => { setIsDeleteOpen(false); setSelectedUser(null); }}>Cancel</Button>
-              <Button variant="danger" onClick={handleDelete} loading={isSaving}>Delete Account</Button>
+              <Button variant="danger" onClick={handleDelete} loading={isSaving}>Permanently Delete</Button>
             </>
           }
         >
           <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#DC2626]/20 text-sm text-[#DC2626]">
             <p className="font-semibold">⚠️ Action & Subscription Quota Effect</p>
             <p className="text-xs mt-1">
-              Removing this account will revoke their system access and immediately reduce your active dashboard user count, helping bring your organization into compliance with your subscription plan allowance.
+              Permanently deleting this account will remove the user from the database and immediately reduce your active dashboard user count, helping bring your organization into compliance with your subscription plan allowance.
             </p>
           </div>
         </Modal>

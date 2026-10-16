@@ -19,7 +19,6 @@ import SuperAdminCompaniesPage from '@/app/(dashboard)/super-admin/companies/pag
 import SuperAdminSubscriptionsPage from '@/app/(dashboard)/super-admin/subscriptions/page';
 import SuperAdminPlansPage from '@/app/(dashboard)/super-admin/plans/page';
 import SuperAdminPaymentsPage from '@/app/(dashboard)/super-admin/payments/page';
-import SuperAdminSettingsPage from '@/app/(dashboard)/super-admin/settings/page';
 import SuperAdminProfilePage from '@/app/(dashboard)/super-admin/profile/page';
 import AdminStoreManagerDashboardPage from '@/app/(dashboard)/admin/store-manager-oversight/dashboard/page';
 
@@ -192,11 +191,7 @@ export function AppRoutes() {
         />
         <Route
           path="/super-admin/settings"
-          element={
-            <AuthGuard allowedRoles={['super_admin']}>
-              <SuperAdminSettingsPage />
-            </AuthGuard>
-          }
+          element={<Navigate to="/super-admin/dashboard" replace />}
         />
         <Route
           path="/super-admin/profile"

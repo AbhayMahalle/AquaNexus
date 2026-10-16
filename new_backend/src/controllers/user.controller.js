@@ -474,32 +474,84 @@ const deleteUser = async (req, res) => {
       if (user.userRoles?.some((ur) => ur.role?.name === "ADMIN")) {
         return sendError(res, "Cannot delete the company Admin account", 400);
       }
-    }
-
-    // Attempt clean delete, fallback to INACTIVE status
-    try {
-      await prisma.$transaction(async (tx) => {
-        await tx.managerAssignment.deleteMany({ where: { userId: id } });
-        await tx.userRole.deleteMany({ where: { userId: id } });
-        if (user.employee) {
-          await tx.employee.update({
-            where: { id: user.employee.id },
-            data: { userId: null, status: 'INACTIVE' },
-          }).catch(() => {});
+      if (req.user.role?.name === "MANAGER") {
+        const isEmployee = user.userRoles?.some((ur) => ur.role?.name === "EMPLOYEE");
+        if (!isEmployee) {
+          return sendError(res, "Managers are only permitted to delete Employee accounts", 403);
         }
-        await tx.user.delete({ where: { id } });
-      });
-    } catch (dbErr) {
-      await prisma.user.update({
-        where: { id },
-        data: { status: 'INACTIVE' },
-      });
+      }
     }
 
-    return sendSuccess(res, null, "User deleted successfully");
+    // Find fallback admin to reassign any business transaction records
+    const targetOrgId = user.organizationId || req.user.organizationId;
+    let fallbackUserId = null;
+    if (targetOrgId) {
+      const fallbackAdmin = await prisma.user.findFirst({
+        where: {
+          organizationId: targetOrgId,
+          userRoles: { some: { role: { name: 'ADMIN' } } },
+          id: { not: id },
+        },
+      });
+      fallbackUserId = fallbackAdmin?.id || (req.user.id !== id ? req.user.id : null);
+    } else {
+      fallbackUserId = req.user.id !== id ? req.user.id : null;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Reassign non-nullable user foreign keys to fallback admin
+      if (fallbackUserId) {
+        await tx.production.updateMany({ where: { createdBy: id }, data: { createdBy: fallbackUserId } });
+        await tx.stockTransaction.updateMany({ where: { createdBy: id }, data: { createdBy: fallbackUserId } });
+        await tx.goodsReceived.updateMany({ where: { receivedBy: id }, data: { receivedBy: fallbackUserId } });
+        await tx.order.updateMany({ where: { createdBy: id }, data: { createdBy: fallbackUserId } });
+        await tx.dispatch.updateMany({ where: { createdBy: id }, data: { createdBy: fallbackUserId } });
+        await tx.sale.updateMany({ where: { createdBy: id }, data: { createdBy: fallbackUserId } });
+        await tx.return.updateMany({ where: { createdBy: id }, data: { createdBy: fallbackUserId } });
+        await tx.payment.updateMany({ where: { createdBy: id }, data: { createdBy: fallbackUserId } });
+        await tx.expense.updateMany({ where: { createdBy: id }, data: { createdBy: fallbackUserId } });
+        await tx.purchaseRequisition.updateMany({ where: { requestedBy: id }, data: { requestedBy: fallbackUserId } });
+        await tx.purchaseOrder.updateMany({ where: { issuedBy: id }, data: { issuedBy: fallbackUserId } });
+        await tx.p2PGoodsReceived.updateMany({ where: { receivedBy: id }, data: { receivedBy: fallbackUserId } });
+        await tx.p2PPayment.updateMany({ where: { paidBy: id }, data: { paidBy: fallbackUserId } });
+      }
+
+      // 2. Clear nullable approver/reviewer/recorder references
+      await tx.expense.updateMany({ where: { approvedBy: id }, data: { approvedBy: null } });
+      await tx.leave.updateMany({ where: { approvedBy: id }, data: { approvedBy: null } });
+      await tx.overtime.updateMany({ where: { approvedBy: id }, data: { approvedBy: null } });
+      await tx.payroll.updateMany({ where: { processedBy: id }, data: { processedBy: null } });
+      await tx.purchaseRequisition.updateMany({ where: { rateFinalizedBy: id }, data: { rateFinalizedBy: null } });
+      await tx.purchaseRequisition.updateMany({ where: { rejectedBy: id }, data: { rejectedBy: null } });
+      await tx.vendorInvoice.updateMany({ where: { reviewedBy: id }, data: { reviewedBy: null } });
+      await tx.subscriptionPayment.updateMany({ where: { recordedById: id }, data: { recordedById: null } });
+      await tx.subscriptionHistory.updateMany({ where: { performedById: id }, data: { performedById: null } });
+
+      // 3. Clean up linked employee record and its child records if any exist
+      const employee = await tx.employee.findFirst({ where: { userId: id } });
+      if (employee) {
+        await tx.attendance.deleteMany({ where: { employeeId: employee.id } });
+        await tx.leave.deleteMany({ where: { employeeId: employee.id } });
+        await tx.overtime.deleteMany({ where: { employeeId: employee.id } });
+        await tx.payroll.deleteMany({ where: { employeeId: employee.id } });
+        await tx.employee.delete({ where: { id: employee.id } });
+      }
+
+      // 4. Delete user direct junctions & personal data
+      await tx.managerAssignment.deleteMany({ where: { userId: id } });
+      await tx.userRole.deleteMany({ where: { userId: id } });
+      await tx.userDistributor.deleteMany({ where: { userId: id } });
+      await tx.notification.deleteMany({ where: { userId: id } });
+      await tx.auditLog.deleteMany({ where: { userId: id } });
+
+      // 5. Hard delete user from PostgreSQL database
+      await tx.user.delete({ where: { id } });
+    }, { timeout: 30000 });
+
+    return sendSuccess(res, null, "User deleted permanently from database");
   } catch (error) {
     console.error("deleteUser error:", error);
-    return sendError(res, "Failed to delete user", 500);
+    return sendError(res, error.message || "Failed to delete user", 500);
   }
 };
 

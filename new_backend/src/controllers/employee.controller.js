@@ -552,19 +552,72 @@ const deleteEmployee = async (req, res) => {
       return sendError(res, 'Employee not found', 404);
     }
 
-    try {
-      await prisma.employee.delete({ where: { id: existing.id } });
-    } catch {
-      await prisma.employee.update({
-        where: { id: existing.id },
-        data: { status: 'TERMINATED' }
-      });
-    }
+    // Find fallback admin in the organization to reassign any business transaction records
+    const fallbackAdmin = await prisma.user.findFirst({
+      where: {
+        organizationId: req.organizationId,
+        userRoles: { some: { role: { name: 'ADMIN' } } },
+        ...(existing.userId ? { id: { not: existing.userId } } : {})
+      }
+    });
+    const fallbackUserId = fallbackAdmin?.id || req.user.id;
 
-    return sendSuccess(res, { success: true }, 'Employee removed successfully');
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete employee child records
+      await tx.attendance.deleteMany({ where: { employeeId: existing.id } });
+      await tx.leave.deleteMany({ where: { employeeId: existing.id } });
+      await tx.overtime.deleteMany({ where: { employeeId: existing.id } });
+      await tx.payroll.deleteMany({ where: { employeeId: existing.id } });
+
+      // 2. Delete employee record from database
+      await tx.employee.delete({ where: { id: existing.id } });
+
+      // 3. If there is a linked user, hard delete the user as well
+      if (existing.userId) {
+        const targetUserId = existing.userId;
+
+        // Reassign non-nullable user FKs to fallbackUserId
+        await tx.production.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: fallbackUserId } });
+        await tx.stockTransaction.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: fallbackUserId } });
+        await tx.goodsReceived.updateMany({ where: { receivedBy: targetUserId }, data: { receivedBy: fallbackUserId } });
+        await tx.order.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: fallbackUserId } });
+        await tx.dispatch.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: fallbackUserId } });
+        await tx.sale.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: fallbackUserId } });
+        await tx.return.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: fallbackUserId } });
+        await tx.payment.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: fallbackUserId } });
+        await tx.expense.updateMany({ where: { createdBy: targetUserId }, data: { createdBy: fallbackUserId } });
+        await tx.purchaseRequisition.updateMany({ where: { requestedBy: targetUserId }, data: { requestedBy: fallbackUserId } });
+        await tx.purchaseOrder.updateMany({ where: { issuedBy: targetUserId }, data: { issuedBy: fallbackUserId } });
+        await tx.p2PGoodsReceived.updateMany({ where: { receivedBy: targetUserId }, data: { receivedBy: fallbackUserId } });
+        await tx.p2PPayment.updateMany({ where: { paidBy: targetUserId }, data: { paidBy: fallbackUserId } });
+
+        // Nullify approvals and reviews
+        await tx.expense.updateMany({ where: { approvedBy: targetUserId }, data: { approvedBy: null } });
+        await tx.leave.updateMany({ where: { approvedBy: targetUserId }, data: { approvedBy: null } });
+        await tx.overtime.updateMany({ where: { approvedBy: targetUserId }, data: { approvedBy: null } });
+        await tx.payroll.updateMany({ where: { processedBy: targetUserId }, data: { processedBy: null } });
+        await tx.purchaseRequisition.updateMany({ where: { rateFinalizedBy: targetUserId }, data: { rateFinalizedBy: null } });
+        await tx.purchaseRequisition.updateMany({ where: { rejectedBy: targetUserId }, data: { rejectedBy: null } });
+        await tx.vendorInvoice.updateMany({ where: { reviewedBy: targetUserId }, data: { reviewedBy: null } });
+        await tx.subscriptionPayment.updateMany({ where: { recordedById: targetUserId }, data: { recordedById: null } });
+        await tx.subscriptionHistory.updateMany({ where: { performedById: targetUserId }, data: { performedById: null } });
+
+        // User direct junctions & personal data
+        await tx.managerAssignment.deleteMany({ where: { userId: targetUserId } });
+        await tx.userRole.deleteMany({ where: { userId: targetUserId } });
+        await tx.userDistributor.deleteMany({ where: { userId: targetUserId } });
+        await tx.notification.deleteMany({ where: { userId: targetUserId } });
+        await tx.auditLog.deleteMany({ where: { userId: targetUserId } });
+
+        // Hard delete user from PostgreSQL database
+        await tx.user.delete({ where: { id: targetUserId } });
+      }
+    }, { timeout: 30000 });
+
+    return sendSuccess(res, { success: true }, 'Employee deleted permanently from database');
   } catch (error) {
     console.error('deleteEmployee error:', error);
-    return sendError(res, 'Failed to remove employee', 500);
+    return sendError(res, error.message || 'Failed to remove employee', 500);
   }
 };
 

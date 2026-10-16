@@ -339,15 +339,6 @@ export default function SuperAdminDashboard() {
                     size="sm"
                     fullWidth
                     className="justify-start"
-                    onClick={() => navigate('/super-admin/settings')}
-                  >
-                    Configure Platform Settings
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    fullWidth
-                    className="justify-start"
                     onClick={() => navigate('/super-admin/profile')}
                   >
                     Super Admin Profile & Security

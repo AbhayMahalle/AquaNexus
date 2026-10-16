@@ -24,11 +24,11 @@ const adminOnly = [requireAuth, requireTenantContext, requireRole(["ADMIN"])];
 const adminOrManager = [requireAuth, requireTenantContext, requireRole(["ADMIN", "MANAGER"])];
 
 // Users
-router.get("/users", ...adminOnly, getUsers);
-router.get("/users/:id", ...adminOnly, validateUserIdParam, validate, getUser);
-router.post("/users", ...adminOnly, validateCreateUser, validate, createUser);
-router.patch("/users/:id", ...adminOnly, validateUpdateUser, validate, updateUser);
-router.delete("/users/:id", ...adminOnly, validateUserIdParam, validate, deleteUser);
+router.get("/users", ...adminOrManager, getUsers);
+router.get("/users/:id", ...adminOrManager, validateUserIdParam, validate, getUser);
+router.post("/users", ...adminOrManager, validateCreateUser, validate, createUser);
+router.patch("/users/:id", ...adminOrManager, validateUpdateUser, validate, updateUser);
+router.delete("/users/:id", ...adminOrManager, validateUserIdParam, validate, deleteUser);
 
 // Roles & Permissions
 router.get("/roles", ...adminOnly, getRoles);
