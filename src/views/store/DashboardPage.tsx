@@ -8,9 +8,11 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 import { Table, Column } from '@/components/ui/Table';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { cn } from '@/lib/utils';
 import {
   Package,
   ArrowDownToLine,
@@ -25,8 +27,25 @@ import {
   Activity,
   Plus,
   Clock,
-  ExternalLink
+  ExternalLink,
+  CheckCircle2
 } from 'lucide-react';
+
+interface LiveStockItem {
+  id: string;
+  productId: string;
+  name: string;
+  sku: string;
+  category: string;
+  unit: string;
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  reorderLevel: number;
+  storageBin?: string;
+  status: 'optimal' | 'low' | 'critical' | 'out_of_stock';
+  updatedAt?: string;
+}
 
 interface StockMovementRow {
   id: string;
@@ -159,6 +178,8 @@ export default function DashboardPage() {
 
   const [recentMovements, setRecentMovements] = useState<StockMovementRow[]>([]);
   const [lowStockAlerts, setLowStockAlerts] = useState<LowStockAlertRow[]>([]);
+  const [inventoryList, setInventoryList] = useState<LiveStockItem[]>([]);
+  const [selectedStockId, setSelectedStockId] = useState<string>('');
   const [kpiCounts, setKpiCounts] = useState({
     currentStock: '0',
     stockIn: '0',
@@ -173,7 +194,7 @@ export default function DashboardPage() {
     async function loadStoreData() {
       try {
         const [invRes, lowRes, txRes, retRes, dispRes] = await Promise.all([
-          fetchApi<{ inventory: any[] }>('/inventory'),
+          fetchApi<{ inventory: any[] }>('/inventory?limit=100'),
           fetchApi<{ lowStockItems: any[] } | any[]>('/inventory/low-stock'),
           fetchApi<{ transactions: any[] }>('/stock-transactions'),
           fetchApi<{ returns: any[] }>('/returns'),
@@ -184,6 +205,38 @@ export default function DashboardPage() {
         if (invRes.success && invRes.data) {
           const invList = invRes.data.inventory || (Array.isArray(invRes.data) ? invRes.data : []);
           skuCount = invList.length;
+
+          const mapped: LiveStockItem[] = invList.map((inv: any) => {
+            const qty = Number(inv.quantity) || 0;
+            const reserved = Number(inv.reservedQuantity) || 0;
+            const available = Math.max(0, qty - reserved);
+            const reorder = Number(inv.reorderLevel ?? inv.product?.minimumStock ?? 0);
+            let status: LiveStockItem['status'] = inv.status || 'optimal';
+            if (qty <= 0) status = 'out_of_stock';
+            else if (available <= reorder * 0.3) status = 'critical';
+            else if (available <= reorder) status = 'low';
+
+            return {
+              id: inv.id,
+              productId: inv.productId || inv.product?.id || inv.id,
+              name: inv.product?.name || 'Stock Item',
+              sku: inv.product?.sku || 'SKU',
+              category: inv.product?.category || 'General',
+              unit: inv.product?.unit || 'Units',
+              quantity: qty,
+              reservedQuantity: reserved,
+              availableQuantity: available,
+              reorderLevel: reorder,
+              storageBin: inv.storageBin || 'Main Warehouse',
+              status,
+              updatedAt: inv.updatedAt ? new Date(inv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+            };
+          });
+
+          setInventoryList(mapped);
+          if (mapped.length > 0) {
+            setSelectedStockId((prev) => prev || mapped[0].id);
+          }
         }
 
         let lowList: any[] = [];
@@ -378,6 +431,13 @@ export default function DashboardPage() {
     },
   ];
 
+  const selectedStock = inventoryList.find((item) => item.id === selectedStockId) || inventoryList[0];
+
+  const stockOptions = inventoryList.map((item) => ({
+    value: item.id,
+    label: `${item.name} (${item.sku})`,
+  }));
+
   return (
     <AuthGuard allowedRoles={['admin', 'manager', 'store_manager']}>
       <DashboardLayout>
@@ -406,6 +466,157 @@ export default function DashboardPage() {
             icon: <Plus className="w-4 h-4" />,
           }}
         />
+
+        {/* Live Product Stock Availability */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3 border-b border-[#E2E8F0]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-base font-semibold text-[#172033] flex items-center gap-2">
+                  <Package className="w-5 h-5 text-[#0F4C81]" />
+                  <span>Product Stock Availability</span>
+                </CardTitle>
+                <CardDescription>
+                  Select a product to view its current live stock and inventory levels.
+                </CardDescription>
+              </div>
+
+              <div className="w-full sm:w-80">
+                <Select
+                  id="store-stock-selector"
+                  value={selectedStock?.id || ''}
+                  onChange={(e) => setSelectedStockId(e.target.value)}
+                  options={stockOptions}
+                  placeholder="Select a product..."
+                  disabled={inventoryList.length === 0}
+                  className="w-full text-xs font-medium"
+                />
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="pt-4">
+            {selectedStock ? (
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* 1. Live Available Stock */}
+                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-xs font-semibold text-[#0F4C81] uppercase tracking-wider">
+                          Live Available Stock
+                        </span>
+                        <Badge
+                          variant={selectedStock.status === 'optimal' ? 'success' : selectedStock.status === 'low' ? 'warning' : 'danger'}
+                          size="sm"
+                        >
+                          {selectedStock.status === 'optimal' ? 'In Stock' : selectedStock.status === 'low' ? 'Low Stock' : 'Critical'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0F4C81]">
+                          {selectedStock.availableQuantity.toLocaleString()}
+                        </span>
+                        <span className="text-xs font-medium text-[#64748B]">
+                          {selectedStock.unit}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="pt-3 mt-3 border-t border-[#E2E8F0] text-xs text-[#64748B]">
+                      Ready for immediate issue
+                    </div>
+                  </div>
+
+                  {/* 2. Physical On-Hand */}
+                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">
+                          Physical On-Hand
+                        </span>
+                        <Boxes className="w-4 h-4 text-[#94A3B8]" />
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#172033]">
+                          {selectedStock.quantity.toLocaleString()}
+                        </span>
+                        <span className="text-xs font-medium text-[#64748B]">
+                          {selectedStock.unit}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="pt-3 mt-3 border-t border-[#E2E8F0] text-xs text-[#64748B]">
+                      Total in warehouse
+                    </div>
+                  </div>
+
+                  {/* 3. Reserved / Allocated */}
+                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">
+                          Reserved / Allocated
+                        </span>
+                        <Truck className="w-4 h-4 text-[#94A3B8]" />
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#172033]">
+                          {selectedStock.reservedQuantity.toLocaleString()}
+                        </span>
+                        <span className="text-xs font-medium text-[#64748B]">
+                          {selectedStock.unit}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="pt-3 mt-3 border-t border-[#E2E8F0] text-xs text-[#64748B]">
+                      Committed for dispatch
+                    </div>
+                  </div>
+
+                  {/* 4. Reorder Threshold */}
+                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">
+                          Reorder Threshold
+                        </span>
+                        <AlertTriangle className="w-4 h-4 text-[#94A3B8]" />
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#172033]">
+                          {selectedStock.reorderLevel.toLocaleString()}
+                        </span>
+                        <span className="text-xs font-medium text-[#64748B]">
+                          {selectedStock.unit}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="pt-3 mt-3 border-t border-[#E2E8F0] text-xs text-[#64748B]">
+                      Minimum buffer level
+                    </div>
+                  </div>
+                </div>
+
+                {/* Minimal Meta row */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-3 mt-4 border-t border-[#E2E8F0] text-xs text-[#64748B]">
+                  <div className="flex items-center gap-3">
+                    <span>SKU: <strong className="font-mono text-[#0F4C81]">{selectedStock.sku}</strong></span>
+                    <span>•</span>
+                    <span>Category: <strong className="text-[#172033]">{selectedStock.category}</strong></span>
+                    <span>•</span>
+                    <span>Storage Location: <strong className="text-[#172033]">{selectedStock.storageBin || 'Main Warehouse'}</strong></span>
+                  </div>
+                  <Link to="/store/inventory" className="text-[#0F4C81] hover:underline flex items-center gap-1 font-medium">
+                    <span>View in Inventory</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-[#64748B] py-2">No stock items available.</p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* 1. KPI Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
