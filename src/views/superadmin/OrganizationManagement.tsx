@@ -32,6 +32,8 @@ import {
   Trash2,
   Layers,
   Sparkles,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 
 interface OrganizationRecord {
@@ -131,6 +133,68 @@ export default function OrganizationManagement() {
   const [selectedOrgForUsers, setSelectedOrgForUsers] = useState<OrganizationRecord | null>(null);
   const [userModalTab, setUserModalTab] = useState<'USERS' | 'STAFF'>('USERS');
   const [userModalSearch, setUserModalSearch] = useState('');
+  const [isLoadingOrgUsers, setIsLoadingOrgUsers] = useState(false);
+
+  const handleOpenUsersModal = async (org: OrganizationRecord) => {
+    setSelectedOrgForUsers(org);
+    setUserModalTab('USERS');
+    setUserModalSearch('');
+    setIsLoadingOrgUsers(true);
+
+    try {
+      const res = await apiRequest<any>(`/platform/organizations/${org.id}/users`);
+      if (res.ok && res.data) {
+        const fetchedUsers = res.data.users || [];
+        const fetchedEmployees = res.data.employees || [];
+
+        setSelectedOrgForUsers((prev) =>
+          prev && prev.id === org.id
+            ? {
+                ...prev,
+                users: fetchedUsers,
+                employees: fetchedEmployees,
+                stats: {
+                  ...(prev.stats || { orderCount: 0, productCount: 0 }),
+                  userCount: fetchedUsers.length,
+                  employeeCount: fetchedEmployees.length,
+                },
+                _count: {
+                  ...(prev._count || { orders: 0 }),
+                  users: fetchedUsers.length,
+                  employees: fetchedEmployees.length,
+                },
+              }
+            : prev
+        );
+
+        setOrganizations((prevList) =>
+          prevList.map((item) =>
+            item.id === org.id
+              ? {
+                  ...item,
+                  users: fetchedUsers,
+                  employees: fetchedEmployees,
+                  stats: {
+                    ...(item.stats || { orderCount: 0, productCount: 0 }),
+                    userCount: fetchedUsers.length,
+                    employeeCount: fetchedEmployees.length,
+                  },
+                  _count: {
+                    ...(item._count || { orders: 0 }),
+                    users: fetchedUsers.length,
+                    employees: fetchedEmployees.length,
+                  },
+                }
+              : item
+          )
+        );
+      }
+    } catch (err: any) {
+      console.error('Failed to load users for organization:', err);
+    } finally {
+      setIsLoadingOrgUsers(false);
+    }
+  };
 
   // Provision Modal State
   const [isProvisionOpen, setIsProvisionOpen] = useState(false);
@@ -565,11 +629,7 @@ export default function OrganizationManagement() {
         return (
           <button
             type="button"
-            onClick={() => {
-              setSelectedOrgForUsers(row);
-              setUserModalTab('USERS');
-              setUserModalSearch('');
-            }}
+            onClick={() => handleOpenUsersModal(row)}
             className="group text-left p-1.5 -m-1.5 rounded-lg hover:bg-orange-50 transition-colors cursor-pointer"
             title="Click to view company Users & Staff directory"
           >
@@ -605,11 +665,7 @@ export default function OrganizationManagement() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {
-              setSelectedOrgForUsers(row);
-              setUserModalTab('USERS');
-              setUserModalSearch('');
-            }}
+            onClick={() => handleOpenUsersModal(row)}
             title="View Company Users & Staff Directory"
             className="text-gray-700 hover:bg-gray-100 border-gray-200 p-1.5 h-8 w-8 flex items-center justify-center"
           >
@@ -1281,221 +1337,245 @@ export default function OrganizationManagement() {
         isOpen={Boolean(selectedOrgForUsers)}
         onClose={() => setSelectedOrgForUsers(null)}
         title={
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-orange-600" />
-            <span>{selectedOrgForUsers?.name} — Users & Staff Directory</span>
+          <div className="flex items-center justify-between w-full pr-6">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-orange-600" />
+              <span>{selectedOrgForUsers?.name} — Users & Staff Directory</span>
+            </div>
+            {selectedOrgForUsers && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleOpenUsersModal(selectedOrgForUsers)}
+                disabled={isLoadingOrgUsers}
+                className="text-gray-500 hover:text-gray-900 p-1.5 h-7 w-7"
+                title="Refresh Directory"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingOrgUsers ? 'animate-spin text-orange-500' : ''}`} />
+              </Button>
+            )}
           </div>
         }
         subtitle={
           selectedOrgForUsers
-            ? `slug: /${selectedOrgForUsers.slug} • ${(selectedOrgForUsers.users?.length || selectedOrgForUsers.stats?.userCount || 0)} System Users • ${(selectedOrgForUsers.employees?.length || selectedOrgForUsers.stats?.employeeCount || 0)} Staff / Employees`
+            ? `slug: /${selectedOrgForUsers.slug} • ${(selectedOrgForUsers.users?.length ?? selectedOrgForUsers.stats?.userCount ?? 0)} System Users • ${(selectedOrgForUsers.employees?.length ?? selectedOrgForUsers.stats?.employeeCount ?? 0)} Staff / Employees`
             : undefined
         }
         size="xl"
       >
         {selectedOrgForUsers && (
           <div className="space-y-4 pt-1">
-            {/* Search and Tabs */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
-              <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setUserModalTab('USERS')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
-                    userModalTab === 'USERS'
-                      ? 'bg-white text-gray-900 shadow-xs'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Users className="w-3.5 h-3.5 text-orange-500" />
-                  <span>System Users ({selectedOrgForUsers.users?.length || 0})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUserModalTab('STAFF')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
-                    userModalTab === 'STAFF'
-                      ? 'bg-white text-gray-900 shadow-xs'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Staff / Employees ({selectedOrgForUsers.employees?.length || 0})</span>
-                </button>
+            {isLoadingOrgUsers ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+                <Loader2 className="w-8 h-8 animate-spin text-orange-500 mb-2" />
+                <p className="text-sm font-semibold text-gray-800">Loading directory records...</p>
+                <p className="text-xs text-gray-400">Fetching live users and staff from database</p>
               </div>
+            ) : (
+              <>
+                {/* Search and Tabs */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
+                  <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setUserModalTab('USERS')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                        userModalTab === 'USERS'
+                          ? 'bg-white text-gray-900 shadow-xs'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Users className="w-3.5 h-3.5 text-orange-500" />
+                      <span>System Users ({selectedOrgForUsers.users?.length || 0})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserModalTab('STAFF')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                        userModalTab === 'STAFF'
+                          ? 'bg-white text-gray-900 shadow-xs'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Staff / Employees ({selectedOrgForUsers.employees?.length || 0})</span>
+                    </button>
+                  </div>
 
-              <div className="relative w-full sm:w-64">
-                <Input
-                  placeholder="Search by name, email, role..."
-                  value={userModalSearch}
-                  onChange={(e) => setUserModalSearch(e.target.value)}
-                  leftIcon={<Search className="w-3.5 h-3.5 text-gray-400" />}
-                />
-              </div>
-            </div>
+                  <div className="relative w-full sm:w-64">
+                    <Input
+                      placeholder="Search by name, email, role..."
+                      value={userModalSearch}
+                      onChange={(e) => setUserModalSearch(e.target.value)}
+                      leftIcon={<Search className="w-3.5 h-3.5 text-gray-400" />}
+                    />
+                  </div>
+                </div>
 
-            {/* Tab 1: System Users */}
-            {userModalTab === 'USERS' && (
-              <div className="overflow-x-auto max-h-[420px] overflow-y-auto border rounded-lg">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 border-b sticky top-0 text-gray-500 font-semibold uppercase tracking-wider">
-                    <tr>
-                      <th className="p-3">User</th>
-                      <th className="p-3">Role</th>
-                      <th className="p-3">Contact</th>
-                      <th className="p-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {(selectedOrgForUsers.users || [])
-                      .filter((u) => {
-                        if (!userModalSearch) return true;
-                        const s = userModalSearch.toLowerCase();
-                        const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
-                        const roleName = (u.userRoles?.[0]?.role?.name || '').toLowerCase();
-                        return (
-                          fullName.includes(s) ||
-                          u.username?.toLowerCase().includes(s) ||
-                          u.email?.toLowerCase().includes(s) ||
-                          roleName.includes(s)
-                        );
-                      })
-                      .map((u) => {
-                        const roleName = u.userRoles?.[0]?.role?.name || 'USER';
-                        const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username;
-                        return (
-                          <tr key={u.id} className="hover:bg-gray-50/80">
-                            <td className="p-3">
-                              <div className="font-bold text-gray-900">{fullName}</div>
-                              <div className="text-[11px] text-gray-500 font-mono">@{u.username}</div>
-                            </td>
-                            <td className="p-3">
-                              <Badge
-                                variant={
-                                  roleName === 'ADMIN'
-                                    ? 'primary'
-                                    : roleName === 'MANAGER'
-                                    ? 'warning'
-                                    : roleName === 'DISTRIBUTOR'
-                                    ? 'info'
-                                    : 'neutral'
-                                }
-                                className="font-semibold text-[11px]"
-                              >
-                                {roleName}
-                              </Badge>
-                            </td>
-                            <td className="p-3 space-y-0.5">
-                              <div className="flex items-center gap-1 text-gray-600 font-mono text-[11px]">
-                                <Mail className="w-3 h-3 text-gray-400" />
-                                <span>{u.email}</span>
-                              </div>
-                              {u.phone && (
-                                <div className="flex items-center gap-1 text-gray-500 text-[11px]">
-                                  <Phone className="w-3 h-3 text-gray-400" />
-                                  <span>{u.phone}</span>
-                                </div>
-                              )}
-                            </td>
-                            <td className="p-3">
-                              <Badge variant={u.status === 'ACTIVE' ? 'success' : 'danger'} className="text-[10px]">
-                                {u.status}
-                              </Badge>
+                {/* Tab 1: System Users */}
+                {userModalTab === 'USERS' && (
+                  <div className="overflow-x-auto max-h-[420px] overflow-y-auto border rounded-lg">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-gray-50 border-b sticky top-0 text-gray-500 font-semibold uppercase tracking-wider">
+                        <tr>
+                          <th className="p-3">User</th>
+                          <th className="p-3">Role</th>
+                          <th className="p-3">Contact</th>
+                          <th className="p-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {(selectedOrgForUsers.users || [])
+                          .filter((u) => {
+                            if (!userModalSearch) return true;
+                            const s = userModalSearch.toLowerCase();
+                            const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+                            const roleName = (u.userRoles?.[0]?.role?.name || '').toLowerCase();
+                            return (
+                              fullName.includes(s) ||
+                              u.username?.toLowerCase().includes(s) ||
+                              u.email?.toLowerCase().includes(s) ||
+                              roleName.includes(s)
+                            );
+                          })
+                          .map((u) => {
+                            const roleName = u.userRoles?.[0]?.role?.name || 'USER';
+                            const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username;
+                            return (
+                              <tr key={u.id} className="hover:bg-gray-50/80">
+                                <td className="p-3">
+                                  <div className="font-bold text-gray-900">{fullName}</div>
+                                  <div className="text-[11px] text-gray-500 font-mono">@{u.username}</div>
+                                </td>
+                                <td className="p-3">
+                                  <Badge
+                                    variant={
+                                      roleName === 'ADMIN'
+                                        ? 'primary'
+                                        : roleName === 'MANAGER'
+                                        ? 'warning'
+                                        : roleName === 'DISTRIBUTOR'
+                                        ? 'info'
+                                        : 'neutral'
+                                    }
+                                    className="font-semibold text-[11px]"
+                                  >
+                                    {roleName}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 space-y-0.5">
+                                  <div className="flex items-center gap-1 text-gray-600 font-mono text-[11px]">
+                                    <Mail className="w-3 h-3 text-gray-400" />
+                                    <span>{u.email}</span>
+                                  </div>
+                                  {u.phone && (
+                                    <div className="flex items-center gap-1 text-gray-500 text-[11px]">
+                                      <Phone className="w-3 h-3 text-gray-400" />
+                                      <span>{u.phone}</span>
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="p-3">
+                                  <Badge variant={u.status === 'ACTIVE' ? 'success' : 'danger'} className="text-[10px]">
+                                    {u.status}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        {(!selectedOrgForUsers.users || selectedOrgForUsers.users.length === 0) && (
+                          <tr>
+                            <td colSpan={4} className="p-8 text-center text-gray-400 italic">
+                              No system users found for this organization.
                             </td>
                           </tr>
-                        );
-                      })}
-                    {(!selectedOrgForUsers.users || selectedOrgForUsers.users.length === 0) && (
-                      <tr>
-                        <td colSpan={4} className="p-8 text-center text-gray-400 italic">
-                          No system users found for this organization.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
 
-            {/* Tab 2: Staff / Employees */}
-            {userModalTab === 'STAFF' && (
-              <div className="overflow-x-auto max-h-[420px] overflow-y-auto border rounded-lg">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 border-b sticky top-0 text-gray-500 font-semibold uppercase tracking-wider">
-                    <tr>
-                      <th className="p-3">Employee Code</th>
-                      <th className="p-3">Name & Designation</th>
-                      <th className="p-3">Department</th>
-                      <th className="p-3">Contact</th>
-                      <th className="p-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {(selectedOrgForUsers.employees || [])
-                      .filter((emp) => {
-                        if (!userModalSearch) return true;
-                        const s = userModalSearch.toLowerCase();
-                        const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.toLowerCase();
-                        const deptName = (emp.department?.name || '').toLowerCase();
-                        return (
-                          emp.employeeCode.toLowerCase().includes(s) ||
-                          fullName.includes(s) ||
-                          emp.designation?.toLowerCase().includes(s) ||
-                          deptName.includes(s) ||
-                          emp.email?.toLowerCase().includes(s)
-                        );
-                      })
-                      .map((emp) => {
-                        const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
-                        return (
-                          <tr key={emp.id} className="hover:bg-gray-50/80">
-                            <td className="p-3">
-                              <span className="font-mono bg-gray-100 border px-1.5 py-0.5 rounded text-[11px] font-bold text-gray-800">
-                                {emp.employeeCode}
-                              </span>
-                            </td>
-                            <td className="p-3">
-                              <div className="font-bold text-gray-900">{fullName}</div>
-                              <div className="text-[11px] text-gray-500">{emp.designation}</div>
-                            </td>
-                            <td className="p-3">
-                              <span className="font-medium text-gray-700">
-                                {emp.department?.name || 'General Operations'}
-                              </span>
-                            </td>
-                            <td className="p-3 space-y-0.5">
-                              {emp.email && (
-                                <div className="flex items-center gap-1 text-gray-600 font-mono text-[11px]">
-                                  <Mail className="w-3 h-3 text-gray-400" />
-                                  <span>{emp.email}</span>
-                                </div>
-                              )}
-                              {emp.phone && (
-                                <div className="flex items-center gap-1 text-gray-500 text-[11px]">
-                                  <Phone className="w-3 h-3 text-gray-400" />
-                                  <span>{emp.phone}</span>
-                                </div>
-                              )}
-                              {!emp.email && !emp.phone && <span className="text-gray-400 italic">—</span>}
-                            </td>
-                            <td className="p-3">
-                              <Badge variant={emp.status === 'ACTIVE' ? 'success' : 'danger'} className="text-[10px]">
-                                {emp.status}
-                              </Badge>
+                {/* Tab 2: Staff / Employees */}
+                {userModalTab === 'STAFF' && (
+                  <div className="overflow-x-auto max-h-[420px] overflow-y-auto border rounded-lg">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-gray-50 border-b sticky top-0 text-gray-500 font-semibold uppercase tracking-wider">
+                        <tr>
+                          <th className="p-3">Employee Code</th>
+                          <th className="p-3">Name & Designation</th>
+                          <th className="p-3">Department</th>
+                          <th className="p-3">Contact</th>
+                          <th className="p-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {(selectedOrgForUsers.employees || [])
+                          .filter((emp) => {
+                            if (!userModalSearch) return true;
+                            const s = userModalSearch.toLowerCase();
+                            const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.toLowerCase();
+                            const deptName = (emp.department?.name || '').toLowerCase();
+                            return (
+                              emp.employeeCode.toLowerCase().includes(s) ||
+                              fullName.includes(s) ||
+                              emp.designation?.toLowerCase().includes(s) ||
+                              deptName.includes(s) ||
+                              emp.email?.toLowerCase().includes(s)
+                            );
+                          })
+                          .map((emp) => {
+                            const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+                            return (
+                              <tr key={emp.id} className="hover:bg-gray-50/80">
+                                <td className="p-3">
+                                  <span className="font-mono bg-gray-100 border px-1.5 py-0.5 rounded text-[11px] font-bold text-gray-800">
+                                    {emp.employeeCode}
+                                  </span>
+                                </td>
+                                <td className="p-3">
+                                  <div className="font-bold text-gray-900">{fullName}</div>
+                                  <div className="text-[11px] text-gray-500">{emp.designation}</div>
+                                </td>
+                                <td className="p-3">
+                                  <span className="font-medium text-gray-700">
+                                    {emp.department?.name || 'General Operations'}
+                                  </span>
+                                </td>
+                                <td className="p-3 space-y-0.5">
+                                  {emp.email && (
+                                    <div className="flex items-center gap-1 text-gray-600 font-mono text-[11px]">
+                                      <Mail className="w-3 h-3 text-gray-400" />
+                                      <span>{emp.email}</span>
+                                    </div>
+                                  )}
+                                  {emp.phone && (
+                                    <div className="flex items-center gap-1 text-gray-500 text-[11px]">
+                                      <Phone className="w-3 h-3 text-gray-400" />
+                                      <span>{emp.phone}</span>
+                                    </div>
+                                  )}
+                                  {!emp.email && !emp.phone && <span className="text-gray-400 italic">—</span>}
+                                </td>
+                                <td className="p-3">
+                                  <Badge variant={emp.status === 'ACTIVE' ? 'success' : 'danger'} className="text-[10px]">
+                                    {emp.status}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        {(!selectedOrgForUsers.employees || selectedOrgForUsers.employees.length === 0) && (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-gray-400 italic">
+                              No staff / employees registered for this organization.
                             </td>
                           </tr>
-                        );
-                      })}
-                    {(!selectedOrgForUsers.employees || selectedOrgForUsers.employees.length === 0) && (
-                      <tr>
-                        <td colSpan={5} className="p-8 text-center text-gray-400 italic">
-                          No staff / employees registered for this organization.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="flex justify-end pt-2 border-t">

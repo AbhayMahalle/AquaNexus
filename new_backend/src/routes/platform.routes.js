@@ -19,6 +19,7 @@ const {
 const {
   getOrganizations,
   getOrganizationById,
+  getOrganizationUsersAndStaff,
   provisionOrganization,
   addOrganizationAdmin,
   updateOrganizationStatus: updateOrgStatus,
@@ -71,6 +72,7 @@ router.post('/platform/payments', ...superAdminOnly, recordPayment);
 router.get('/platform/companies', ...superAdminOnly, getOrganizations);
 router.post('/platform/companies', ...superAdminOnly, provisionOrganization);
 router.get('/platform/companies/:id', ...superAdminOnly, getOrganizationById);
+router.get('/platform/companies/:id/users', ...superAdminOnly, getOrganizationUsersAndStaff);
 router.patch('/platform/companies/:id/status', ...superAdminOnly, updateOrgStatus);
 router.post('/platform/companies/:id/admins', ...superAdminOnly, addOrganizationAdmin);
 router.delete('/platform/companies/:id', ...superAdminOnly, deleteOrganization);
@@ -78,6 +80,7 @@ router.delete('/platform/companies/:id', ...superAdminOnly, deleteOrganization);
 router.get('/platform/organizations', ...superAdminOnly, getOrganizations);
 router.post('/platform/organizations', ...superAdminOnly, provisionOrganization);
 router.get('/platform/organizations/:id', ...superAdminOnly, getOrganizationById);
+router.get('/platform/organizations/:id/users', ...superAdminOnly, getOrganizationUsersAndStaff);
 router.patch('/platform/organizations/:id/status', ...superAdminOnly, updateOrgStatus);
 router.delete('/platform/organizations/:id', ...superAdminOnly, deleteOrganization);
 

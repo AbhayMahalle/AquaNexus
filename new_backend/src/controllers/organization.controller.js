@@ -213,6 +213,77 @@ const getOrganizationById = async (req, res) => {
 };
 
 /**
+ * Get organization users and staff directory (Platform SuperAdmin only)
+ */
+const getOrganizationUsersAndStaff = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const org = await prisma.organization.findUnique({
+      where: { id },
+      include: {
+        users: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            status: true,
+            createdAt: true,
+            userRoles: {
+              include: { role: true },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+        employees: {
+          select: {
+            id: true,
+            employeeCode: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            designation: true,
+            status: true,
+            department: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            createdAt: true,
+          },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
+
+    if (!org) {
+      return sendError(res, "Organization not found", 404);
+    }
+
+    return sendSuccess(
+      res,
+      {
+        organizationId: org.id,
+        organizationName: org.name,
+        users: org.users,
+        employees: org.employees,
+        userCount: org.users.length,
+        employeeCount: org.employees.length,
+      },
+      "Users and staff retrieved successfully"
+    );
+  } catch (error) {
+    console.error("getOrganizationUsersAndStaff error:", error);
+    return sendError(res, "Failed to retrieve organization users and staff", 500);
+  }
+};
+
+/**
  * Provision new customer organization + initial Admin account (Platform SuperAdmin only)
  */
 const provisionOrganization = async (req, res) => {
@@ -954,6 +1025,7 @@ const deleteOrganization = async (req, res) => {
 module.exports = {
   getOrganizations,
   getOrganizationById,
+  getOrganizationUsersAndStaff,
   provisionOrganization,
   addOrganizationAdmin,
   updateOrganizationStatus,
