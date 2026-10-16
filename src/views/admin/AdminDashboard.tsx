@@ -37,21 +37,20 @@ import type { Production, Product } from '@/types';
 import { productionService } from '@/services/productionService';
 import { fetchApi } from '@/services/apiClient';
 
-const FEATURE_MAP: Record<string, { label: string; desc: string }> = {
-  PRODUCTION: { label: 'Production Management', desc: 'Batch logging, quality testing & output metrics' },
-  INVENTORY: { label: 'Inventory & Stock Control', desc: 'Raw materials, stock levels & reorder alerts' },
-  ORDERS: { label: 'Sales Orders & Invoicing', desc: 'Order tracking, GST invoices & dispatch' },
-  DISTRIBUTION: { label: 'Distribution & Logistics', desc: 'Driver assignments, delivery routes & vehicle logs' },
-  FINANCE: { label: 'Finance & Ledger', desc: 'Expense tracking, ledger accounts & revenue reports' },
-  HR: { label: 'HR & Employee Management', desc: 'Staff shifts, attendance, payroll & roles' },
-  P2P: { label: 'P2P Inter-Branch Transfer', desc: 'Plant-to-plant inventory & bottle exchanges' },
-  ADVANCED_ANALYTICS: { label: 'Advanced Analytics', desc: 'Forecasting, cost efficiency & executive reports' },
+const FEATURE_LABELS: Record<string, string> = {
+  PRODUCTION: 'Production & Batches',
+  INVENTORY: 'Inventory & Stock',
+  ORDERS: 'Orders & Invoices',
+  DISTRIBUTION: 'Route Distribution',
+  FINANCE: 'Finance & Ledger',
+  HR: 'HR & Employees',
+  P2P: 'Plant Transfer (P2P)',
+  ADVANCED_ANALYTICS: 'Advanced Analytics',
 };
 
-const getFeatureInfo = (key: string) => {
-  if (FEATURE_MAP[key]) return FEATURE_MAP[key];
-  const formatted = key.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-  return { label: formatted, desc: 'Included in plan tier' };
+const getFeatureLabel = (key: string) => {
+  if (FEATURE_LABELS[key]) return FEATURE_LABELS[key];
+  return key.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
 export default function AdminDashboardPage() {
@@ -60,35 +59,12 @@ export default function AdminDashboardPage() {
   const [kpi, setKpi] = useState<any>({ production: 0, inventory: 0, employees: 0, pendingDispatches: 0, revenue: 0 });
   const [subscription, setSubscription] = useState<any>(null);
   const [availablePlans, setAvailablePlans] = useState<any[]>([]);
-  const [plansDropdownOpen, setPlansDropdownOpen] = useState(false);
-  const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>('ALL');
+  const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const plansDropdownRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (plansDropdownRef.current && !plansDropdownRef.current.contains(event.target as Node)) {
-        setPlansDropdownOpen(false);
-      }
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setPlansDropdownOpen(false);
-      }
-    }
-    if (plansDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [plansDropdownOpen]);
 
   const fetchDashboardData = async () => {
     try {
@@ -295,216 +271,14 @@ export default function AdminDashboardPage() {
                             </Badge>
                           )}
 
-                          {/* Live Database Subscription Plans Dropdown */}
-                          <div className="relative inline-block" ref={plansDropdownRef}>
-                            <button
-                              type="button"
-                              onClick={() => setPlansDropdownOpen(!plansDropdownOpen)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-2xs ${
-                                plansDropdownOpen
-                                  ? 'bg-orange-600 text-white border-orange-600 ring-2 ring-orange-200'
-                                  : 'bg-orange-50 text-orange-900 border-orange-200 hover:bg-orange-100 hover:border-orange-300'
-                              }`}
-                              title="View all subscription plans with prices & features fetched from database"
-                            >
-                              <Layers className="w-3.5 h-3.5 text-current" />
-                              <span>View All Plans & Features ({availablePlans.length || 0})</span>
-                              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${plansDropdownOpen ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            {/* Mobile backdrop */}
-                            {plansDropdownOpen && (
-                              <div
-                                className="fixed inset-0 bg-black/40 z-40 sm:hidden"
-                                onClick={() => setPlansDropdownOpen(false)}
-                              />
-                            )}
-
-                            {/* Dropdown Menu Panel */}
-                            {plansDropdownOpen && (
-                              <div className="fixed inset-x-3 top-20 sm:absolute sm:inset-auto sm:left-0 sm:top-full sm:mt-2 z-50 w-auto sm:w-[580px] md:w-[680px] max-h-[82vh] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                                {/* Dropdown Header */}
-                                <div className="p-4 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-between border-b border-gray-700">
-                                  <div className="flex items-center gap-2.5">
-                                    <div className="p-2 bg-orange-500/20 text-orange-400 rounded-lg border border-orange-500/30">
-                                      <Layers className="w-4 h-4" />
-                                    </div>
-                                    <div>
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <h4 className="text-sm font-bold text-white">Subscription Plans Catalog</h4>
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                          Live from Database
-                                        </span>
-                                      </div>
-                                      <p className="text-[11px] text-gray-300 mt-0.5">
-                                        Current Plan: <span className="font-bold text-orange-400">{subscription.plan?.name || 'Basic'}</span> (₹{Number(subscription.plan?.price || 0).toLocaleString('en-IN')}/{subscription.plan?.billingCycle?.toLowerCase() === 'yearly' ? 'yr' : 'mo'})
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => setPlansDropdownOpen(false)}
-                                    className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-                                    title="Close Dropdown"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </button>
-                                </div>
-
-                                {/* Plan Filter Bar inside Dropdown */}
-                                <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between gap-2 flex-wrap">
-                                  <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                                    <span>Filter Plans:</span>
-                                    <select
-                                      value={selectedPlanFilter}
-                                      onChange={(e) => setSelectedPlanFilter(e.target.value)}
-                                      className="text-xs font-semibold bg-white border border-gray-300 rounded-lg px-2.5 py-1 text-gray-800 hover:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200 cursor-pointer shadow-2xs"
-                                    >
-                                      <option value="ALL">All Available Plans ({availablePlans.length})</option>
-                                      {availablePlans.map((p: any) => (
-                                        <option key={p.id} value={p.code}>
-                                          {p.name} — ₹{Number(p.price).toLocaleString('en-IN')}/{p.billingCycle?.toLowerCase() === 'yearly' ? 'yr' : 'mo'} ({p.maxUsers} Users){p.code === subscription.plan?.code ? ' ★ Current' : ''}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </label>
-
-                                  <span className="text-[11px] text-gray-500">
-                                    {availablePlans.length} plan{availablePlans.length !== 1 ? 's' : ''} configured
-                                  </span>
-                                </div>
-
-                                {/* Plans List Container (Scrollable) */}
-                                <div className="p-4 overflow-y-auto max-h-[58vh] space-y-3.5">
-                                  {availablePlans.length === 0 ? (
-                                    <div className="py-8 text-center text-gray-500 text-xs">
-                                      Loading plans and features from database...
-                                    </div>
-                                  ) : (
-                                    availablePlans
-                                      .filter((plan: any) => selectedPlanFilter === 'ALL' || plan.code === selectedPlanFilter)
-                                      .map((plan: any) => {
-                                        const isCurrent = plan.code === subscription.plan?.code || plan.id === subscription.planId;
-                                        let featuresArray: string[] = [];
-                                        if (Array.isArray(plan.features)) {
-                                          featuresArray = plan.features;
-                                        } else if (typeof plan.features === 'string') {
-                                          try {
-                                            featuresArray = JSON.parse(plan.features);
-                                          } catch {
-                                            featuresArray = [];
-                                          }
-                                        }
-
-                                        return (
-                                          <div
-                                            key={plan.id}
-                                            className={`p-4 rounded-xl transition-all ${
-                                              isCurrent
-                                                ? 'border-2 border-emerald-500 bg-emerald-50/25 ring-2 ring-emerald-100 shadow-sm'
-                                                : 'border border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/10'
-                                            }`}
-                                          >
-                                            {/* Plan Header */}
-                                            <div className="flex items-start justify-between gap-3">
-                                              <div>
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                  <h5 className="text-base font-bold text-gray-950">{plan.name}</h5>
-                                                  <Badge variant={plan.code === 'PRO_MAX' ? 'primary' : plan.code === 'PRO' ? 'success' : 'neutral'} className="font-bold text-[11px]">
-                                                    {plan.code}
-                                                  </Badge>
-                                                  {isCurrent && (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                                      <Check className="w-3.5 h-3.5 text-emerald-700" /> Current Plan
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                {plan.description && (
-                                                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">{plan.description}</p>
-                                                )}
-                                              </div>
-
-                                              <div className="text-right shrink-0">
-                                                <div className="text-lg font-black text-gray-950">
-                                                  ₹{Number(plan.price).toLocaleString('en-IN')}
-                                                  <span className="text-xs font-normal text-gray-500">
-                                                    /{plan.billingCycle?.toLowerCase() === 'yearly' ? 'yr' : 'mo'}
-                                                  </span>
-                                                </div>
-                                                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-                                                  {plan.billingCycle || 'Monthly'}
-                                                </span>
-                                              </div>
-                                            </div>
-
-                                            {/* Account Capacity Specs */}
-                                            <div className="flex items-center gap-2 flex-wrap mt-2.5">
-                                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 text-xs font-semibold border border-gray-200">
-                                                <Users className="w-3.5 h-3.5 text-gray-600" />
-                                                <span>Capacity: <strong>{plan.maxUsers}</strong> Business Account{plan.maxUsers > 1 ? 's' : ''}</span>
-                                              </span>
-                                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200">
-                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                                <span>Unlimited Plant Staff & Employees</span>
-                                              </span>
-                                            </div>
-
-                                            {/* Features List from Database */}
-                                            <div className="mt-3 pt-3 border-t border-gray-100">
-                                              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                                <Sparkles className="w-3 h-3 text-orange-500" />
-                                                Features Included ({featuresArray.length}):
-                                              </p>
-
-                                              {featuresArray.length > 0 ? (
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                  {featuresArray.map((featKey: string) => {
-                                                    const info = getFeatureInfo(featKey);
-                                                    return (
-                                                      <div
-                                                        key={featKey}
-                                                        className="flex items-start gap-2 p-2 rounded-lg bg-gray-50 border border-gray-200/70"
-                                                      >
-                                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                                        <div className="min-w-0">
-                                                          <p className="text-xs font-bold text-gray-900 leading-snug">{info.label}</p>
-                                                          {info.desc && (
-                                                            <p className="text-[10px] text-gray-500 leading-tight truncate">{info.desc}</p>
-                                                          )}
-                                                        </div>
-                                                      </div>
-                                                    );
-                                                  })}
-                                                </div>
-                                              ) : (
-                                                <p className="text-xs text-gray-400 italic">Core water plant operational modules included</p>
-                                              )}
-                                            </div>
-                                          </div>
-                                        );
-                                      })
-                                  )}
-                                </div>
-
-                                {/* Dropdown Footer */}
-                                <div className="p-3 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
-                                  <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
-                                    <Info className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                                    <span>Plan upgrades and capacity expansions are managed by your Platform Super Admin.</span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => setPlansDropdownOpen(false)}
-                                    className="px-3 py-1 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer shrink-0"
-                                  >
-                                    Close
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setPlansModalOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border border-gray-200 bg-white text-gray-700 hover:text-orange-700 hover:border-orange-300 hover:bg-orange-50 transition-all shadow-2xs cursor-pointer"
+                          >
+                            <Layers className="w-3.5 h-3.5 text-orange-600" />
+                            <span>All Plans</span>
+                          </button>
                         </div>
                         <p className="text-xs text-gray-600 mt-1">
                           Billing: <strong className="text-black">{subscription.plan?.billingCycle || 'Monthly'}</strong> • Staff Accounts: <strong className="text-black">{totalBusinessCapacity}</strong> allowed (1 Admin • Unlimited Employees).
@@ -574,6 +348,104 @@ export default function AdminDashboardPage() {
                     </div>
                   )}
                 </div>
+
+                {/* All Plans Popup Modal — Clean & Minimal */}
+                <Modal
+                  isOpen={plansModalOpen}
+                  onClose={() => setPlansModalOpen(false)}
+                  title="Subscription Plans"
+                  subtitle="Available platform tiers and authorized capacities"
+                  size="xl"
+                  footer={
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-xs text-gray-500">
+                        Contact your Super Admin to upgrade or modify plan assignments.
+                      </span>
+                      <Button variant="outline" size="sm" onClick={() => setPlansModalOpen(false)}>
+                        Close
+                      </Button>
+                    </div>
+                  }
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+                    {availablePlans.map((plan: any) => {
+                      const isCurrent = plan.code === subscription?.plan?.code || plan.id === subscription?.planId;
+                      let featuresArray: string[] = [];
+                      if (Array.isArray(plan.features)) {
+                        featuresArray = plan.features;
+                      } else if (typeof plan.features === 'string') {
+                        try {
+                          featuresArray = JSON.parse(plan.features);
+                        } catch {
+                          featuresArray = [];
+                        }
+                      }
+
+                      return (
+                        <div
+                          key={plan.id}
+                          className={`rounded-xl p-4 flex flex-col justify-between transition-all ${
+                            isCurrent
+                              ? 'border-2 border-emerald-500 bg-emerald-50/25 ring-2 ring-emerald-100 shadow-xs'
+                              : 'border border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                        >
+                          <div>
+                            {/* Header: Name & Badge */}
+                            <div className="flex items-center justify-between gap-1 mb-2">
+                              <h4 className="text-base font-bold text-gray-950">{plan.name}</h4>
+                              {isCurrent ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  Current
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                                  {plan.code}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Price */}
+                            <div className="mb-3">
+                              <span className="text-2xl font-black text-gray-950">
+                                ₹{Number(plan.price).toLocaleString('en-IN')}
+                              </span>
+                              <span className="text-xs text-gray-500 font-medium">/{plan.billingCycle?.toLowerCase() === 'yearly' ? 'yr' : 'mo'}</span>
+                            </div>
+
+                            {/* Capacity */}
+                            <div className="text-xs font-semibold text-gray-800 pb-3 mb-3 border-b border-gray-100 space-y-1">
+                              <p className="flex items-center gap-1.5">
+                                <Users className="w-3.5 h-3.5 text-gray-500" />
+                                <span><strong>{plan.maxUsers}</strong> Business Account{plan.maxUsers > 1 ? 's' : ''}</span>
+                              </p>
+                              <p className="text-[11px] text-emerald-700 font-medium pl-5">
+                                ✓ Unlimited Plant Staff
+                              </p>
+                            </div>
+
+                            {/* Minimal Features List */}
+                            <div className="space-y-1.5">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                                Features
+                              </p>
+                              {featuresArray.length > 0 ? (
+                                featuresArray.map((featKey: string) => (
+                                  <div key={featKey} className="flex items-center gap-1.5 text-xs text-gray-700">
+                                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    <span className="truncate">{getFeatureLabel(featKey)}</span>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-xs text-gray-400 italic">Core Operations</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Modal>
               </>
             );
           })()}
