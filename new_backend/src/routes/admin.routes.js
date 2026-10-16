@@ -4,6 +4,7 @@ const {
   getUser,
   createUser,
   updateUser,
+  deleteUser,
 } = require("../controllers/user.controller");
 const { getRoles, getPermissions } = require("../controllers/role.controller");
 const { exportErpData } = require("../controllers/report.controller");
@@ -27,6 +28,7 @@ router.get("/users", ...adminOnly, getUsers);
 router.get("/users/:id", ...adminOnly, validateUserIdParam, validate, getUser);
 router.post("/users", ...adminOnly, validateCreateUser, validate, createUser);
 router.patch("/users/:id", ...adminOnly, validateUpdateUser, validate, updateUser);
+router.delete("/users/:id", ...adminOnly, validateUserIdParam, validate, deleteUser);
 
 // Roles & Permissions
 router.get("/roles", ...adminOnly, getRoles);

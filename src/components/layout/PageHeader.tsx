@@ -14,6 +14,7 @@ export interface ActionConfig {
   href?: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'accent' | 'orange';
   loading?: boolean;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -89,7 +90,7 @@ export function PageHeader({
               );
             }
             return (
-              <Button key={idx} variant={sec.variant || 'outline'} size="sm" onClick={sec.onClick} leftIcon={sec.icon} loading={sec.loading} className={sec.className}>
+              <Button key={idx} variant={sec.variant || 'outline'} size="sm" onClick={sec.onClick} leftIcon={sec.icon} loading={sec.loading} disabled={sec.disabled} className={sec.className}>
                 {sec.label}
               </Button>
             );
@@ -97,12 +98,12 @@ export function PageHeader({
           {primaryAction &&
             (primaryAction.href ? (
               <Link to={primaryAction.href}>
-                <Button variant={primaryAction.variant || 'primary'} size="sm" leftIcon={primaryAction.icon} loading={primaryAction.loading} className={primaryAction.className}>
+                <Button variant={primaryAction.variant || 'primary'} size="sm" leftIcon={primaryAction.icon} loading={primaryAction.loading} disabled={primaryAction.disabled} className={primaryAction.className}>
                   {primaryAction.label}
                 </Button>
               </Link>
             ) : (
-              <Button variant={primaryAction.variant || 'primary'} size="sm" onClick={primaryAction.onClick} leftIcon={primaryAction.icon} loading={primaryAction.loading} className={primaryAction.className}>
+              <Button variant={primaryAction.variant || 'primary'} size="sm" onClick={primaryAction.onClick} leftIcon={primaryAction.icon} loading={primaryAction.loading} disabled={primaryAction.disabled} className={primaryAction.className}>
                 {primaryAction.label}
               </Button>
             ))}

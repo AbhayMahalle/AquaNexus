@@ -105,7 +105,6 @@ export const ALL_NAV_SECTIONS: NavSection[] = [
       { title: 'Returns', href: '/distributor/returns', iconName: 'RotateCcw', roles: ['admin', 'distributor'] },
       { title: 'Invoices', href: '/distributor/invoices', iconName: 'FileText', roles: ['admin', 'distributor'] },
       { title: 'Payments', href: '/distributor/payments', iconName: 'CreditCard', roles: ['admin', 'distributor'] },
-      { title: 'Pending Due', href: '/distributor/outstanding', iconName: 'AlertCircle', roles: ['admin', 'distributor'] },
     ],
   },
   {

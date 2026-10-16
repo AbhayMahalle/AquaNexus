@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { formatCurrency, formatNumber } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 import {
   Factory,
   Package,
@@ -22,7 +23,8 @@ import {
   CheckCircle2,
   Clock,
   ArrowUpRight,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from 'lucide-react';
 
 import type { Production, Product } from '@/types';
@@ -165,83 +167,142 @@ export default function AdminDashboardPage() {
                 : (subscription.maxUsers && subscription.maxUsers > 1 ? subscription.maxUsers : 5)
             );
             const businessUsage = subscription.businessUserCount ?? subscription.currentUsage ?? 0;
-            const isFull = subscription.isLimitReached || businessUsage >= totalBusinessCapacity;
+            const isOverLimit = Boolean(
+              subscription.isOverLimit ||
+              businessUsage > totalBusinessCapacity ||
+              businessRoles.some((r: any) => r.isOverLimit || (typeof r.maxLimit === 'number' && r.currentUsage > r.maxLimit))
+            );
+            const excessCount = subscription.excessCount || Math.max(0, businessUsage - totalBusinessCapacity);
+            const isFull = isOverLimit || subscription.isLimitReached || businessUsage >= totalBusinessCapacity;
 
             return (
-              <div className="mb-6 p-4 sm:p-5 rounded-xl border border-gray-200 bg-white shadow-xs">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2.5 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 shrink-0">
-                      <ShieldCheck className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="text-sm font-bold text-black">{subscription.organizationName || 'Company'}</h4>
-                        <Badge variant={subscription.plan?.code === 'PRO_MAX' ? 'primary' : subscription.plan?.code === 'PRO' ? 'success' : 'neutral'} className="font-bold">
-                          {subscription.plan?.name || 'Basic Plan'}
-                        </Badge>
-                        <Badge variant={subscription.status === 'ACTIVE' ? 'success' : 'danger'}>
-                          {subscription.status}
-                        </Badge>
+              <>
+                {/* Strict Over-Limit Warning Banner */}
+                {isOverLimit && (
+                  <div className="mb-6 p-5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-lg border-2 border-red-500 animate-pulse-subtle">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="p-3 bg-white/20 rounded-xl text-yellow-300 shrink-0">
+                          <AlertTriangle className="w-7 h-7" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-white text-red-700">
+                              Action Required
+                            </span>
+                            <span className="text-xs font-bold text-red-100">Plan Downgraded / Limit Exceeded</span>
+                          </div>
+                          <h3 className="text-base sm:text-lg font-extrabold mt-1 text-white">
+                            User Limit Exceeded: {businessUsage} Active Users (Plan Allowance: {totalBusinessCapacity})
+                          </h3>
+                          <p className="text-xs sm:text-sm text-red-100 mt-1 max-w-2xl leading-relaxed">
+                            Your subscription plan was updated to <strong>{subscription.plan?.name || 'Current Plan'}</strong>. You currently have <strong className="text-white underline">{excessCount} extra dashboard user(s)</strong> over your plan quota. You must strictly delete or deactivate the extra user(s) in User Management before standard dashboard operations can proceed.
+                            <span className="block mt-1 text-xs text-yellow-200 font-medium">
+                              ✓ Plant Employees are unlimited and never count toward your plan limit.
+                            </span>
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-600 mt-1">
-                        Billing: <strong className="text-black">{subscription.plan?.billingCycle || 'Monthly'}</strong> • Staff Accounts: <strong className="text-black">{totalBusinessCapacity}</strong> allowed (1 Admin • Unlimited Employees).
-                      </p>
+                      <Link to="/admin/users" className="shrink-0">
+                        <Button variant="secondary" className="bg-white text-red-700 hover:bg-red-50 font-bold shadow-md hover:shadow-lg transition-all border-0 w-full sm:w-auto">
+                          <Trash2 className="w-4 h-4 mr-1.5 text-red-600" /> Go to Users & Delete Extra
+                        </Button>
+                      </Link>
                     </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-gray-50 p-2.5 sm:p-3 rounded-lg border border-gray-100">
-                    <div className="text-left sm:text-right">
-                      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Account Usage</p>
-                      <p className="text-sm font-extrabold text-black mt-0.5">
-                        {businessUsage} <span className="text-xs font-normal text-gray-500">/ {totalBusinessCapacity} used</span>
-                      </p>
-                    </div>
-                    <div className="w-full sm:w-36 bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                      <div
-                        className={`h-2.5 rounded-full ${isFull ? 'bg-danger' : 'bg-orange-500'}`}
-                        style={{ width: `${Math.min(100, Math.round((businessUsage / Math.max(1, totalBusinessCapacity)) * 100))}%` }}
-                      />
-                    </div>
-                    <div>
-                      {isFull ? (
-                        <span className="text-xs font-bold text-danger flex items-center gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5" /> Quota Reached
-                        </span>
-                      ) : (
-                        <span className="text-xs font-bold text-success">
-                          {Math.max(0, totalBusinessCapacity - businessUsage)} free
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Per-role entitlement pills */}
-                {roleBreakdown.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap pt-3 mt-3 border-t border-gray-100 text-xs">
-                    <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mr-1">Role Quotas:</span>
-                    <span className="px-2 py-0.5 rounded bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-medium">
-                      👑 Admin: <strong>1/1</strong>
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-medium">
-                      ⚙️ Employees: <strong>Unlimited</strong> ({subscription.employeeCount ?? 0} active)
-                    </span>
-                    {businessRoles.map((r: any) => (
-                      <span
-                        key={r.roleName}
-                        className={`px-2 py-0.5 rounded border text-[11px] font-medium ${
-                          r.isLimitReached
-                            ? 'bg-amber-50 border-amber-200 text-amber-900 font-semibold'
-                            : 'bg-gray-50 border-gray-200 text-gray-700'
-                        }`}
-                      >
-                        {r.roleName}: <strong>{r.currentUsage}/{r.maxLimit}</strong>
-                      </span>
-                    ))}
                   </div>
                 )}
-              </div>
+
+                {/* Subscription Status Card */}
+                <div className={`mb-6 p-4 sm:p-5 rounded-xl border bg-white shadow-xs ${isOverLimit ? 'border-red-400 bg-red-50/20' : 'border-gray-200'}`}>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2.5 rounded-xl border shrink-0 ${isOverLimit ? 'bg-red-50 text-red-600 border-red-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-bold text-black">{subscription.organizationName || 'Company'}</h4>
+                          <Badge variant={subscription.plan?.code === 'PRO_MAX' ? 'primary' : subscription.plan?.code === 'PRO' ? 'success' : 'neutral'} className="font-bold">
+                            {subscription.plan?.name || 'Basic Plan'}
+                          </Badge>
+                          <Badge variant={subscription.status === 'ACTIVE' ? 'success' : 'danger'}>
+                            {subscription.status}
+                          </Badge>
+                          {isOverLimit && (
+                            <Badge variant="danger" className="font-bold animate-pulse">
+                              {excessCount} Users Over Quota
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Billing: <strong className="text-black">{subscription.plan?.billingCycle || 'Monthly'}</strong> • Staff Accounts: <strong className="text-black">{totalBusinessCapacity}</strong> allowed (1 Admin • Unlimited Employees).
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className={`flex flex-col sm:flex-row sm:items-center gap-3 p-2.5 sm:p-3 rounded-lg border ${isOverLimit ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
+                      <div className="text-left sm:text-right">
+                        <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Account Usage</p>
+                        <p className={`text-sm font-extrabold mt-0.5 ${isOverLimit ? 'text-red-700' : 'text-black'}`}>
+                          {businessUsage} <span className="text-xs font-normal text-gray-500">/ {totalBusinessCapacity} used</span>
+                        </p>
+                      </div>
+                      <div className="w-full sm:w-36 bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                        <div
+                          className={`h-2.5 rounded-full ${isOverLimit ? 'bg-red-600' : isFull ? 'bg-danger' : 'bg-orange-500'}`}
+                          style={{ width: `${Math.min(100, Math.round((businessUsage / Math.max(1, totalBusinessCapacity)) * 100))}%` }}
+                        />
+                      </div>
+                      <div>
+                        {isOverLimit ? (
+                          <span className="text-xs font-bold text-red-600 flex items-center gap-1">
+                            <AlertTriangle className="w-3.5 h-3.5" /> {excessCount} Extra
+                          </span>
+                        ) : isFull ? (
+                          <span className="text-xs font-bold text-danger flex items-center gap-1">
+                            <AlertTriangle className="w-3.5 h-3.5" /> Quota Reached
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold text-success">
+                            {Math.max(0, totalBusinessCapacity - businessUsage)} free
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Per-role entitlement pills */}
+                  {roleBreakdown.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-3 mt-3 border-t border-gray-100 text-xs">
+                      <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mr-1">Role Quotas:</span>
+                      <span className="px-2 py-0.5 rounded bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-medium">
+                        👑 Admin: <strong>1/1</strong>
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-medium">
+                        ⚙️ Employees: <strong>Unlimited</strong> ({subscription.employeeCount ?? 0} active)
+                      </span>
+                      {businessRoles.map((r: any) => {
+                        const roleOver = Boolean(r.isOverLimit || (typeof r.maxLimit === 'number' && r.currentUsage > r.maxLimit));
+                        return (
+                          <span
+                            key={r.roleName}
+                            className={`px-2 py-0.5 rounded border text-[11px] font-medium ${
+                              roleOver
+                                ? 'bg-red-100 border-red-300 text-red-900 font-bold'
+                                : r.isLimitReached
+                                ? 'bg-amber-50 border-amber-200 text-amber-900 font-semibold'
+                                : 'bg-gray-50 border-gray-200 text-gray-700'
+                            }`}
+                          >
+                            {r.roleName}: <strong>{r.currentUsage}/{r.maxLimit}</strong>
+                            {roleOver && <span className="ml-1 text-red-700">({r.currentUsage - r.maxLimit} extra)</span>}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
             );
           })()}
 

@@ -132,11 +132,12 @@ async function getCompanyUsageAndLimits(organizationId, client = prisma) {
     orderBy: { name: 'asc' },
   });
 
-  // Fetch all users in organization with their roles
+  // Fetch all active users in organization with their roles
   const usersInOrg = await client.user.findMany({
     where: {
       organizationId,
       isSuperAdmin: false,
+      status: 'ACTIVE',
     },
     select: {
       id: true,
@@ -215,12 +216,35 @@ async function getCompanyUsageAndLimits(organizationId, client = prisma) {
         maxLimit: limit,
         remaining: Math.max(0, limit - count),
         isLimitReached: isReached,
+        isOverLimit: count > limit,
+        excessCount: Math.max(0, count - limit),
         unlimited: false,
         isBusinessRole: true,
       };
       roleBreakdown.push(roleLimits[rName]);
     }
   });
+
+  const excessBusinessUsers = Math.max(0, totalBusinessUsage - totalBusinessCapacity);
+  const excessRoles = [];
+  let isAnyRoleOverLimit = false;
+
+  roleBreakdown.forEach((r) => {
+    if (r.isBusinessRole && typeof r.maxLimit === 'number' && r.currentUsage > r.maxLimit) {
+      isAnyRoleOverLimit = true;
+      excessRoles.push({
+        roleName: r.roleName,
+        currentUsage: r.currentUsage,
+        maxLimit: r.maxLimit,
+        excess: r.currentUsage - r.maxLimit,
+      });
+    }
+  });
+
+  const isOverLimit = excessBusinessUsers > 0 || isAnyRoleOverLimit;
+  const totalExcessCount = isOverLimit
+    ? Math.max(excessBusinessUsers, excessRoles.reduce((s, r) => s + r.excess, 0))
+    : 0;
 
   // Check expiration if endDate is set
   let effectiveStatus = subscription.status;
@@ -267,7 +291,11 @@ async function getCompanyUsageAndLimits(organizationId, client = prisma) {
     maxUsers: totalBusinessCapacity || subscription.maxUsers || subscription.plan?.maxUsers || 5,
     currentUsage: totalBusinessUsage,
     remaining: Math.max(0, totalBusinessCapacity - totalBusinessUsage),
-    isLimitReached: anyBusinessLimitReached,
+    isLimitReached: anyBusinessLimitReached || isOverLimit,
+    isOverLimit,
+    excessCount: totalExcessCount,
+    excessRoles,
+    requiresUserDeletion: isOverLimit,
     features,
   };
 }
@@ -373,6 +401,7 @@ async function assertCanAddUser(organizationId, targetRoleName, tx, excludeUserI
       where: {
         organizationId,
         isSuperAdmin: false,
+        status: 'ACTIVE',
         userRoles: { some: { role: { name: 'ADMIN' } } },
         ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
       },
@@ -421,6 +450,7 @@ async function assertCanAddUser(organizationId, targetRoleName, tx, excludeUserI
     where: {
       organizationId,
       isSuperAdmin: false,
+      status: 'ACTIVE',
       userRoles: { some: { role: { name: roleKey } } },
       ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
     },

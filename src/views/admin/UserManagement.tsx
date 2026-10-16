@@ -15,7 +15,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types/auth';
 import { showToast, exportToCSV } from '@/lib/api';
-import { UserPlus, Search, Shield, Mail, Edit, Trash2, Eye, Download, X, Filter } from 'lucide-react';
+import { UserPlus, Search, Shield, Mail, Edit, Trash2, Eye, Download, X, Filter, AlertTriangle } from 'lucide-react';
 
 interface UserRecord {
   id: string;
@@ -285,16 +285,27 @@ export default function UserManagementPage() {
     setIsSaving(true);
     try {
       const res = await fetchApi<any>(`/users/${selectedUser.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'SUSPENDED' }),
+        method: 'DELETE',
       });
       if (res.success) {
-        await fetchUsers();
+        await Promise.all([fetchUsers(), fetchSubscription()]);
         setIsDeleteOpen(false);
         setSelectedUser(null);
-        showToast(`User "${selectedUser.name}" deactivated`, 'info');
+        showToast(`User "${selectedUser.name}" deleted successfully`, 'success');
       } else {
-        showToast(res.message || 'Failed to deactivate user', 'error');
+        // Fallback to INACTIVE status if hard delete is constrained by foreign records
+        const patchRes = await fetchApi<any>(`/users/${selectedUser.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'INACTIVE' }),
+        });
+        if (patchRes.success) {
+          await Promise.all([fetchUsers(), fetchSubscription()]);
+          setIsDeleteOpen(false);
+          setSelectedUser(null);
+          showToast(`User "${selectedUser.name}" deactivated successfully`, 'info');
+        } else {
+          showToast(res.message || 'Failed to remove user', 'error');
+        }
       }
     } finally {
       setIsSaving(false);
@@ -312,7 +323,7 @@ export default function UserManagementPage() {
       body: JSON.stringify({ status: newStatus }),
     });
     if (res.success) {
-      await fetchUsers();
+      await Promise.all([fetchUsers(), fetchSubscription()]);
       showToast(`${user.name} is now ${newStatus.toLowerCase()}`, newStatus === 'ACTIVE' ? 'success' : 'warning');
     } else {
       showToast(res.message || 'Failed to update status', 'error');
@@ -335,17 +346,50 @@ export default function UserManagementPage() {
     ], 'aquanexus_users');
   };
 
+  const roleBreakdown = subscription?.roleBreakdown || [];
+  const businessRoles = roleBreakdown.filter((r: any) => r.isBusinessRole);
+  const totalBusinessCapacity = subscription?.totalBusinessCapacity ?? (
+    businessRoles.length > 0
+      ? businessRoles.reduce((sum: number, r: any) => sum + (typeof r.maxLimit === 'number' ? r.maxLimit : 1), 0)
+      : (subscription?.maxUsers && subscription.maxUsers > 1 ? subscription.maxUsers : 5)
+  );
+  const businessUsage = subscription?.businessUserCount ?? subscription?.currentUsage ?? 0;
+  const isOverLimit = Boolean(
+    subscription?.isOverLimit ||
+    businessUsage > totalBusinessCapacity ||
+    businessRoles.some((r: any) => r.isOverLimit || (typeof r.maxLimit === 'number' && r.currentUsage > r.maxLimit))
+  );
+  const excessCount = subscription?.excessCount || Math.max(0, businessUsage - totalBusinessCapacity);
+
   const columns: Column<UserRecord>[] = [
     { key: 'name', header: 'Full Name', render: (u) => <span className="font-bold text-[#172033]">{u.name}</span> },
     { key: 'email', header: 'Email Address', render: (u) => <span className="text-[#64748B] flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-[#94A3B8] shrink-0" />{u.email}</span> },
     {
       key: 'role',
       header: 'System Role',
-      render: (u) => (
-        <Badge variant={ROLE_VARIANTS[u.role]}>
-          {u.role === 'supplier' ? 'VENDOR / SUPPLIER' : u.role.replace('_', ' ').toUpperCase()}
-        </Badge>
-      ),
+      render: (u) => {
+        const roleKey = u.role.toUpperCase();
+        const roleLimitInfo = subscription?.roleLimits?.[roleKey];
+        const isRoleOverQuota = Boolean(
+          u.status === 'active' &&
+          roleLimitInfo &&
+          !roleLimitInfo.unlimited &&
+          (roleLimitInfo.isOverLimit || (typeof roleLimitInfo.maxLimit === 'number' && roleLimitInfo.currentUsage > roleLimitInfo.maxLimit))
+        );
+
+        return (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge variant={isRoleOverQuota ? 'danger' : ROLE_VARIANTS[u.role]}>
+              {u.role === 'supplier' ? 'VENDOR / SUPPLIER' : u.role.replace('_', ' ').toUpperCase()}
+            </Badge>
+            {isRoleOverQuota && (
+              <Badge variant="danger" className="text-[10px] font-bold animate-pulse">
+                ⚠️ OVER LIMIT
+              </Badge>
+            )}
+          </div>
+        );
+      },
     },
     { key: 'roleTitle', header: 'Position / Department' },
     {
@@ -365,23 +409,34 @@ export default function UserManagementPage() {
       key: 'actions',
       header: 'Actions',
       align: 'right',
-      render: (u) => (
-        <div className="flex items-center justify-end gap-1">
-          <button onClick={() => openView(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-[#EFF3F8] transition-colors" title="View Details">
-            <Eye className="w-4 h-4" />
-          </button>
-          {(!isManager || u.role === 'employee') && (
-            <>
-              <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F4C81] hover:bg-[#E6EFF7] transition-colors" title="Edit User">
-                <Edit className="w-4 h-4" />
-              </button>
-              <button onClick={() => openDelete(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors" title="Delete User">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </>
-          )}
-        </div>
-      ),
+      render: (u) => {
+        const isTargetOverLimit = isOverLimit && u.role !== 'admin' && u.role !== 'employee' && u.status === 'active';
+        return (
+          <div className="flex items-center justify-end gap-1">
+            <button onClick={() => openView(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-[#EFF3F8] transition-colors" title="View Details">
+              <Eye className="w-4 h-4" />
+            </button>
+            {(!isManager || u.role === 'employee') && (
+              <>
+                <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F4C81] hover:bg-[#E6EFF7] transition-colors" title="Edit User">
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => openDelete(u)}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    isTargetOverLimit
+                      ? 'text-red-700 bg-red-100 hover:bg-red-200 border border-red-300 font-bold'
+                      : 'text-[#64748B] hover:text-[#DC2626] hover:bg-[#FEF2F2]'
+                  }`}
+                  title={isTargetOverLimit ? "Delete extra user to comply with plan limits" : "Delete User"}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -457,10 +512,15 @@ export default function UserManagementPage() {
           description="Manage user accounts, roles, and access permissions."
           breadcrumbs={[{ label: 'Users' }]}
           primaryAction={{
-            label: 'Add User',
+            label: isOverLimit ? `Limit Exceeded (${excessCount} Extra)` : 'Add User',
             icon: <UserPlus className="w-4 h-4" />,
-            variant: 'primary',
+            variant: isOverLimit ? 'secondary' : 'primary',
+            disabled: isOverLimit,
             onClick: () => {
+              if (isOverLimit) {
+                showToast(`Cannot add users: Current accounts exceed plan quota by ${excessCount} user(s). Please delete extra users first.`, 'error');
+                return;
+              }
               resetForm();
               setIsCreateOpen(true);
             },
@@ -475,9 +535,39 @@ export default function UserManagementPage() {
           ]}
         />
 
+        {/* Strict Over-Limit Warning Banner */}
+        {isOverLimit && (
+          <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-lg border-2 border-red-500 animate-pulse-subtle">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 bg-white/20 rounded-xl text-yellow-300 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-white text-red-700">
+                    Action Required
+                  </span>
+                  <span className="text-xs font-bold text-red-100">
+                    {excessCount} Extra Dashboard User(s) Over Plan Quota
+                  </span>
+                </div>
+                <h3 className="text-base font-extrabold mt-1 text-white">
+                  Subscription Limit Exceeded: {businessUsage} of {totalBusinessCapacity} Accounts Active
+                </h3>
+                <p className="text-xs sm:text-sm text-red-100 mt-1 max-w-2xl leading-relaxed">
+                  Your organization&apos;s subscription was updated to <strong>{subscription?.plan?.name || 'Current Plan'}</strong>. To comply with your new plan limits, you must strictly delete or deactivate the extra {excessCount} dashboard account(s) using the red action buttons in the table below.
+                  <span className="block mt-1 text-xs text-yellow-200 font-medium">
+                    ✓ Plant Employees have unlimited quota and are never counted against this limit.
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Subscription Entitlement Bar with Per-Role Breakdown */}
         {subscription && (
-          <div className="mb-6 p-4 rounded-xl border border-blue-100 bg-blue-50/50 flex flex-col gap-3">
+          <div className={`mb-6 p-4 rounded-xl border flex flex-col gap-3 ${isOverLimit ? 'border-red-300 bg-red-50/30' : 'border-blue-100 bg-blue-50/50'}`}>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Plan:</span>
@@ -487,6 +577,11 @@ export default function UserManagementPage() {
                 <Badge variant={subscription.status === 'ACTIVE' ? 'success' : 'danger'}>
                   {subscription.status}
                 </Badge>
+                {isOverLimit && (
+                  <Badge variant="danger" className="font-bold animate-pulse">
+                    {excessCount} Accounts Over Quota
+                  </Badge>
+                )}
                 <span className="text-xs text-gray-500">
                   {subscription.plan?.code === 'BASIC'
                     ? '1 Admin • Unlimited Employees • Max 1 user per business role'
@@ -500,32 +595,41 @@ export default function UserManagementPage() {
             {/* Per-role entitlement pills */}
             <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-blue-100/60">
               <span className="text-xs font-medium text-gray-600">Role Entitlements:</span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white border border-gray-200 text-gray-700 shadow-sm">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white border border-gray-200 text-gray-700 shadow-xs">
                 👑 Admin: <strong className="text-primary">1 / 1</strong>
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-sm">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-xs">
                 ⚙️ Employees: <strong>Unlimited</strong> ({subscription.employeeCount ?? 0} active)
               </span>
-              {subscription.roleBreakdown?.filter((r: any) => r.isBusinessRole).map((r: any) => (
-                <span
-                  key={r.roleName}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium shadow-sm ${
-                    r.isLimitReached
-                      ? 'bg-amber-50 border border-amber-300 text-amber-900 font-semibold'
-                      : 'bg-white border border-gray-200 text-gray-700'
-                  }`}
-                >
-                  <span>{r.roleName}:</span>
-                  <strong className={r.isLimitReached ? 'text-amber-700' : 'text-gray-900'}>
-                    {r.currentUsage} / {r.maxLimit}
-                  </strong>
-                  {r.isLimitReached && (
-                    <span className="text-[10px] px-1 py-0.2 bg-amber-200 text-amber-900 rounded font-bold uppercase">
-                      Full
-                    </span>
-                  )}
-                </span>
-              ))}
+              {subscription.roleBreakdown?.filter((r: any) => r.isBusinessRole).map((r: any) => {
+                const roleOver = Boolean(r.isOverLimit || (typeof r.maxLimit === 'number' && r.currentUsage > r.maxLimit));
+                return (
+                  <span
+                    key={r.roleName}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium shadow-xs ${
+                      roleOver
+                        ? 'bg-red-100 border border-red-300 text-red-900 font-bold'
+                        : r.isLimitReached
+                        ? 'bg-amber-50 border border-amber-300 text-amber-900 font-semibold'
+                        : 'bg-white border border-gray-200 text-gray-700'
+                    }`}
+                  >
+                    <span>{r.roleName}:</span>
+                    <strong className={roleOver ? 'text-red-700' : r.isLimitReached ? 'text-amber-700' : 'text-gray-900'}>
+                      {r.currentUsage} / {r.maxLimit}
+                    </strong>
+                    {roleOver ? (
+                      <span className="text-[10px] px-1 py-0.2 bg-red-200 text-red-900 rounded font-bold uppercase">
+                        +{r.currentUsage - r.maxLimit} Extra
+                      </span>
+                    ) : r.isLimitReached ? (
+                      <span className="text-[10px] px-1 py-0.2 bg-amber-200 text-amber-900 rounded font-bold uppercase">
+                        Full
+                      </span>
+                    ) : null}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
@@ -665,19 +769,21 @@ export default function UserManagementPage() {
         <Modal
           isOpen={isDeleteOpen}
           onClose={() => { setIsDeleteOpen(false); setSelectedUser(null); }}
-          title="Confirm User Removal"
-          description={`Are you sure you want to remove "${selectedUser?.name}"? This action cannot be undone.`}
+          title="Confirm User Removal / Deletion"
+          description={`Are you sure you want to remove "${selectedUser?.name}"?`}
           size="sm"
           footer={
             <>
               <Button variant="outline" onClick={() => { setIsDeleteOpen(false); setSelectedUser(null); }}>Cancel</Button>
-              <Button variant="danger" onClick={handleDelete} loading={isSaving}>Remove User</Button>
+              <Button variant="danger" onClick={handleDelete} loading={isSaving}>Delete Account</Button>
             </>
           }
         >
           <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#DC2626]/20 text-sm text-[#DC2626]">
-            <p className="font-semibold">⚠️ Warning</p>
-            <p className="text-xs mt-1">Removing this user will revoke their access to the AquaNexus ERP system. All their assignments and permissions will be cleared.</p>
+            <p className="font-semibold">⚠️ Action & Subscription Quota Effect</p>
+            <p className="text-xs mt-1">
+              Removing this account will revoke their system access and immediately reduce your active dashboard user count, helping bring your organization into compliance with your subscription plan allowance.
+            </p>
           </div>
         </Modal>
       </DashboardLayout>

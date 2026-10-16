@@ -292,7 +292,7 @@ export function AppRoutes() {
         <Route path="/distributor/returns" element={<DistributorReturnsPage />} />
         <Route path="/distributor/invoices" element={<DistributorInvoicesPage />} />
         <Route path="/distributor/payments" element={<DistributorPaymentsPage />} />
-        <Route path="/distributor/outstanding" element={<DistributorOutstandingPage />} />
+        <Route path="/distributor/outstanding" element={<Navigate to="/distributor/invoices" replace />} />
 
 
         {/* Shared Operational Modules */}

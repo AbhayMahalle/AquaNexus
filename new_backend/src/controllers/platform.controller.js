@@ -668,6 +668,10 @@ const getCurrentCompanySubscription = async (req, res) => {
       createdUsers: usage.createdUsers,
       remaining: usage.remaining,
       isLimitReached: usage.isLimitReached,
+      isOverLimit: usage.isOverLimit,
+      excessCount: usage.excessCount,
+      excessRoles: usage.excessRoles,
+      requiresUserDeletion: usage.requiresUserDeletion,
     };
 
     return sendSuccess(res, { subscription: usage }, 'Company subscription details retrieved');

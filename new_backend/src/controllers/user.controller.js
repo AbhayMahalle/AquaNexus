@@ -449,9 +449,64 @@ const updateUser = async (req, res) => {
   }
 };
 
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isSuperAdmin =
+      Boolean(req.user.isSuperAdmin) || req.user.role?.name === "SUPER_ADMIN";
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: { userRoles: { include: { role: true } }, employee: true },
+    });
+
+    if (!user) {
+      return sendError(res, "User not found", 404);
+    }
+
+    if (!isSuperAdmin) {
+      if (user.organizationId !== req.user.organizationId || user.isSuperAdmin) {
+        return sendError(res, "User not found", 404);
+      }
+      if (req.user.id === id) {
+        return sendError(res, "You cannot delete your own account", 400);
+      }
+      if (user.userRoles?.some((ur) => ur.role?.name === "ADMIN")) {
+        return sendError(res, "Cannot delete the company Admin account", 400);
+      }
+    }
+
+    // Attempt clean delete, fallback to INACTIVE status
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.managerAssignment.deleteMany({ where: { userId: id } });
+        await tx.userRole.deleteMany({ where: { userId: id } });
+        if (user.employee) {
+          await tx.employee.update({
+            where: { id: user.employee.id },
+            data: { userId: null, status: 'INACTIVE' },
+          }).catch(() => {});
+        }
+        await tx.user.delete({ where: { id } });
+      });
+    } catch (dbErr) {
+      await prisma.user.update({
+        where: { id },
+        data: { status: 'INACTIVE' },
+      });
+    }
+
+    return sendSuccess(res, null, "User deleted successfully");
+  } catch (error) {
+    console.error("deleteUser error:", error);
+    return sendError(res, "Failed to delete user", 500);
+  }
+};
+
 module.exports = {
   getUsers,
   getUser,
   createUser,
   updateUser,
+  deleteUser,
 };

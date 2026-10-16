@@ -6,7 +6,6 @@ import {
   ShoppingCart,
   Boxes,
   TrendingUp,
-  AlertCircle,
   Plus,
   ArrowRight,
   Shield,
@@ -133,7 +132,7 @@ export const DistributorDashboard: React.FC = () => {
       />
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPICard
           label="Available Warehouse Stock"
           value={loading ? '...' : `${totalStockQuantity} Units`}
@@ -155,25 +154,6 @@ export const DistributorDashboard: React.FC = () => {
           icon={TrendingUp}
           change={sales.length > 0 ? `+${sales.length} orders settled` : 'No sales yet'}
           changeType="positive"
-        />
-        <KPICard
-          label="Outstanding Balance"
-          value={loading ? '...' : formatCurrency(outstandingAmount)}
-          subtitle={
-            earliestDueInvoice
-              ? `Invoice ${earliestDueInvoice.invoiceNumber} due ${formatDate(earliestDueInvoice.dueDate)}`
-              : invoices.length > 0
-              ? 'All invoices settled'
-              : 'No pending invoices'
-          }
-          icon={AlertCircle}
-          statusBadge={
-            outstandingAmount > 0 ? (
-              <Badge variant="warning">Due Soon</Badge>
-            ) : (
-              <Badge variant="success">All Settled</Badge>
-            )
-          }
         />
       </div>
 
