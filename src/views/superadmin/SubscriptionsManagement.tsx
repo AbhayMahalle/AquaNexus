@@ -210,11 +210,17 @@ export default function SubscriptionsManagement() {
   };
 
   const filteredSubs = subscriptions.filter((s) => {
+    const q = (searchTerm || '').trim().toLowerCase();
     const matchSearch =
-      (s.companyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (s.companySlug || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (s.plan?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = !statusFilter || s.status === statusFilter;
+      !q ||
+      (s.companyName || '').toLowerCase().includes(q) ||
+      (s.companySlug || '').toLowerCase().includes(q) ||
+      (s.plan?.name || '').toLowerCase().includes(q) ||
+      (s.plan?.code || '').toLowerCase().includes(q);
+    const matchStatus =
+      !statusFilter ||
+      statusFilter === 'ALL' ||
+      String(s.status || '').toUpperCase() === statusFilter.toUpperCase();
     return matchSearch && matchStatus;
   });
 
@@ -441,7 +447,7 @@ export default function SubscriptionsManagement() {
               </CardTitle>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                <div className="w-full sm:w-60">
+                <div className="w-full sm:w-64">
                   <Input
                     placeholder="Search company or plan..."
                     value={searchTerm}
@@ -449,18 +455,32 @@ export default function SubscriptionsManagement() {
                     leftIcon={<Search className="w-4 h-4 text-gray-400" />}
                   />
                 </div>
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  options={[
-                    { label: 'All Statuses', value: '' },
-                    { label: 'Active', value: 'ACTIVE' },
-                    { label: 'Suspended', value: 'SUSPENDED' },
-                    { label: 'Expired', value: 'EXPIRED' },
-                    { label: 'Trial', value: 'TRIAL' },
-                  ]}
-                  className="!w-36"
-                />
+                <div className="w-full sm:w-44">
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    options={[
+                      { label: 'All Statuses', value: '' },
+                      { label: 'Active', value: 'ACTIVE' },
+                      { label: 'Suspended', value: 'SUSPENDED' },
+                      { label: 'Expired', value: 'EXPIRED' },
+                      { label: 'Trial', value: 'TRIAL' },
+                    ]}
+                  />
+                </div>
+                {(searchTerm || statusFilter) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStatusFilter('');
+                    }}
+                    className="text-gray-500 hover:text-gray-900 text-xs shrink-0"
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="p-0">

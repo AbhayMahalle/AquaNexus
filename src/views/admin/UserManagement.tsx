@@ -640,31 +640,33 @@ export default function UserManagementPage() {
                 />
               </div>
               <div className="flex flex-wrap sm:flex-nowrap gap-2">
-                <Select
-                  value={roleFilter}
-                  onChange={handleRoleFilter}
-                  options={[
-                    { label: 'All Roles', value: '' },
-                    { label: 'Admin', value: 'admin' },
-                    { label: 'Manager', value: 'manager' },
-                    { label: 'Store Manager', value: 'store_manager' },
-                    { label: 'Accountant', value: 'accountant' },
-                    { label: 'Distributor', value: 'distributor' },
-                    { label: 'Vendor / Supplier', value: 'supplier' },
-                    { label: 'Employee', value: 'employee' },
-                  ]}
-                  className="!w-44"
-                />
-                <Select
-                  value={statusFilter}
-                  onChange={handleStatusFilter}
-                  options={[
-                    { label: 'All Statuses', value: '' },
-                    { label: 'Active', value: 'active' },
-                    { label: 'Inactive', value: 'inactive' },
-                  ]}
-                  className="!w-32"
-                />
+                <div className="w-full sm:w-44">
+                  <Select
+                    value={roleFilter}
+                    onChange={handleRoleFilter}
+                    options={[
+                      { label: 'All Roles', value: '' },
+                      { label: 'Admin', value: 'admin' },
+                      { label: 'Manager', value: 'manager' },
+                      { label: 'Store Manager', value: 'store_manager' },
+                      { label: 'Accountant', value: 'accountant' },
+                      { label: 'Distributor', value: 'distributor' },
+                      { label: 'Vendor / Supplier', value: 'supplier' },
+                      { label: 'Employee', value: 'employee' },
+                    ]}
+                  />
+                </div>
+                <div className="w-full sm:w-32">
+                  <Select
+                    value={statusFilter}
+                    onChange={handleStatusFilter}
+                    options={[
+                      { label: 'All Statuses', value: '' },
+                      { label: 'Active', value: 'active' },
+                      { label: 'Inactive', value: 'inactive' },
+                    ]}
+                  />
+                </div>
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters} leftIcon={<X className="w-3.5 h-3.5" />}>
                     Clear

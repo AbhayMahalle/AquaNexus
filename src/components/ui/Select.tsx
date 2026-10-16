@@ -15,28 +15,33 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   required?: boolean;
   options: SelectOption[];
   placeholder?: string;
+  containerClassName?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, helperText, required = false, options, placeholder, className, disabled, id, value, ...props }, ref) => {
+  ({ label, error, helperText, required = false, options, placeholder, className, containerClassName, disabled, id, value, ...props }, ref) => {
     const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
+    // Extract any width classes passed to className (e.g., !w-36, w-44, sm:w-...) so container sizes proportionally
+    const widthMatches = className ? className.match(/(?:!\s*)?(?:[a-z0-9-]+:)?(?:max-w-|min-w-|w-)[a-z0-9/.-]+/g) : null;
+    const widthClass = widthMatches ? widthMatches.join(' ') : '';
+
     return (
-      <div className="w-full space-y-1.5">
+      <div className={cn(widthClass || 'w-full', 'space-y-1.5', containerClassName)}>
         {label && (
           <label htmlFor={selectId} className="block text-xs font-semibold text-textPrimary uppercase tracking-wider">
             {label}
             {required && <span className="text-status-danger ml-1">*</span>}
           </label>
         )}
-        <div className="relative flex items-center">
+        <div className={cn('relative flex items-center', widthClass || 'w-full')}>
           <select
             ref={ref}
             id={selectId}
             value={value}
             disabled={disabled}
             className={cn(
-              'w-full appearance-none rounded-lg border bg-surface px-3.5 py-2 pr-10 text-sm text-textPrimary transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:bg-background disabled:text-textMuted disabled:cursor-not-allowed',
+              'w-full appearance-none rounded-lg border bg-surface px-3.5 py-2 pr-10 text-sm text-textPrimary transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 disabled:bg-background disabled:text-textMuted disabled:cursor-not-allowed cursor-pointer',
               error
                 ? 'border-status-danger focus:border-status-danger focus:ring-status-danger/20'
                 : 'border-border hover:border-gray-400 focus:border-orange-500 focus:ring-orange-200',
