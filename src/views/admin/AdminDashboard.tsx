@@ -153,11 +153,10 @@ export default function AdminDashboardPage() {
         <div className="text-black">
           <PageHeader
             title="Admin Dashboard"
-            description="Overview of plant production, inventory, staff, and operations."
             breadcrumbs={[{ label: 'Admin Dashboard' }]}
           />
 
-          {/* Company Subscription & SaaS Status Widget */}
+          {/* Company Subscription Status Widget */}
           {subscription && (() => {
             const roleBreakdown = subscription.roleBreakdown || [];
             const businessRoles = roleBreakdown.filter((r: any) => r.isBusinessRole);

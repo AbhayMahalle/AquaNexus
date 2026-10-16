@@ -51,10 +51,10 @@ export default function LoginPage() {
           <Droplets className="w-8 h-8 text-orange-600 fill-orange-200" />
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-black tracking-tight">
-          Aqua<span className="text-orange-600 font-extrabold">Nexus</span> SaaS
+          Aqua<span className="text-orange-600 font-extrabold">Nexus</span>
         </h1>
         <p className="text-xs sm:text-sm text-gray-700 mt-1 font-medium">
-          Water Plant Operations & Enterprise Management • Powered by Aazira Solution
+          Water Plant Operations & Enterprise Management
         </p>
       </div>
 

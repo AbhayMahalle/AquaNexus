@@ -190,7 +190,6 @@ export default function PlansManagement() {
         <div className="text-black">
           <PageHeader
             title="Plans & Pricing"
-            description="Manage subscription plan tiers, pricing, and user capacity."
             breadcrumbs={[{ label: 'Platform' }, { label: 'Plans & Pricing' }]}
             primaryAction={{
               label: 'New Plan',
@@ -263,7 +262,6 @@ export default function PlansManagement() {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             title={isEditing ? `Edit Plan: ${selectedPlan?.name}` : 'Create Subscription Plan'}
-            description="Configure plan pricing, user creation limits, and billing details"
             footer={
               <>
                 <Button variant="outline" onClick={() => setIsModalOpen(false)}>

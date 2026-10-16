@@ -124,7 +124,6 @@ export default function SuperAdminDashboard() {
         <div className="text-black">
           <PageHeader
             title="Platform Overview"
-            description="Overview of customer companies, subscriptions, and platform revenue."
             breadcrumbs={[{ label: 'Platform Overview' }]}
             primaryAction={{
               label: 'Add Company',
@@ -148,7 +147,7 @@ export default function SuperAdminDashboard() {
             ]}
           />
 
-          {/* Platform Owner KPI Overview */}
+          {/* Platform KPI Overview */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div
               onClick={() => navigate('/super-admin/companies')}
@@ -158,11 +157,11 @@ export default function SuperAdminDashboard() {
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Companies</p>
                   <h3 className="text-2xl font-extrabold text-black mt-1">
-                    {stats?.companies?.total ?? companies.length}
+                    {stats?.companies?.total ?? stats?.metrics?.totalCompanies ?? companies.length}
                   </h3>
                   <p className="text-xs text-success font-semibold mt-1 flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    {stats?.companies?.active ?? companies.filter(c => c.status === 'ACTIVE').length} Active Tenants
+                    {stats?.companies?.active ?? stats?.metrics?.activeCompanies ?? companies.filter(c => c.status === 'ACTIVE').length} Active Companies
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-orange-50 text-orange-600 border border-orange-200">
@@ -204,9 +203,9 @@ export default function SuperAdminDashboard() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total SaaS Revenue</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Revenue</p>
                   <h3 className="text-2xl font-extrabold text-black mt-1">
-                    {formatCurrency(stats?.financials?.totalRevenue ?? 0)}
+                    {formatCurrency(stats?.financials?.totalRevenue ?? stats?.metrics?.totalRevenue ?? 0)}
                   </h3>
                   <p className="text-xs text-gray-600 font-medium mt-1">
                     MRR: <span className="font-bold text-black">{formatCurrency(stats?.financials?.mrr ?? 0)}</span> • {stats?.financials?.totalTransactions ?? 0} Transactions
@@ -221,20 +220,22 @@ export default function SuperAdminDashboard() {
             <div className="p-5 rounded-xl border border-gray-200 bg-white shadow-xs border-l-4 border-l-purple-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Platform Governance</p>
-                  <h3 className="text-2xl font-extrabold text-black mt-1">Aazira Solution</h3>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Users</p>
+                  <h3 className="text-2xl font-extrabold text-black mt-1">
+                    {stats?.metrics?.totalUsers ?? stats?.totalUsers ?? 0}
+                  </h3>
                   <p className="text-xs text-purple-700 font-semibold mt-1 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Singleton Super Admin
+                    <Users className="w-3.5 h-3.5" /> Across all companies
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-purple-50 text-purple-600 border border-purple-200">
-                  <ShieldCheck className="w-6 h-6" />
+                  <Users className="w-6 h-6" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Quick SaaS Management Sections */}
+          {/* Companies & Plans Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <Card className="lg:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -251,22 +252,22 @@ export default function SuperAdminDashboard() {
                   View All Companies
                 </Button>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 <Table
                   columns={companyColumns}
                   data={companies}
                   emptyText="No customer companies registered yet"
-                  emptyDescription="Click 'Onboard New Company' to provision the first customer tenant"
+                  emptyDescription="Click 'Add Company' to register the first company"
                 />
               </CardContent>
             </Card>
 
-            <div className="space-y-4">
+            <div>
               <Card>
                 <CardHeader className="pb-3 flex flex-row items-center justify-between">
                   <CardTitle className="text-sm font-bold flex items-center gap-2">
                     <Layers className="w-4 h-4 text-blue-600" />
-                    <span>Plan Entitlements Guide</span>
+                    <span>Plan Overview</span>
                   </CardTitle>
                   <Button
                     variant="ghost"
@@ -296,7 +297,7 @@ export default function SuperAdminDashboard() {
                         <div className="flex items-center justify-between text-gray-500 mt-1.5">
                           <span>Capacity: up to {p.maxUsers} accounts</span>
                           <span className="font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[11px]">
-                            {p.subscriberCount} active {p.subscriberCount === 1 ? 'tenant' : 'tenants'}
+                            {p.subscriberCount} active {p.subscriberCount === 1 ? 'company' : 'companies'}
                           </span>
                         </div>
                       </div>
@@ -313,35 +314,6 @@ export default function SuperAdminDashboard() {
                     className="mt-2"
                   >
                     Configure Pricing & Plans
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-bold flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-purple-600" />
-                    <span>Platform Admin Quick Links</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    fullWidth
-                    className="justify-start"
-                    onClick={() => navigate('/super-admin/subscriptions')}
-                  >
-                    Manage Company Subscriptions
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    fullWidth
-                    className="justify-start"
-                    onClick={() => navigate('/super-admin/profile')}
-                  >
-                    Super Admin Profile & Security
                   </Button>
                 </CardContent>
               </Card>

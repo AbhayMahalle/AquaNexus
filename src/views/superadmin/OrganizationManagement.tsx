@@ -589,7 +589,6 @@ export default function OrganizationManagement() {
         <div className="space-y-6">
           <PageHeader
             title="Companies"
-            description="Manage client companies, accounts, and subscription access."
             action={
               <Button
                 variant="primary"
@@ -619,7 +618,7 @@ export default function OrganizationManagement() {
           <Card className="p-4 border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Active Tenants</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Active Companies</p>
                 <h3 className="text-2xl font-extrabold text-emerald-600 mt-1">{kpis.active}</h3>
               </div>
               <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-200">
@@ -631,7 +630,7 @@ export default function OrganizationManagement() {
           <Card className="p-4 border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Suspended Tenants</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Suspended Companies</p>
                 <h3 className="text-2xl font-extrabold text-red-600 mt-1">{kpis.suspended}</h3>
               </div>
               <div className="p-3 bg-red-50 text-red-600 rounded-xl border border-red-200">
@@ -720,15 +719,14 @@ export default function OrganizationManagement() {
       <Modal
         isOpen={isProvisionOpen}
         onClose={() => setIsProvisionOpen(false)}
-        title="Provision Customer Organization & Admin"
-        description="Add a client company organization and configure its primary Administrator account in a unified atomic transaction."
+        title="Add Company & Admin"
         size="lg"
       >
         <form onSubmit={handleProvisionSubmit} className="space-y-5">
           <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-xs text-blue-900 space-y-1">
             <div className="font-bold flex items-center gap-1.5">
               <Shield className="w-4 h-4 text-blue-700 shrink-0" />
-              <span>Multi-Tenant Provisioning Invariant</span>
+              <span>Administrator Setup</span>
             </div>
             <p>
               This transaction provisions a distinct organization container and an initial Company Admin.
@@ -989,7 +987,6 @@ export default function OrganizationManagement() {
           if (!isDeleting) setSelectedOrgForDelete(null);
         }}
         title="Delete Company & All Users"
-        description="Permanently remove this company, its administrator, and all associated accounts."
       >
         <div className="space-y-4">
           <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-900 text-sm space-y-2">
@@ -1011,7 +1008,7 @@ export default function OrganizationManagement() {
                 <strong>All User Accounts:</strong> {selectedOrgForDelete?.stats?.userCount ?? selectedOrgForDelete?._count?.users ?? selectedOrgForDelete?.users?.length ?? 0} total accounts (Managers, Accountants, Staff, Distributors, Suppliers)
               </li>
               <li>
-                <strong>All Operational Tenant Data:</strong> Subscriptions, Employees, Inventory, Products, Orders, Production batches, and financial records.
+                <strong>All Operational Company Data:</strong> Subscriptions, Employees, Inventory, Products, Orders, Production batches, and financial records.
               </li>
             </ul>
           </div>
@@ -1047,7 +1044,6 @@ export default function OrganizationManagement() {
           if (!isUpdatingPlan) setSelectedOrgForPlan(null);
         }}
         title={`Update Subscription Plan — ${selectedOrgForPlan?.name}`}
-        description="Select and apply a new subscription plan for this company."
       >
         <form onSubmit={handleUpdatePlanSubmit} className="space-y-4">
           <div className="p-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-xs">

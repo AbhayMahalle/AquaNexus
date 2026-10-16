@@ -221,7 +221,7 @@ export default function SubscriptionsManagement() {
   const columns: Column<any>[] = [
     {
       key: 'company',
-      header: 'Company / Tenant',
+      header: 'Company Name',
       render: (s) => (
         <div>
           <span className="font-bold text-black">{s.companyName}</span>
@@ -361,7 +361,6 @@ export default function SubscriptionsManagement() {
         <div className="text-black">
           <PageHeader
             title="Subscriptions"
-            description="Manage company subscription plans, user limits, and status."
             breadcrumbs={[{ label: 'Platform' }, { label: 'Subscriptions' }]}
             primaryAction={{
               label: 'Assign Plan',
@@ -377,7 +376,7 @@ export default function SubscriptionsManagement() {
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Subscriptions</p>
                   <h3 className="text-2xl font-extrabold text-black mt-1">{kpis.active}</h3>
-                  <p className="text-xs text-gray-500 mt-1">out of {kpis.total} registered tenants</p>
+                  <p className="text-xs text-gray-500 mt-1">out of {kpis.total} companies</p>
                 </div>
                 <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
                   <CreditCard className="w-5 h-5" />
@@ -479,7 +478,6 @@ export default function SubscriptionsManagement() {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             title={selectedSub ? `Configure Subscription: ${selectedSub.companyName}` : 'Assign Subscription Plan'}
-            description="Super Admin platform configuration for company plan, pricing, and role creation limits"
             footer={
               <>
                 <Button variant="outline" onClick={() => setIsModalOpen(false)}>

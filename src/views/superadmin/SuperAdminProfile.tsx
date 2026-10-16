@@ -138,8 +138,7 @@ export default function SuperAdminProfile() {
       <DashboardLayout>
         <div className="text-black max-w-4xl">
           <PageHeader
-            title="Super Admin Profile & Security"
-            description="Manage Aazira Solution platform owner identity, authorized contact details, and account security"
+            title="My Profile"
             breadcrumbs={[{ label: 'Platform' }, { label: 'Profile' }]}
           />
 

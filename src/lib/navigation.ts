@@ -18,7 +18,7 @@ export function getDashboardRoute(role: UserRole): string {
 
 export const ALL_NAV_SECTIONS: NavSection[] = [
   {
-    sectionTitle: 'PLATFORM ADMIN',
+    sectionTitle: 'PLATFORM',
     items: [
       { title: 'Overview', href: '/super-admin/dashboard', iconName: 'LayoutDashboard', roles: ['super_admin'] },
       { title: 'Companies', href: '/super-admin/companies', iconName: 'Building2', roles: ['super_admin'] },
@@ -127,7 +127,7 @@ export function getNavigationForUser(user: User | null): NavSection[] {
   if (user.role === 'super_admin') {
     return [
       {
-        sectionTitle: 'PLATFORM ADMIN',
+        sectionTitle: 'PLATFORM',
         items: [
           { title: 'Overview', href: '/super-admin/dashboard', iconName: 'LayoutDashboard', roles: ['super_admin'] },
           { title: 'Companies', href: '/super-admin/companies', iconName: 'Building2', roles: ['super_admin'] },

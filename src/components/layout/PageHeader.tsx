@@ -72,9 +72,6 @@ export function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-textPrimary leading-snug">{title}</h1>
-          {description && (
-            <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-textSecondary leading-relaxed">{description}</p>
-          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">

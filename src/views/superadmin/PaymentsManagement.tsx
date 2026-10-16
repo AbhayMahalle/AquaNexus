@@ -129,7 +129,7 @@ export default function PaymentsManagement() {
   const columns: Column<any>[] = [
     {
       key: 'company',
-      header: 'Company / Tenant',
+      header: 'Company Name',
       render: (p) => (
         <span className="font-bold text-black">{p.companyName}</span>
       ),
@@ -201,7 +201,6 @@ export default function PaymentsManagement() {
         <div className="text-black">
           <PageHeader
             title="Revenue & Payments"
-            description="Audit subscription receipts and recorded payments."
             breadcrumbs={[{ label: 'Platform' }, { label: 'Payments' }]}
             primaryAction={{
               label: 'Record Payment',
@@ -282,7 +281,6 @@ export default function PaymentsManagement() {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             title="Record Subscription Payment"
-            description="Manually record bank transfer, cheque, or offline subscription receipt"
             footer={
               <>
                 <Button variant="outline" onClick={() => setIsModalOpen(false)}>

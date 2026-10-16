@@ -500,7 +500,6 @@ export default function UserManagementPage() {
       <DashboardLayout>
         <PageHeader
           title="Users & Roles"
-          description="Manage user accounts, roles, and access permissions."
           breadcrumbs={[{ label: 'Users' }]}
           primaryAction={{
             label: isOverLimit ? `Limit Exceeded (${excessCount} Extra)` : 'Add User',
@@ -696,7 +695,6 @@ export default function UserManagementPage() {
           isOpen={isCreateOpen}
           onClose={() => { setIsCreateOpen(false); resetForm(); }}
           title="Create New User Account"
-          description="Provision access to the AquaNexus Water ERP platform"
           footer={
             <>
               <Button variant="outline" onClick={() => { setIsCreateOpen(false); resetForm(); }}>Cancel</Button>
@@ -712,7 +710,6 @@ export default function UserManagementPage() {
           isOpen={isEditOpen}
           onClose={() => { setIsEditOpen(false); setSelectedUser(null); resetForm(); }}
           title={`Edit User: ${selectedUser?.name || ''}`}
-          description="Update user details and role assignment"
           footer={
             <>
               <Button variant="outline" onClick={() => { setIsEditOpen(false); setSelectedUser(null); resetForm(); }}>Cancel</Button>
@@ -728,7 +725,6 @@ export default function UserManagementPage() {
           isOpen={isViewOpen}
           onClose={() => { setIsViewOpen(false); setSelectedUser(null); }}
           title={`User Details: ${selectedUser?.name || ''}`}
-          description="Complete user profile information"
         >
           {selectedUser && (
             <div className="space-y-4">
