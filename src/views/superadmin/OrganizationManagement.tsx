@@ -23,6 +23,7 @@ import {
   Ban,
   CheckCircle2,
   Users,
+  Briefcase,
   AlertTriangle,
   Mail,
   Phone,
@@ -71,7 +72,29 @@ interface OrganizationRecord {
     id: string;
     username: string;
     email: string;
-    role?: { name: string };
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    status: string;
+    createdAt?: string;
+    userRoles?: Array<{
+      role?: { name: string; description?: string };
+    }>;
+  }>;
+  employees?: Array<{
+    id: string;
+    employeeCode: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    phone?: string;
+    designation: string;
+    status: string;
+    department?: {
+      id: string;
+      name: string;
+    };
+    createdAt?: string;
   }>;
   admins?: Array<{
     id: string;
@@ -103,6 +126,11 @@ export default function OrganizationManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SUSPENDED'>('ALL');
+
+  // View Users & Staff Directory Modal State
+  const [selectedOrgForUsers, setSelectedOrgForUsers] = useState<OrganizationRecord | null>(null);
+  const [userModalTab, setUserModalTab] = useState<'USERS' | 'STAFF'>('USERS');
+  const [userModalSearch, setUserModalSearch] = useState('');
 
   // Provision Modal State
   const [isProvisionOpen, setIsProvisionOpen] = useState(false);
@@ -208,8 +236,15 @@ export default function OrganizationManagement() {
     const total = organizations.length;
     const active = organizations.filter((o) => o.status === 'ACTIVE').length;
     const suspended = organizations.filter((o) => o.status === 'SUSPENDED').length;
-    const totalUsers = organizations.reduce((sum, o) => sum + (o._count?.users || o.users?.length || 0), 0);
-    return { total, active, suspended, totalUsers };
+    const totalUsers = organizations.reduce(
+      (sum, o) => sum + (o.stats?.userCount ?? o._count?.users ?? o.users?.length ?? 0),
+      0
+    );
+    const totalStaff = organizations.reduce(
+      (sum, o) => sum + (o.stats?.employeeCount ?? o._count?.employees ?? o.employees?.length ?? 0),
+      0
+    );
+    return { total, active, suspended, totalUsers, totalStaff };
   }, [organizations]);
 
   const handleNameChange = (val: string) => {
@@ -524,12 +559,33 @@ export default function OrganizationManagement() {
     {
       key: 'users',
       header: 'Users / Staff',
-      accessor: (row) => (
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-          <Users className="w-4 h-4 text-gray-400" />
-          <span>{row._count?.users ?? row.users?.length ?? 0} Accounts</span>
-        </div>
-      ),
+      accessor: (row) => {
+        const userCount = row.stats?.userCount ?? row._count?.users ?? row.users?.length ?? 0;
+        const employeeCount = row.stats?.employeeCount ?? row._count?.employees ?? row.employees?.length ?? 0;
+        return (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedOrgForUsers(row);
+              setUserModalTab('USERS');
+              setUserModalSearch('');
+            }}
+            className="group text-left p-1.5 -m-1.5 rounded-lg hover:bg-orange-50 transition-colors cursor-pointer"
+            title="Click to view company Users & Staff directory"
+          >
+            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900 group-hover:text-orange-600">
+              <Users className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+              <span>{userCount} Users</span>
+              <span className="text-gray-300">|</span>
+              <Briefcase className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>{employeeCount} Staff</span>
+            </div>
+            <div className="text-[11px] text-blue-600 font-medium group-hover:underline flex items-center gap-0.5 mt-0.5">
+              <span>View Directory ({userCount + employeeCount})</span>
+            </div>
+          </button>
+        );
+      },
     },
     {
       key: 'created',
@@ -546,6 +602,20 @@ export default function OrganizationManagement() {
       header: 'Actions',
       accessor: (row) => (
         <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setSelectedOrgForUsers(row);
+              setUserModalTab('USERS');
+              setUserModalSearch('');
+            }}
+            title="View Company Users & Staff Directory"
+            className="text-gray-700 hover:bg-gray-100 border-gray-200 p-1.5 h-8 w-8 flex items-center justify-center"
+          >
+            <Users className="w-3.5 h-3.5 text-gray-600" />
+          </Button>
+
           <Button
             size="sm"
             variant="outline"
@@ -642,8 +712,9 @@ export default function OrganizationManagement() {
           <Card className="p-4 border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Platform Users</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Platform Accounts</p>
                 <h3 className="text-2xl font-extrabold text-amber-600 mt-1">{kpis.totalUsers}</h3>
+                <p className="text-[11px] text-gray-500 mt-0.5">{kpis.totalStaff} Staff / Employees</p>
               </div>
               <div className="p-3 bg-amber-50 text-amber-600 rounded-xl border border-amber-200">
                 <Users className="w-6 h-6" />
@@ -1203,6 +1274,237 @@ export default function OrganizationManagement() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Users & Staff Directory Modal */}
+      <Modal
+        isOpen={Boolean(selectedOrgForUsers)}
+        onClose={() => setSelectedOrgForUsers(null)}
+        title={
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-orange-600" />
+            <span>{selectedOrgForUsers?.name} — Users & Staff Directory</span>
+          </div>
+        }
+        subtitle={
+          selectedOrgForUsers
+            ? `slug: /${selectedOrgForUsers.slug} • ${(selectedOrgForUsers.users?.length || selectedOrgForUsers.stats?.userCount || 0)} System Users • ${(selectedOrgForUsers.employees?.length || selectedOrgForUsers.stats?.employeeCount || 0)} Staff / Employees`
+            : undefined
+        }
+        size="xl"
+      >
+        {selectedOrgForUsers && (
+          <div className="space-y-4 pt-1">
+            {/* Search and Tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
+              <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setUserModalTab('USERS')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                    userModalTab === 'USERS'
+                      ? 'bg-white text-gray-900 shadow-xs'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5 text-orange-500" />
+                  <span>System Users ({selectedOrgForUsers.users?.length || 0})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserModalTab('STAFF')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                    userModalTab === 'STAFF'
+                      ? 'bg-white text-gray-900 shadow-xs'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Staff / Employees ({selectedOrgForUsers.employees?.length || 0})</span>
+                </button>
+              </div>
+
+              <div className="relative w-full sm:w-64">
+                <Input
+                  placeholder="Search by name, email, role..."
+                  value={userModalSearch}
+                  onChange={(e) => setUserModalSearch(e.target.value)}
+                  leftIcon={<Search className="w-3.5 h-3.5 text-gray-400" />}
+                />
+              </div>
+            </div>
+
+            {/* Tab 1: System Users */}
+            {userModalTab === 'USERS' && (
+              <div className="overflow-x-auto max-h-[420px] overflow-y-auto border rounded-lg">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 border-b sticky top-0 text-gray-500 font-semibold uppercase tracking-wider">
+                    <tr>
+                      <th className="p-3">User</th>
+                      <th className="p-3">Role</th>
+                      <th className="p-3">Contact</th>
+                      <th className="p-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(selectedOrgForUsers.users || [])
+                      .filter((u) => {
+                        if (!userModalSearch) return true;
+                        const s = userModalSearch.toLowerCase();
+                        const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+                        const roleName = (u.userRoles?.[0]?.role?.name || '').toLowerCase();
+                        return (
+                          fullName.includes(s) ||
+                          u.username?.toLowerCase().includes(s) ||
+                          u.email?.toLowerCase().includes(s) ||
+                          roleName.includes(s)
+                        );
+                      })
+                      .map((u) => {
+                        const roleName = u.userRoles?.[0]?.role?.name || 'USER';
+                        const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username;
+                        return (
+                          <tr key={u.id} className="hover:bg-gray-50/80">
+                            <td className="p-3">
+                              <div className="font-bold text-gray-900">{fullName}</div>
+                              <div className="text-[11px] text-gray-500 font-mono">@{u.username}</div>
+                            </td>
+                            <td className="p-3">
+                              <Badge
+                                variant={
+                                  roleName === 'ADMIN'
+                                    ? 'primary'
+                                    : roleName === 'MANAGER'
+                                    ? 'warning'
+                                    : roleName === 'DISTRIBUTOR'
+                                    ? 'info'
+                                    : 'neutral'
+                                }
+                                className="font-semibold text-[11px]"
+                              >
+                                {roleName}
+                              </Badge>
+                            </td>
+                            <td className="p-3 space-y-0.5">
+                              <div className="flex items-center gap-1 text-gray-600 font-mono text-[11px]">
+                                <Mail className="w-3 h-3 text-gray-400" />
+                                <span>{u.email}</span>
+                              </div>
+                              {u.phone && (
+                                <div className="flex items-center gap-1 text-gray-500 text-[11px]">
+                                  <Phone className="w-3 h-3 text-gray-400" />
+                                  <span>{u.phone}</span>
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <Badge variant={u.status === 'ACTIVE' ? 'success' : 'danger'} className="text-[10px]">
+                                {u.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    {(!selectedOrgForUsers.users || selectedOrgForUsers.users.length === 0) && (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-gray-400 italic">
+                          No system users found for this organization.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Tab 2: Staff / Employees */}
+            {userModalTab === 'STAFF' && (
+              <div className="overflow-x-auto max-h-[420px] overflow-y-auto border rounded-lg">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 border-b sticky top-0 text-gray-500 font-semibold uppercase tracking-wider">
+                    <tr>
+                      <th className="p-3">Employee Code</th>
+                      <th className="p-3">Name & Designation</th>
+                      <th className="p-3">Department</th>
+                      <th className="p-3">Contact</th>
+                      <th className="p-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(selectedOrgForUsers.employees || [])
+                      .filter((emp) => {
+                        if (!userModalSearch) return true;
+                        const s = userModalSearch.toLowerCase();
+                        const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.toLowerCase();
+                        const deptName = (emp.department?.name || '').toLowerCase();
+                        return (
+                          emp.employeeCode.toLowerCase().includes(s) ||
+                          fullName.includes(s) ||
+                          emp.designation?.toLowerCase().includes(s) ||
+                          deptName.includes(s) ||
+                          emp.email?.toLowerCase().includes(s)
+                        );
+                      })
+                      .map((emp) => {
+                        const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+                        return (
+                          <tr key={emp.id} className="hover:bg-gray-50/80">
+                            <td className="p-3">
+                              <span className="font-mono bg-gray-100 border px-1.5 py-0.5 rounded text-[11px] font-bold text-gray-800">
+                                {emp.employeeCode}
+                              </span>
+                            </td>
+                            <td className="p-3">
+                              <div className="font-bold text-gray-900">{fullName}</div>
+                              <div className="text-[11px] text-gray-500">{emp.designation}</div>
+                            </td>
+                            <td className="p-3">
+                              <span className="font-medium text-gray-700">
+                                {emp.department?.name || 'General Operations'}
+                              </span>
+                            </td>
+                            <td className="p-3 space-y-0.5">
+                              {emp.email && (
+                                <div className="flex items-center gap-1 text-gray-600 font-mono text-[11px]">
+                                  <Mail className="w-3 h-3 text-gray-400" />
+                                  <span>{emp.email}</span>
+                                </div>
+                              )}
+                              {emp.phone && (
+                                <div className="flex items-center gap-1 text-gray-500 text-[11px]">
+                                  <Phone className="w-3 h-3 text-gray-400" />
+                                  <span>{emp.phone}</span>
+                                </div>
+                              )}
+                              {!emp.email && !emp.phone && <span className="text-gray-400 italic">—</span>}
+                            </td>
+                            <td className="p-3">
+                              <Badge variant={emp.status === 'ACTIVE' ? 'success' : 'danger'} className="text-[10px]">
+                                {emp.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    {(!selectedOrgForUsers.employees || selectedOrgForUsers.employees.length === 0) && (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-gray-400 italic">
+                          No staff / employees registered for this organization.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2 border-t">
+              <Button variant="outline" size="sm" onClick={() => setSelectedOrgForUsers(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
       </DashboardLayout>
     </AuthGuard>

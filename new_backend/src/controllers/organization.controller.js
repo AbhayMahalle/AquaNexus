@@ -39,13 +39,6 @@ const getOrganizations = async (req, res) => {
           take: 1,
         },
         users: {
-          where: {
-            userRoles: {
-              some: {
-                role: { name: "ADMIN" },
-              },
-            },
-          },
           select: {
             id: true,
             username: true,
@@ -55,7 +48,31 @@ const getOrganizations = async (req, res) => {
             phone: true,
             status: true,
             createdAt: true,
+            userRoles: {
+              include: { role: true },
+            },
           },
+          orderBy: { createdAt: "asc" },
+        },
+        employees: {
+          select: {
+            id: true,
+            employeeCode: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            designation: true,
+            status: true,
+            department: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            createdAt: true,
+          },
+          orderBy: { createdAt: "asc" },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -63,6 +80,9 @@ const getOrganizations = async (req, res) => {
 
     const formatted = organizations.map((org) => {
       const activeSub = org.subscriptions?.[0] || null;
+      const admins = org.users.filter((u) =>
+        u.userRoles.some((ur) => ur.role?.name === "ADMIN"),
+      );
       return {
         id: org.id,
         name: org.name,
@@ -95,7 +115,15 @@ const getOrganizations = async (req, res) => {
           orderCount: org._count.orders,
           productCount: org._count.products,
         },
-        admins: org.users,
+        _count: {
+          users: org._count.users,
+          employees: org._count.employees,
+          orders: org._count.orders,
+          products: org._count.products,
+        },
+        users: org.users,
+        employees: org.employees,
+        admins: admins.length > 0 ? admins : org.users.slice(0, 1),
       };
     });
 
@@ -129,6 +157,11 @@ const getOrganizationById = async (req, res) => {
             departments: true,
           },
         },
+        subscriptions: {
+          include: { plan: true },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
         users: {
           select: {
             id: true,
@@ -136,11 +169,34 @@ const getOrganizationById = async (req, res) => {
             email: true,
             firstName: true,
             lastName: true,
+            phone: true,
             status: true,
+            createdAt: true,
             userRoles: {
               include: { role: true },
             },
           },
+          orderBy: { createdAt: "asc" },
+        },
+        employees: {
+          select: {
+            id: true,
+            employeeCode: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            designation: true,
+            status: true,
+            department: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            createdAt: true,
+          },
+          orderBy: { createdAt: "asc" },
         },
       },
     });
