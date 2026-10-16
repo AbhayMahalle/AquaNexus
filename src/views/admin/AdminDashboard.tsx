@@ -353,13 +353,13 @@ export default function AdminDashboardPage() {
                 <Modal
                   isOpen={plansModalOpen}
                   onClose={() => setPlansModalOpen(false)}
-                  title="Subscription Plans"
-                  subtitle="Available platform tiers and authorized capacities"
+                  title="Subscription Plans & Limits"
+                  subtitle="All plans include full platform features and modules — tiers differ by authorized user limits"
                   size="xl"
                   footer={
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-xs text-gray-500">
-                        Contact your Super Admin to upgrade or modify plan assignments.
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 w-full text-xs text-gray-500">
+                      <span>
+                        Need to increase user capacity? Contact your Platform Super Admin.
                       </span>
                       <Button variant="outline" size="sm" onClick={() => setPlansModalOpen(false)}>
                         Close
@@ -370,33 +370,23 @@ export default function AdminDashboardPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
                     {availablePlans.map((plan: any) => {
                       const isCurrent = plan.code === subscription?.plan?.code || plan.id === subscription?.planId;
-                      let featuresArray: string[] = [];
-                      if (Array.isArray(plan.features)) {
-                        featuresArray = plan.features;
-                      } else if (typeof plan.features === 'string') {
-                        try {
-                          featuresArray = JSON.parse(plan.features);
-                        } catch {
-                          featuresArray = [];
-                        }
-                      }
 
                       return (
                         <div
                           key={plan.id}
                           className={`rounded-xl p-4 flex flex-col justify-between transition-all ${
                             isCurrent
-                              ? 'border-2 border-emerald-500 bg-emerald-50/25 ring-2 ring-emerald-100 shadow-xs'
+                              ? 'border-2 border-emerald-500 bg-emerald-50/20 ring-2 ring-emerald-100 shadow-xs'
                               : 'border border-gray-200 bg-white hover:border-gray-300'
                           }`}
                         >
                           <div>
                             {/* Header: Name & Badge */}
-                            <div className="flex items-center justify-between gap-1 mb-2">
+                            <div className="flex items-center justify-between gap-1 mb-1.5">
                               <h4 className="text-base font-bold text-gray-950">{plan.name}</h4>
                               {isCurrent ? (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                  Current
+                                  Current Plan
                                 </span>
                               ) : (
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-gray-100 text-gray-700 border border-gray-200">
@@ -413,32 +403,42 @@ export default function AdminDashboardPage() {
                               <span className="text-xs text-gray-500 font-medium">/{plan.billingCycle?.toLowerCase() === 'yearly' ? 'yr' : 'mo'}</span>
                             </div>
 
-                            {/* Capacity */}
-                            <div className="text-xs font-semibold text-gray-800 pb-3 mb-3 border-b border-gray-100 space-y-1">
-                              <p className="flex items-center gap-1.5">
-                                <Users className="w-3.5 h-3.5 text-gray-500" />
-                                <span><strong>{plan.maxUsers}</strong> Business Account{plan.maxUsers > 1 ? 's' : ''}</span>
-                              </p>
-                              <p className="text-[11px] text-emerald-700 font-medium pl-5">
+                            {/* Key Differentiator: Capacity & User Limit */}
+                            <div className="p-2.5 rounded-lg bg-orange-50/80 border border-orange-200/80 mb-3 space-y-1">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-orange-950">
+                                <Users className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                                <span>Limit: {plan.maxUsers} Business User{plan.maxUsers > 1 ? 's' : ''}</span>
+                              </div>
+                              <p className="text-[11px] text-emerald-800 font-semibold pl-5">
                                 ✓ Unlimited Plant Staff
                               </p>
                             </div>
 
-                            {/* Minimal Features List */}
-                            <div className="space-y-1.5">
+                            {/* Features — Same full features on all plans */}
+                            <div className="space-y-1.5 text-xs text-gray-700">
                               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
-                                Features
+                                Full Features Included:
                               </p>
-                              {featuresArray.length > 0 ? (
-                                featuresArray.map((featKey: string) => (
-                                  <div key={featKey} className="flex items-center gap-1.5 text-xs text-gray-700">
-                                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                    <span className="truncate">{getFeatureLabel(featKey)}</span>
-                                  </div>
-                                ))
-                              ) : (
-                                <p className="text-xs text-gray-400 italic">Core Operations</p>
-                              )}
+                              <div className="flex items-center gap-1.5">
+                                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>Production & Batches</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>Inventory & Stock Control</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>Orders & Invoicing</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>Distribution Logistics</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>Finance & HR Operations</span>
+                              </div>
                             </div>
                           </div>
                         </div>
