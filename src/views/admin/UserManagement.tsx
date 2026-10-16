@@ -84,6 +84,106 @@ export default function UserManagementPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
 
+  const getRoleLimit = (role: string) => {
+    if (!subscription?.roleLimits) return null;
+    const upper = role.toUpperCase();
+    const lower = role.toLowerCase();
+    return subscription.roleLimits[upper] || subscription.roleLimits[lower] || subscription.roleLimits[role] || null;
+  };
+
+  const roleBreakdown = subscription?.roleBreakdown || [];
+  const businessRoles = roleBreakdown.filter((r: any) => r.isBusinessRole);
+  const totalBusinessCapacity = subscription?.totalBusinessCapacity ?? (
+    businessRoles.length > 0
+      ? businessRoles.reduce((sum: number, r: any) => sum + (typeof r.maxLimit === 'number' ? r.maxLimit : 1), 0)
+      : (subscription?.maxUsers && subscription.maxUsers > 1 ? subscription.maxUsers : 5)
+  );
+  const businessUsage = subscription?.businessUserCount ?? subscription?.currentUsage ?? 0;
+  const isOverLimit = Boolean(
+    subscription?.isOverLimit ||
+    businessUsage > totalBusinessCapacity ||
+    businessRoles.some((r: any) => r.isOverLimit || (typeof r.maxLimit === 'number' && r.currentUsage > r.maxLimit))
+  );
+  const excessCount = subscription?.excessCount || Math.max(0, businessUsage - totalBusinessCapacity);
+
+  const isCreateLimitReached = useMemo(() => {
+    if (formData.role === 'employee') return false;
+
+    // Single-Admin Rule: exactly 1 company Admin allowed
+    if (formData.role === 'admin') {
+      const adminCount = users.filter(u => u.role === 'admin').length;
+      const adminLimit = getRoleLimit('admin');
+      const adminMax = adminLimit?.maxLimit ?? 1;
+      return adminCount >= adminMax;
+    }
+
+    // If organization as a whole is already over limit or capacity is full
+    if (isOverLimit) return true;
+    if (totalBusinessCapacity > 0 && businessUsage >= totalBusinessCapacity) return true;
+
+    // Check role-specific limit
+    const rLimit = getRoleLimit(formData.role);
+    if (rLimit && !rLimit.unlimited) {
+      if (rLimit.isLimitReached || rLimit.isOverLimit) return true;
+      if (typeof rLimit.maxLimit === 'number') {
+        const activeCount = typeof rLimit.currentUsage === 'number'
+          ? rLimit.currentUsage
+          : users.filter(u => u.role === formData.role && u.status === 'active').length;
+        if (activeCount >= rLimit.maxLimit) return true;
+      }
+      if (typeof rLimit.remaining === 'number' && rLimit.remaining <= 0) return true;
+    }
+
+    return false;
+  }, [formData.role, isOverLimit, totalBusinessCapacity, businessUsage, subscription, users]);
+
+  const isEditLimitReached = useMemo(() => {
+    if (!selectedUser) return false;
+
+    // If role is employee: always permitted because employee is unlimited
+    if (formData.role === 'employee') return false;
+
+    // If changing to admin when another admin exists:
+    if (formData.role === 'admin' && selectedUser.role !== 'admin') {
+      return true;
+    }
+
+    const roleUnchanged = formData.role === selectedUser.role;
+
+    if (roleUnchanged) {
+      // If the role didn't change, check if this account's role or organization is currently over limit
+      const rLimit = getRoleLimit(formData.role);
+      const isRoleOver = Boolean(
+        rLimit &&
+        !rLimit.unlimited &&
+        (rLimit.isOverLimit || (typeof rLimit.maxLimit === 'number' && rLimit.currentUsage > rLimit.maxLimit))
+      );
+      return isOverLimit || isRoleOver;
+    }
+
+    // If role is changing from employee to a business role:
+    if (selectedUser.role === 'employee') {
+      if (isOverLimit || (totalBusinessCapacity > 0 && businessUsage >= totalBusinessCapacity)) {
+        return true;
+      }
+    }
+
+    // Changing to a new business role:
+    const newRoleLimit = getRoleLimit(formData.role);
+    if (newRoleLimit && !newRoleLimit.unlimited) {
+      if (newRoleLimit.isLimitReached || newRoleLimit.isOverLimit) return true;
+      if (typeof newRoleLimit.maxLimit === 'number') {
+        const activeCount = typeof newRoleLimit.currentUsage === 'number'
+          ? newRoleLimit.currentUsage
+          : users.filter(u => u.role === formData.role && u.status === 'active').length;
+        if (activeCount >= newRoleLimit.maxLimit) return true;
+      }
+      if (typeof newRoleLimit.remaining === 'number' && newRoleLimit.remaining <= 0) return true;
+    }
+
+    return false;
+  }, [selectedUser, formData.role, subscription, isOverLimit, totalBusinessCapacity, businessUsage, users]);
+
   const fetchSubscription = async () => {
     try {
       const res = await fetchApi<any>('/company/subscription');
@@ -184,6 +284,10 @@ export default function UserManagementPage() {
 
   // Create user
   const handleCreate = async () => {
+    if (isCreateLimitReached) {
+      showToast('Cannot create user: subscription plan limit reached for this role', 'error');
+      return;
+    }
     if (!validateForm(true)) return;
     setIsSaving(true);
     try {
@@ -235,6 +339,10 @@ export default function UserManagementPage() {
   };
 
   const handleEdit = async () => {
+    if (isEditLimitReached) {
+      showToast('Cannot save changes: subscription plan limit reached or users limit exceeded', 'error');
+      return;
+    }
     if (!validateForm() || !selectedUser) return;
     setIsSaving(true);
     try {
@@ -336,21 +444,6 @@ export default function UserManagementPage() {
       { key: 'status', header: 'Status' },
     ], 'aquanexus_users');
   };
-
-  const roleBreakdown = subscription?.roleBreakdown || [];
-  const businessRoles = roleBreakdown.filter((r: any) => r.isBusinessRole);
-  const totalBusinessCapacity = subscription?.totalBusinessCapacity ?? (
-    businessRoles.length > 0
-      ? businessRoles.reduce((sum: number, r: any) => sum + (typeof r.maxLimit === 'number' ? r.maxLimit : 1), 0)
-      : (subscription?.maxUsers && subscription.maxUsers > 1 ? subscription.maxUsers : 5)
-  );
-  const businessUsage = subscription?.businessUserCount ?? subscription?.currentUsage ?? 0;
-  const isOverLimit = Boolean(
-    subscription?.isOverLimit ||
-    businessUsage > totalBusinessCapacity ||
-    businessRoles.some((r: any) => r.isOverLimit || (typeof r.maxLimit === 'number' && r.currentUsage > r.maxLimit))
-  );
-  const excessCount = subscription?.excessCount || Math.max(0, businessUsage - totalBusinessCapacity);
 
   const columns: Column<UserRecord>[] = [
     { key: 'name', header: 'Full Name', render: (u) => <span className="font-bold text-[#172033]">{u.name}</span> },
@@ -467,29 +560,55 @@ export default function UserManagementPage() {
           <span>Unlimited role: Employees never consume subscription quota on any plan.</span>
         </div>
       ) : formData.role === 'admin' ? (
-        <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-center gap-2">
+        <div className={`p-2.5 rounded-lg text-xs flex items-center gap-2 border ${
+          (isCreateOpen ? isCreateLimitReached : isEditLimitReached)
+            ? 'bg-amber-50 border-amber-200 text-amber-900'
+            : 'bg-blue-50 border-blue-200 text-blue-800'
+        }`}>
           <span>ℹ</span>
-          <span>Single-Admin Rule: Exactly 1 company Admin is permitted per organization.</span>
+          <span>Single-Admin Rule: Exactly 1 company Admin is permitted per organization.{(isCreateOpen ? isCreateLimitReached : isEditLimitReached) ? ' • Limit reached, Save Changes is disabled.' : ''}</span>
         </div>
       ) : subscription?.roleLimits?.[formData.role.toUpperCase()] ? (
         (() => {
           const rLimit = subscription.roleLimits[formData.role.toUpperCase()];
+          const isLimitHit = isCreateOpen ? isCreateLimitReached : isEditLimitReached;
           return (
             <div className={`p-2.5 rounded-lg text-xs flex items-center justify-between gap-2 border ${
-              rLimit.isLimitReached
+              isLimitHit || rLimit.isLimitReached
                 ? 'bg-amber-50 border-amber-200 text-amber-900'
                 : 'bg-blue-50/60 border-blue-100 text-blue-900'
             }`}>
               <span>Quota for {rLimit.roleName}: <strong>{rLimit.currentUsage} / {rLimit.maxLimit}</strong> accounts</span>
-              {rLimit.isLimitReached && (
+              {(isLimitHit || rLimit.isLimitReached) && (
                 <span className="font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded text-[11px]">
-                  Limit Reached • Upgrade Required
+                  Limit Reached • Save Changes Disabled
                 </span>
               )}
             </div>
           );
         })()
       ) : null}
+
+      {/* Subscription Over-Limit / Limit Reached Alert Banner */}
+      {(isCreateOpen ? isCreateLimitReached : isEditLimitReached) && formData.role !== 'employee' && (
+        <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-amber-900">
+              {isOverLimit
+                ? 'Plan User Limit Exceeded'
+                : 'Plan User Limit Reached'}
+            </p>
+            <p className="text-amber-800 mt-0.5">
+              {isOverLimit
+                ? `Current active accounts exceed your plan quota by ${excessCount} user(s). The Save Changes button is disabled until limits are resolved.`
+                : formData.role === 'admin'
+                ? 'Only 1 company Admin account is permitted per organization. Save Changes is disabled.'
+                : `Your subscription plan limit for the ${formData.role.replace('_', ' ')} role has been reached. Save Changes is disabled.`}
+            </p>
+          </div>
+        </div>
+      )}
 
       <Input label="Plant Location" value={formData.plant} onChange={(e) => setFormData(f => ({ ...f, plant: e.target.value }))} />
     </div>
@@ -700,7 +819,15 @@ export default function UserManagementPage() {
           footer={
             <>
               <Button variant="outline" onClick={() => { setIsCreateOpen(false); resetForm(); }}>Cancel</Button>
-              <Button variant="primary" onClick={handleCreate} loading={isSaving}>Provision Account</Button>
+              <Button
+                variant="primary"
+                onClick={handleCreate}
+                loading={isSaving}
+                disabled={isCreateLimitReached || isSaving}
+                title={isCreateLimitReached ? 'Plan user limit reached or exceeded. Save Changes is disabled.' : undefined}
+              >
+                Save Changes
+              </Button>
             </>
           }
         >
@@ -715,7 +842,15 @@ export default function UserManagementPage() {
           footer={
             <>
               <Button variant="outline" onClick={() => { setIsEditOpen(false); setSelectedUser(null); resetForm(); }}>Cancel</Button>
-              <Button variant="primary" onClick={handleEdit} loading={isSaving}>Save Changes</Button>
+              <Button
+                variant="primary"
+                onClick={handleEdit}
+                loading={isSaving}
+                disabled={isEditLimitReached || isSaving}
+                title={isEditLimitReached ? 'Plan user limit reached or exceeded. Save Changes is disabled.' : undefined}
+              >
+                Save Changes
+              </Button>
             </>
           }
         >
