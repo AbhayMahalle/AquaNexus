@@ -52,7 +52,9 @@ export default function PaymentsManagement() {
       ]);
 
       if (payRes.ok && payRes.data) {
-        setPayments(payRes.data.payments || []);
+        const list = payRes.data.payments || [];
+        list.sort((a: any, b: any) => new Date(b.createdAt || b.paidAt || 0).getTime() - new Date(a.createdAt || a.paidAt || 0).getTime());
+        setPayments(list);
       }
       if (compRes.ok && compRes.data) {
         setCompanies(compRes.data.organizations || compRes.data || []);

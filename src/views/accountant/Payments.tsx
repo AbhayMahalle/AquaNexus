@@ -25,6 +25,7 @@ interface UnifiedPaymentRecord {
   amount: number;
   type: 'DISTRIBUTOR_PAYMENT' | 'SUPPLIER_PAYMENT' | 'SALARY_PAYMENT';
   status: string;
+  createdAt?: string;
 }
 
 export const AccountantPayments: React.FC = () => {
@@ -156,6 +157,7 @@ export const AccountantPayments: React.FC = () => {
       amount: p.amount,
       type: 'DISTRIBUTOR_PAYMENT',
       status: p.status,
+      createdAt: p.createdAt,
     }));
   }, [payments]);
 
@@ -170,6 +172,7 @@ export const AccountantPayments: React.FC = () => {
       amount: e.amount,
       type: 'SUPPLIER_PAYMENT',
       status: e.status === 'PAID' || e.status === 'APPROVED' ? 'PAID' : 'PENDING',
+      createdAt: e.createdAt,
     }));
   }, [expenses]);
 
@@ -184,6 +187,7 @@ export const AccountantPayments: React.FC = () => {
       amount: p.netSalary,
       type: 'SALARY_PAYMENT',
       status: p.status,
+      createdAt: p.createdAt,
     }));
   }, [payroll]);
 
@@ -197,9 +201,14 @@ export const AccountantPayments: React.FC = () => {
   const netCashFlow = totalInflow - (totalSupplierOutflow + totalSalaryOutflow);
 
   const displayedList = useMemo(() => {
-    if (activeTab === 'DISTRIBUTOR_PAYMENT') return distributorInflow;
-    if (activeTab === 'SUPPLIER_PAYMENT') return supplierOutflow;
-    return salaryOutflow;
+    const list = activeTab === 'DISTRIBUTOR_PAYMENT'
+      ? distributorInflow
+      : activeTab === 'SUPPLIER_PAYMENT'
+      ? supplierOutflow
+      : salaryOutflow;
+    return [...list].sort(
+      (a, b) => new Date(b.createdAt || b.paymentDate || 0).getTime() - new Date(a.createdAt || a.paymentDate || 0).getTime()
+    );
   }, [activeTab, distributorInflow, supplierOutflow, salaryOutflow]);
 
   const columns: Column<UnifiedPaymentRecord>[] = [

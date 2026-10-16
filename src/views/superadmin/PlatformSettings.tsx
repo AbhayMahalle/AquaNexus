@@ -28,7 +28,9 @@ export default function PlatformSettings() {
     try {
       const res = await apiRequest<any>('/platform/settings');
       if (res.ok && res.data) {
-        setSettings(res.data.settings || []);
+        const list = res.data.settings || [];
+        list.sort((a: any, b: any) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+        setSettings(list);
       } else {
         showToast(res.error || 'Failed to load settings', 'error');
       }

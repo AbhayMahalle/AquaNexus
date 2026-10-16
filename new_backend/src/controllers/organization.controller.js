@@ -53,7 +53,7 @@ const getOrganizations = async (req, res) => {
               include: { role: true },
             },
           },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
         },
         employees: {
           select: {
@@ -73,7 +73,7 @@ const getOrganizations = async (req, res) => {
             },
             createdAt: true,
           },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -177,7 +177,7 @@ const getOrganizationById = async (req, res) => {
               include: { role: true },
             },
           },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
         },
         employees: {
           select: {
@@ -197,7 +197,7 @@ const getOrganizationById = async (req, res) => {
             },
             createdAt: true,
           },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
         },
       },
     });
@@ -237,7 +237,7 @@ const getOrganizationUsersAndStaff = async (req, res) => {
               include: { role: true },
             },
           },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
         },
         employees: {
           select: {
@@ -257,7 +257,7 @@ const getOrganizationUsersAndStaff = async (req, res) => {
             },
             createdAt: true,
           },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
         },
       },
     });

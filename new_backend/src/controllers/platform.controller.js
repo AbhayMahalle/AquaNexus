@@ -49,7 +49,7 @@ const getPlatformStats = async (req, res) => {
       }),
       prisma.subscriptionPayment.findMany({
         take: 10,
-        orderBy: { paidAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { paidAt: 'desc' }],
         include: { organization: { select: { name: true, slug: true } } },
       }),
       prisma.subscriptionPlan.findMany({
@@ -304,7 +304,7 @@ const changeSuperAdminPassword = async (req, res) => {
 const getPlatformSettings = async (req, res) => {
   try {
     const settings = await prisma.platformSetting.findMany({
-      orderBy: { key: 'asc' },
+      orderBy: [{ updatedAt: 'desc' }, { key: 'asc' }],
     });
     return sendSuccess(res, { settings }, 'Platform settings retrieved');
   } catch (error) {
@@ -359,7 +359,7 @@ const updatePlatformSetting = async (req, res) => {
 const getSubscriptionPlans = async (req, res) => {
   try {
     const plans = await prisma.subscriptionPlan.findMany({
-      orderBy: { price: 'asc' },
+      orderBy: [{ createdAt: 'desc' }, { price: 'asc' }],
     });
 
     const formatted = plans.map((p) => ({
@@ -596,7 +596,7 @@ const getSubscriptionPayments = async (req, res) => {
         subscription: { include: { plan: true } },
         recordedBy: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
-      orderBy: { paidAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { paidAt: 'desc' }],
     });
 
     const formatted = payments.map((p) => ({

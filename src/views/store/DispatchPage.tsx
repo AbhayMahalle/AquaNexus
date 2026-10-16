@@ -39,6 +39,7 @@ export interface StoreDispatchRecord {
   storeOfficer: string;
   status: 'dispatched' | 'staged' | 'pending_gatepass' | 'on_hold';
   notes?: string;
+  createdAt?: string;
 }
 
 export default function DispatchPage() {
@@ -145,9 +146,11 @@ export default function DispatchPage() {
               : 'Store Officer',
             status,
             notes: d.remarks || '',
+            createdAt: d.createdAt,
           };
         });
 
+        mapped.sort((a, b) => new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime());
         setDispatchRecords(mapped);
       }
     } catch (err) {

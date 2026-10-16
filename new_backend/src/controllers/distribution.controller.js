@@ -19,7 +19,7 @@ const getSalesAreas = async (req, res) => {
     const salesAreas = await prisma.salesArea.findMany({
       where,
       include: { _count: { select: { distributors: true } } },
-      orderBy: { name: "asc" },
+      orderBy: { createdAt: "desc" },
     });
 
     return sendSuccess(
@@ -74,7 +74,7 @@ const getDistributors = async (req, res) => {
     const distributors = await prisma.distributor.findMany({
       where,
       include: { salesArea: true },
-      orderBy: { name: "asc" },
+      orderBy: { createdAt: "desc" },
     });
 
     return sendSuccess(

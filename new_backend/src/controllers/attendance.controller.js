@@ -78,7 +78,7 @@ const getAttendance = async (req, res) => {
             }
           }
         },
-        orderBy: { attendanceDate: 'desc' }
+        orderBy: [{ createdAt: 'desc' }, { attendanceDate: 'desc' }]
       }),
       prisma.attendance.count({ where })
     ]);

@@ -115,7 +115,8 @@ export default function InventoryDetailPage() {
         const txRes = await apiRequest<any>(`/api/stock-transactions?productId=${targetProductId}&limit=50`);
         if (txRes.ok && txRes.data) {
           const txList = txRes.data.transactions || (Array.isArray(txRes.data) ? txRes.data : []);
-          const mapped: ItemMovementHistoryRow[] = txList.map((t: any) => {
+          const sortedTx = [...txList].sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          const mapped: ItemMovementHistoryRow[] = sortedTx.map((t: any) => {
             let type: ItemMovementHistoryRow['type'] = 'IN';
             if (t.transactionType === 'STOCK_IN' || t.transactionType === 'PRODUCTION_RECEIPT') type = 'IN';
             else if (t.transactionType === 'STOCK_OUT' || t.transactionType === 'DISPATCH') type = 'OUT';

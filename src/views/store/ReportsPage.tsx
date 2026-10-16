@@ -414,7 +414,7 @@ export default function ReportsPage() {
       }
 
       return true;
-    });
+    }).sort((a, b) => (b.rawDate?.getTime() || 0) - (a.rawDate?.getTime() || 0));
   }, [rawRows, dateRange, startDate, endDate, searchQuery]);
 
   // Derived KPI Calculations from Real Filtered Data

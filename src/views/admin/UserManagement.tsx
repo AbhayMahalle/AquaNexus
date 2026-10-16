@@ -28,6 +28,7 @@ interface UserRecord {
   plant: string;
   phone?: string;
   joinDate?: string;
+  createdAt?: string;
 }
 
 const INITIAL_USERS: UserRecord[] = [];
@@ -222,8 +223,10 @@ export default function UserManagementPage() {
             plant: 'AquaNexus Unit #1',
             phone: u.phone || '',
             joinDate: u.createdAt ? new Date(u.createdAt).toISOString().slice(0, 10) : '2026-09-04',
+            createdAt: u.createdAt,
           };
         });
+        mapped.sort((a, b) => new Date(b.createdAt || b.joinDate || 0).getTime() - new Date(a.createdAt || a.joinDate || 0).getTime());
         setUsers(mapped);
       }
     } catch (err) {

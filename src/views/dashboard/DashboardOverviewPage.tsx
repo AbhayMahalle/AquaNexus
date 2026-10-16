@@ -50,7 +50,13 @@ export const DashboardOverviewPage: React.FC = () => {
       const pendingLeaveCount = leaveRes.success ? leaveRes.data.length : 0;
       const otHours = otRes.success ? otRes.data.reduce((sum, o) => sum + o.hours, 0) : 0;
       
-      const batches = prodRes.success ? prodRes.data : [];
+      const batches = prodRes.success
+        ? [...prodRes.data].sort(
+            (a, b) =>
+              new Date(b.createdAt || b.productionDate || 0).getTime() -
+              new Date(a.createdAt || a.productionDate || 0).getTime()
+          )
+        : [];
       const prodTotal = batches.reduce((sum, b) => sum + (b.status === 'COMPLETED' ? b.quantityProduced : 0), 0);
 
       setStats({

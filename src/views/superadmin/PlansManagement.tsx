@@ -48,7 +48,9 @@ export default function PlansManagement() {
     try {
       const res = await apiRequest<any>('/platform/plans');
       if (res.ok && res.data) {
-        setPlans(res.data.plans || []);
+        const list = res.data.plans || [];
+        list.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setPlans(list);
       } else {
         showToast(res.error || 'Failed to load plans', 'error');
       }

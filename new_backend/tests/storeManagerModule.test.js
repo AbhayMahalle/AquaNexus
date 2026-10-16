@@ -69,6 +69,18 @@ describe('Store & Inventory Manager Module - Complete End-to-End Suite', () => {
       });
     });
 
+    // 1b. Ensure TEST_ORG_ID exists
+    await prisma.organization.upsert({
+      where: { id: TEST_ORG_ID },
+      update: {},
+      create: {
+        id: TEST_ORG_ID,
+        name: 'AquaNexus Primary Plant',
+        slug: 'aquanexus-primary',
+        status: 'ACTIVE'
+      }
+    });
+
     // 2. Fetch or create STORE_MANAGER role and user
     let storeRole = await prisma.role.findFirst({ where: { name: 'STORE_MANAGER' } });
     if (!storeRole) {

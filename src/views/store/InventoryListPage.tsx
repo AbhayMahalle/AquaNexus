@@ -34,6 +34,7 @@ export interface InventoryItem {
   status: 'optimal' | 'low' | 'critical' | 'out_of_stock';
   lastMovement?: string;
   location?: string;
+  createdAt?: string;
 }
 
 export default function InventoryListPage() {
@@ -144,9 +145,17 @@ export default function InventoryListPage() {
               unit: inv.product?.unit || 'Units',
               minThreshold: reorder,
               status,
+              createdAt: inv.product?.createdAt || inv.createdAt,
               lastMovement: inv.updatedAt ? new Date(inv.updatedAt).toLocaleDateString() : '--',
               location: 'Main Warehouse'
             };
+          });
+
+          // Order by when they were added: latest added on top
+          mapped.sort((a, b) => {
+            const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return timeB - timeA;
           });
 
           if (isMounted) {

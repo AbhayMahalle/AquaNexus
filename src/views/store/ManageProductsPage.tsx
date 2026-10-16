@@ -86,7 +86,8 @@ export default function ManageProductsPage() {
       const res = await apiRequest<any>('/api/products?limit=200');
       if (res.ok && res.data) {
         const list = res.data.products || (Array.isArray(res.data) ? res.data : res.data.data || []);
-        setProducts(list);
+        const sortedList = [...list].sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setProducts(sortedList);
       } else {
         showToast(res.error || 'Failed to fetch products from server', 'error');
       }

@@ -145,8 +145,10 @@ export default function OrganizationManagement() {
     try {
       const res = await apiRequest<any>(`/platform/organizations/${org.id}/users`);
       if (res.ok && res.data) {
-        const fetchedUsers = res.data.users || [];
-        const fetchedEmployees = res.data.employees || [];
+        const rawUsers = res.data.users || [];
+        const rawEmployees = res.data.employees || [];
+        const fetchedUsers = [...rawUsers].sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        const fetchedEmployees = [...rawEmployees].sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
         setSelectedOrgForUsers((prev) =>
           prev && prev.id === org.id
@@ -268,7 +270,8 @@ export default function OrganizationManagement() {
       if (res.ok && res.data) {
         const raw = res.data;
         const orgList = Array.isArray(raw) ? raw : (raw.organizations || []);
-        setOrganizations(orgList);
+        const sorted = [...orgList].sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setOrganizations(sorted);
       } else {
         showToast(res.error || 'Failed to load customer organizations', 'error');
       }

@@ -41,6 +41,7 @@ export interface DamagedItemRecord {
   reportedBy: string;
   status: 'REPORTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'DISPOSED';
   notes?: string;
+  createdAt?: string;
 }
 
 export default function DamagedGoodsPage() {
@@ -128,9 +129,11 @@ export default function DamagedGoodsPage() {
             reportedBy: tx.creator ? `${tx.creator.firstName || ''} ${tx.creator.lastName || ''}`.trim() : 'Store Staff',
             status: normStatus as DamagedItemRecord['status'],
             notes: tx.remarks || '',
+            createdAt: tx.createdAt,
           };
         });
 
+        mapped.sort((a, b) => new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime());
         setDamagedRecords(mapped);
         setTotalItems(res.data.pagination?.total || mapped.length);
         setTotalPages(res.data.pagination?.totalPages || Math.ceil(mapped.length / 10) || 1);

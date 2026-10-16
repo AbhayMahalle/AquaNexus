@@ -20,7 +20,7 @@ const getSales = async (req, res) => {
         returns: true,
         invoices: true,
       },
-      orderBy: { saleDate: "desc" },
+      orderBy: [{ createdAt: "desc" }, { saleDate: "desc" }],
     });
     return sendSuccess(res, { sales, data: sales }, "Sales retrieved successfully");
   } catch (error) {
@@ -199,7 +199,7 @@ const getReturns = async (req, res) => {
         sale: true,
         returnItems: { include: { product: true } },
       },
-      orderBy: { returnDate: "desc" },
+      orderBy: [{ createdAt: "desc" }, { returnDate: "desc" }],
     });
     return sendSuccess(res, { returns, data: returns }, "Returns retrieved successfully");
   } catch (error) {

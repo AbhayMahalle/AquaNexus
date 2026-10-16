@@ -101,7 +101,8 @@ export default function AdminDashboardPage() {
       setAvailablePlans(plans);
 
       if (batchesRes.success) {
-        setActiveBatches(batchesRes.data.slice(0, 10));
+        const sorted = [...batchesRes.data].sort((a, b) => new Date(b.createdAt || b.productionDate || 0).getTime() - new Date(a.createdAt || a.productionDate || 0).getTime());
+        setActiveBatches(sorted.slice(0, 10));
       }
       if (statsRes.success) setStats(statsRes.data);
 

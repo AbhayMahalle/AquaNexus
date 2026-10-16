@@ -80,7 +80,7 @@ const getProductions = async (req, res) => {
             }
           }
         },
-        orderBy: { productionDate: 'desc' }
+        orderBy: [{ createdAt: 'desc' }, { productionDate: 'desc' }]
       }),
       prisma.production.count({ where })
     ]);
@@ -169,7 +169,7 @@ const getProductionById = async (req, res) => {
               select: { id: true, firstName: true, lastName: true }
             }
           },
-          orderBy: { receivedDate: 'desc' }
+          orderBy: [{ createdAt: 'desc' }, { receivedDate: 'desc' }]
         }
       }
     });

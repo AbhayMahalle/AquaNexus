@@ -42,6 +42,7 @@ export interface GoodsReceivedNote {
   receivedBy: string;
   status: 'PENDING' | 'RECEIVED' | 'PARTIALLY_RECEIVED' | 'REJECTED';
   notes?: string;
+  createdAt?: string;
 }
 
 export default function GoodsReceivedPage() {
@@ -127,9 +128,11 @@ export default function GoodsReceivedPage() {
             receivedBy: gr.receiver ? `${gr.receiver.firstName || ''} ${gr.receiver.lastName || ''}`.trim() : (gr.receivedBy || 'Store Staff'),
             status: normStatus as GoodsReceivedNote['status'],
             notes: gr.remarks || gr.notes || '',
+            createdAt: gr.createdAt,
           };
         });
 
+        mapped.sort((a, b) => new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime());
         setGrnRecords(mapped);
       }
     } catch (err) {

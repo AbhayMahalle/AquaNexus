@@ -45,7 +45,8 @@ export default function SuperAdminDashboard() {
       }
       if (companiesRes.ok && companiesRes.data) {
         const raw = companiesRes.data.organizations || companiesRes.data || [];
-        setCompanies(Array.isArray(raw) ? raw.slice(0, 5) : []);
+        const sorted = Array.isArray(raw) ? [...raw].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) : [];
+        setCompanies(sorted.slice(0, 5));
       }
     } catch (err: any) {
       showToast(err.message || 'Failed to load platform statistics', 'error');

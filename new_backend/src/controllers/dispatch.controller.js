@@ -17,7 +17,7 @@ const getDispatches = async (req, res) => {
         order: true,
         dispatchItems: { include: { product: true } },
       },
-      orderBy: { dispatchDate: "desc" },
+      orderBy: [{ createdAt: "desc" }, { dispatchDate: "desc" }],
     });
 
     return sendSuccess(

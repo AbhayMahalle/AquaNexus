@@ -41,6 +41,7 @@ export interface StoreReturnRecord {
   status: 'REQUESTED' | 'APPROVED' | 'RECEIVED' | 'INSPECTED' | 'COMPLETED' | 'REJECTED' | 'CANCELLED';
   notes?: string;
   returnItems?: any[];
+  createdAt?: string;
 }
 
 export default function ReturnsPage() {
@@ -147,9 +148,11 @@ export default function ReturnsPage() {
             status: normStatus as StoreReturnRecord['status'],
             notes: r.reason || '',
             returnItems: r.returnItems || [],
+            createdAt: r.createdAt,
           };
         });
 
+        mapped.sort((a, b) => new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime());
         setReturnRecords(mapped);
       }
     } catch (err) {

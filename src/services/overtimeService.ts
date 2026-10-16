@@ -24,6 +24,7 @@ function mapOvertime(o: any): Overtime {
     approvedBy: o.approver ? `${o.approver.firstName || ''} ${o.approver.lastName || ''}`.trim() : undefined,
     payrollAmount,
     notes,
+    createdAt: o.createdAt,
   };
 }
 
@@ -47,6 +48,8 @@ export const overtimeService = {
             (o.notes && o.notes.toLowerCase().includes(q))
         );
       }
+
+      result.sort((a, b) => new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime());
 
       return {
         success: true,

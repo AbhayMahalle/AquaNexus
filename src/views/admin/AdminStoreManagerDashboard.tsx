@@ -88,8 +88,9 @@ export default function AdminStoreManagerDashboard() {
         let lowList: any[] = [];
         if (lowRes.success && lowRes.data) {
           lowList = (lowRes.data as any).lowStockItems || (Array.isArray(lowRes.data) ? lowRes.data : []);
+          const sortedLow = [...lowList].sort((a: any, b: any) => new Date(b.product?.createdAt || b.createdAt || 0).getTime() - new Date(a.product?.createdAt || a.createdAt || 0).getTime());
           setLowStockAlerts(
-            lowList.map((item: any) => ({
+            sortedLow.map((item: any) => ({
               id: item.id,
               sku: item.product?.sku || item.sku || 'SKU',
               name: item.product?.name || item.name || 'Item',
@@ -113,8 +114,10 @@ export default function AdminStoreManagerDashboard() {
             else if (t.transactionType === 'DAMAGED') damCount += t.quantity;
           });
 
+          const sortedTx = [...txList].sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
           setRecentMovements(
-            txList.slice(0, 10).map((t: any) => ({
+            sortedTx.slice(0, 10).map((t: any) => ({
               id: t.id,
               reference: t.referenceNumber || t.id.slice(0, 8),
               item: t.product?.name || 'Stock Item',

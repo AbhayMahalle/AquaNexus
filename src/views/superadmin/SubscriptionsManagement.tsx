@@ -49,7 +49,9 @@ export default function SubscriptionsManagement() {
       ]);
 
       if (subsRes.ok && subsRes.data) {
-        setSubscriptions(subsRes.data.subscriptions || []);
+        const list = subsRes.data.subscriptions || [];
+        list.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setSubscriptions(list);
       }
       if (plansRes.ok && plansRes.data) {
         setPlans(plansRes.data.plans || []);

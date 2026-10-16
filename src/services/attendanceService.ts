@@ -111,6 +111,7 @@ export const attendanceService = {
             absent: 0,
             leave: 0,
             overtimeHours: 0,
+            createdAt: a.employee?.createdAt,
           });
         }
         const stat = employeeMap.get(empCode);
@@ -121,6 +122,7 @@ export const attendanceService = {
       }
 
       const summary = Array.from(employeeMap.values());
+      summary.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       return { success: true, data: summary, message: 'Monthly summary calculated' };
     }
 

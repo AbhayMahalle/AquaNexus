@@ -24,6 +24,7 @@ function mapProduction(p: any): Production {
     status: p.status === 'COMPLETED' ? 'COMPLETED' : p.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : p.status === 'CANCELLED' ? 'CANCELLED' : 'PENDING',
     goodsReceivedStatus: p.totalReceived >= p.quantity ? 'RECEIVED' : 'PENDING',
     notes: p.remarks || '',
+    createdAt: p.createdAt,
   };
 }
 
@@ -39,7 +40,9 @@ export const productionService = {
         category: p.category || 'Bottled Water',
         unit: p.unit || 'Bottle',
         unitPrice: Number(p.sellingPrice || 0),
+        createdAt: p.createdAt,
       }));
+      products.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       return { success: true, data: products, message: res.message || 'Products retrieved' };
     }
     return { success: false, data: [], message: res.message || 'Failed to retrieve products' };
@@ -55,6 +58,7 @@ export const productionService = {
     if (realResponse.success && realResponse.data) {
       const rawList = realResponse.data.productions || (Array.isArray(realResponse.data) ? realResponse.data : []);
       const result = rawList.map(mapProduction);
+      result.sort((a, b) => new Date(b.createdAt || b.productionDate || 0).getTime() - new Date(a.createdAt || a.productionDate || 0).getTime());
 
       return {
         success: true,

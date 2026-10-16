@@ -45,7 +45,8 @@ const getManagerAssignments = async (req, res) => {
     }
 
     const assignments = await prisma.managerAssignment.findMany({
-      where: { userId }
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
     });
 
     return sendSuccess(res, { assignments }, 'Assignments retrieved successfully');

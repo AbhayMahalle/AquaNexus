@@ -7,6 +7,7 @@ export interface Product {
   unitPrice: number;
   availableStock: number;
   status: 'AVAILABLE' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  createdAt?: string;
 }
 
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED';
@@ -35,6 +36,7 @@ export interface Order {
   deliveryAddress: string;
   notes?: string;
   invoiceId?: string;
+  createdAt?: string;
 }
 
 export interface DistributorStock {
@@ -47,6 +49,7 @@ export interface DistributorStock {
   minThreshold: number;
   status: 'AVAILABLE' | 'LOW_STOCK' | 'OUT_OF_STOCK';
   lastUpdated: string;
+  createdAt?: string;
 }
 
 export interface Sale {
@@ -59,6 +62,7 @@ export interface Sale {
   saleDate: string;
   totalAmount: number;
   paymentStatus: 'PAID' | 'PARTIAL' | 'PENDING' | 'OVERDUE';
+  createdAt?: string;
 }
 
 export interface ProductReturn {
@@ -73,6 +77,7 @@ export interface ProductReturn {
   returnDate: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   refundAmount: number;
+  createdAt?: string;
 }
 
 export interface Invoice {
@@ -90,6 +95,7 @@ export interface Invoice {
   paidAmount: number;
   outstandingAmount: number;
   status: 'PAID' | 'PARTIAL' | 'PENDING' | 'OVERDUE';
+  createdAt?: string;
 }
 
 export type PaymentMethod = 'BANK_TRANSFER' | 'CHEQUE' | 'CASH' | 'ONLINE_UPI';
@@ -107,6 +113,7 @@ export interface Payment {
   amount: number;
   status: 'PAID' | 'PARTIAL' | 'PENDING' | 'FAILED';
   notes?: string;
+  createdAt?: string;
 }
 
 export interface PayrollRecord {
@@ -123,6 +130,7 @@ export interface PayrollRecord {
   netSalary: number;
   status: 'PAID' | 'PENDING';
   paidDate?: string;
+  createdAt?: string;
 }
 
 export type ExpenseCategory = 'RAW_MATERIAL' | 'UTILITIES' | 'FUEL_TRANSPORT' | 'MAINTENANCE' | 'OTHER';
@@ -136,6 +144,7 @@ export interface Expense {
   expenseDate: string;
   createdBy: string;
   status: 'APPROVED' | 'PENDING' | 'REJECTED' | 'PAID';
+  createdAt?: string;
 }
 
 export interface OutstandingSummary {

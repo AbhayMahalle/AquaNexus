@@ -38,8 +38,11 @@ export const apiClient = {
         unitPrice: Number(p.sellingPrice || p.unitPrice || 0),
         availableStock: stock,
         status,
+        createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : '',
       };
     });
+
+    products.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
     return { success: true, data: products, message: res.message };
   },
@@ -49,7 +52,8 @@ export const apiClient = {
     if (!res.success) {
       return { success: false, data: [], message: res.message };
     }
-    const list = res.data?.distributors || (Array.isArray(res.data) ? res.data : []);
+    const list = (res.data?.distributors || (Array.isArray(res.data) ? res.data : [])).slice();
+    list.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     return { success: true, data: list, message: res.message };
   },
 
@@ -85,8 +89,11 @@ export const apiClient = {
         deliveryAddress: o.deliveryAddress || o.distributor?.address || 'Plant Dispatch Center',
         notes: o.notes || '',
         invoiceId: o.invoice?.id,
+        createdAt: o.createdAt ? new Date(o.createdAt).toISOString() : '',
       };
     });
+
+    orders.sort((a, b) => new Date(b.createdAt || b.orderDate || 0).getTime() - new Date(a.createdAt || a.orderDate || 0).getTime());
 
     return { success: true, data: orders, message: res.message };
   },
@@ -196,8 +203,12 @@ export const apiClient = {
           minThreshold: minThresh,
           status: qty <= 0 ? 'OUT_OF_STOCK' : qty <= minThresh ? 'LOW_STOCK' : 'AVAILABLE',
           lastUpdated: s.updatedAt ? new Date(s.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : s.updatedAt,
         };
       });
+
+      stock.sort((a, b) => new Date(b.createdAt || b.lastUpdated || 0).getTime() - new Date(a.createdAt || a.lastUpdated || 0).getTime());
+
       return { success: true, data: stock, message: res.message };
     }
 
@@ -221,7 +232,10 @@ export const apiClient = {
       saleDate: s.saleDate ? new Date(s.saleDate).toISOString().split('T')[0] : '',
       totalAmount: Number(s.totalAmount || 0),
       paymentStatus: (s.paymentStatus || (s.status === 'COMPLETED' ? 'PAID' : 'PENDING')) as Sale['paymentStatus'],
+      createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : '',
     }));
+
+    sales.sort((a, b) => new Date(b.createdAt || b.saleDate || 0).getTime() - new Date(a.createdAt || a.saleDate || 0).getTime());
 
     return { success: true, data: sales, message: res.message };
   },
@@ -286,8 +300,11 @@ export const apiClient = {
         reason: r.reason || (firstItem?.condition === 'GOOD' ? 'EXCESS' : 'DAMAGED'),
         status: (r.status === 'RECEIVED' || r.status === 'APPROVED') ? 'APPROVED' : r.status === 'REJECTED' ? 'REJECTED' : 'PENDING',
         refundAmount: Number(r.refundAmount || 0),
+        createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : '',
       };
     });
+
+    returns.sort((a, b) => new Date(b.createdAt || b.returnDate || 0).getTime() - new Date(a.createdAt || a.returnDate || 0).getTime());
 
     return { success: true, data: returns, message: res.message };
   },
@@ -365,7 +382,10 @@ export const apiClient = {
       paidAmount: Number(inv.paidAmount || 0),
       outstandingAmount: Number(inv.outstandingAmount ?? Math.max(0, Number(inv.totalAmount || 0) - Number(inv.paidAmount || 0))),
       status: (inv.status === 'PAID' || inv.status === 'PARTIAL' || inv.status === 'OVERDUE') ? inv.status : 'PENDING',
+      createdAt: inv.createdAt ? new Date(inv.createdAt).toISOString() : '',
     }));
+
+    invoices.sort((a, b) => new Date(b.createdAt || b.issueDate || 0).getTime() - new Date(a.createdAt || a.issueDate || 0).getTime());
 
     return { success: true, data: invoices, message: res.message };
   },
@@ -390,7 +410,10 @@ export const apiClient = {
       paymentMethod: p.paymentMethod || 'BANK_TRANSFER',
       status: p.status === 'COMPLETED' ? 'PAID' : (p.status || 'PENDING'),
       notes: p.remarks || '',
+      createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : '',
     }));
+
+    payments.sort((a, b) => new Date(b.createdAt || b.paymentDate || 0).getTime() - new Date(a.createdAt || a.paymentDate || 0).getTime());
 
     return { success: true, data: payments, message: res.message };
   },
@@ -454,7 +477,10 @@ export const apiClient = {
       deductions: Number(p.deductions || 0),
       netSalary: Number(p.netSalary || 0),
       status: p.status,
+      createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : '',
     }));
+
+    payroll.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
     return { success: true, data: payroll, message: res.message };
   },
@@ -475,7 +501,10 @@ export const apiClient = {
       expenseDate: e.expenseDate ? new Date(e.expenseDate).toISOString().split('T')[0] : '',
       createdBy: `${e.creator?.firstName || ''} ${e.creator?.lastName || ''}`.trim() || 'Accountant',
       status: e.status,
+      createdAt: e.createdAt ? new Date(e.createdAt).toISOString() : '',
     }));
+
+    expenses.sort((a, b) => new Date(b.createdAt || b.expenseDate || 0).getTime() - new Date(a.createdAt || a.expenseDate || 0).getTime());
 
     return { success: true, data: expenses, message: res.message };
   },
@@ -485,7 +514,8 @@ export const apiClient = {
     if (!res.success) {
       return { success: false, data: [], message: res.message };
     }
-    const suppliers = res.data?.suppliers || (Array.isArray(res.data) ? res.data : []);
+    const suppliers = (res.data?.suppliers || (Array.isArray(res.data) ? res.data : [])).slice();
+    suppliers.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     return { success: true, data: suppliers, message: res.message };
   },
 
@@ -622,6 +652,7 @@ export const apiClient = {
         paidAmount: 0,
         outstandingAmount: 0,
         overdueDays: 0,
+        createdAt: (d as any).createdAt,
       });
     }
 
@@ -638,6 +669,7 @@ export const apiClient = {
           paidAmount: 0,
           outstandingAmount: 0,
           overdueDays: 0,
+          createdAt: inv.createdAt,
         });
       }
       const entry = distMap.get(key);
@@ -651,13 +683,16 @@ export const apiClient = {
       }
     }
 
+    const balances = Array.from(distMap.values());
+    balances.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
     return {
       success: true,
       data: {
         totalDistributorOutstanding,
         totalSupplierOutstanding,
         overdueCount,
-        distributorBalances: Array.from(distMap.values()),
+        distributorBalances: balances,
       },
       message: 'Outstanding financial data retrieved',
     };

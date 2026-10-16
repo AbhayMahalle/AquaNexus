@@ -73,6 +73,7 @@ export interface Overtime {
   approvedBy?: string;
   payrollAmount: number;
   notes?: string;
+  createdAt?: string;
 }
 
 export type ProductionStatus = 'PENDING' | 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -91,6 +92,7 @@ export interface Production {
   status: ProductionStatus;
   goodsReceivedStatus: GoodsReceivedStatus;
   notes?: string;
+  createdAt?: string;
 }
 
 export interface Product {
@@ -100,4 +102,5 @@ export interface Product {
   category: string;
   unit: string;
   unitPrice: number;
+  createdAt?: string;
 }

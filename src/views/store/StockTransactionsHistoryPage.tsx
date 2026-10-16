@@ -76,9 +76,10 @@ export default function StockTransactionsHistoryPage() {
       const res = await apiRequest<any>(`/api/stock-transactions?${q.toString()}`);
       if (res.ok && res.data) {
         const list = res.data.transactions || (Array.isArray(res.data) ? res.data : []);
-        setTransactions(list);
-        setTotalItems(res.data.pagination?.total || list.length);
-        setTotalPages(res.data.pagination?.totalPages || Math.ceil(list.length / 15) || 1);
+        const sortedList = [...list].sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setTransactions(sortedList);
+        setTotalItems(res.data.pagination?.total || sortedList.length);
+        setTotalPages(res.data.pagination?.totalPages || Math.ceil(sortedList.length / 15) || 1);
       }
     } catch (err) {
       console.error('Failed to load stock movements:', err);

@@ -33,7 +33,7 @@ const getOrders = async (req, res) => {
         distributor: true,
         orderItems: { include: { product: true } },
       },
-      orderBy: { orderDate: "desc" },
+      orderBy: [{ createdAt: "desc" }, { orderDate: "desc" }],
     });
 
     return sendSuccess(res, { orders, data: orders }, "Orders retrieved successfully");

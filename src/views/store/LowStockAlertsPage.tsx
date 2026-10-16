@@ -39,6 +39,7 @@ export interface LowStockItem {
   suggestedReorderQty?: number | string;
   leadTimeDays?: number;
   lastProcuredDate?: string;
+  createdAt?: string;
 }
 
 export default function LowStockAlertsPage() {
@@ -87,9 +88,11 @@ export default function LowStockAlertsPage() {
             suggestedReorderQty: item.shortage > 0 ? item.shortage : (reorder > 0 ? reorder * 2 : 100),
             leadTimeDays: 3,
             lastProcuredDate: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : '--',
+            createdAt: item.product?.createdAt || item.createdAt,
           };
         });
 
+        mapped.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         setLowStockItems(mapped);
       }
     } catch (err) {

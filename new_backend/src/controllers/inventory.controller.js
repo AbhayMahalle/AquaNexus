@@ -41,11 +41,13 @@ const getInventory = async (req, res) => {
             category: true,
             unit: true,
             minimumStock: true,
-            status: true
+            status: true,
+            createdAt: true,
+            updatedAt: true
           }
         }
       },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: { product: { createdAt: 'desc' } }
     });
 
     let items = inventoryList.map(inv => {
@@ -108,10 +110,13 @@ const getLowStockAlerts = async (req, res) => {
             name: true,
             category: true,
             unit: true,
-            minimumStock: true
+            minimumStock: true,
+            createdAt: true,
+            updatedAt: true
           }
         }
-      }
+      },
+      orderBy: { product: { createdAt: 'desc' } }
     });
 
     const lowStockItems = inventoryList
@@ -565,7 +570,7 @@ const getGoodsReceived = async (req, res) => {
             select: { id: true, firstName: true, lastName: true, username: true }
           }
         },
-        orderBy: { receivedDate: 'desc' }
+        orderBy: [{ createdAt: 'desc' }, { receivedDate: 'desc' }]
       }),
       prisma.goodsReceived.count({ where })
     ]);

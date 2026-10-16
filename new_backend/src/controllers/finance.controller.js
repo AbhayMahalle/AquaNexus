@@ -36,7 +36,7 @@ const getInvoices = async (req, res) => {
         sale: true,
         payments: true,
       },
-      orderBy: { invoiceDate: "desc" },
+      orderBy: [{ createdAt: "desc" }, { invoiceDate: "desc" }],
     });
 
     const formatted = invoices.map(formatInvoice);
@@ -167,7 +167,7 @@ const getPayments = async (req, res) => {
     const payments = await prisma.payment.findMany({
       where: { organizationId: req.organizationId, invoice: invoiceWhere },
       include: { invoice: true },
-      orderBy: { paymentDate: "desc" },
+      orderBy: [{ createdAt: "desc" }, { paymentDate: "desc" }],
     });
 
     return sendSuccess(res, { payments, data: payments }, "Payments retrieved successfully");
@@ -290,7 +290,7 @@ const getExpenses = async (req, res) => {
     const expenses = await prisma.expense.findMany({
       where: { organizationId: req.organizationId },
       include: { supplier: true, creator: true, approver: true },
-      orderBy: { expenseDate: "desc" },
+      orderBy: [{ createdAt: "desc" }, { expenseDate: "desc" }],
     });
     return sendSuccess(res, { expenses, data: expenses }, "Expenses retrieved successfully");
   } catch (error) {
@@ -360,7 +360,7 @@ const getPayroll = async (req, res) => {
     const payroll = await prisma.payroll.findMany({
       where: { organizationId: req.organizationId },
       include: { employee: true, processor: true },
-      orderBy: { payPeriodStart: "desc" },
+      orderBy: [{ createdAt: "desc" }, { payPeriodStart: "desc" }],
     });
     return sendSuccess(res, { payroll, data: payroll }, "Payroll retrieved successfully");
   } catch (error) {

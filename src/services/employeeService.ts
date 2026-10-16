@@ -68,6 +68,9 @@ export const employeeService = {
         result = result.filter((e) => (e.department || '').trim().toLowerCase() === target);
       }
 
+      // Latest added employee on top
+      result.sort((a, b) => new Date((b as any).createdAt || 0).getTime() - new Date((a as any).createdAt || 0).getTime());
+
       return {
         success: true,
         data: result,
