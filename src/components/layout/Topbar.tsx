@@ -8,30 +8,55 @@ import {
   LogOut,
   Building2,
   Shield,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
 
 interface TopbarProps {
   onMobileToggle?: () => void;
+  collapsed?: boolean;
+  onToggleSidebar?: () => void;
   theme?: 'default' | 'sample';
 }
 
-export function Topbar({ onMobileToggle }: TopbarProps) {
+export function Topbar({
+  onMobileToggle,
+  collapsed = false,
+  onToggleSidebar,
+}: TopbarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const userInitial = user?.avatar || (user?.name ? user.name.trim().charAt(0).toUpperCase() : 'M');
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 border-b bg-white border-gray-200 shadow-none">
-      <div className="flex items-center gap-3">
+    <header
+      className={`sticky top-0 z-30 flex items-center justify-between h-16 border-b bg-white border-gray-200 shadow-none ${
+        collapsed ? 'pl-2.5 sm:pl-3 pr-4 sm:pr-6' : 'px-4 sm:px-6'
+      }`}
+    >
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
+          type="button"
           onClick={onMobileToggle}
-          className="lg:hidden p-2 rounded-lg transition-colors text-gray-700 hover:bg-gray-100 hover:text-black"
+          className="lg:hidden p-2 rounded-lg transition-colors text-gray-700 hover:bg-gray-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-orange-400/50"
           aria-label="Toggle Navigation"
+          title="Toggle Navigation"
         >
           <Menu className="w-5 h-5" />
         </button>
+
+        {onToggleSidebar && collapsed && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="hidden lg:flex items-center justify-center p-2 rounded-lg transition-colors text-gray-700 hover:bg-gray-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+          >
+            <PanelLeftOpen className="w-5 h-5" />
+          </button>
+        )}
 
         {user?.isSuperAdmin ? (
           <div className="flex items-center gap-2">

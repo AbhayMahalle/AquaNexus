@@ -41,6 +41,7 @@ import {
   Clock,
   Boxes,
   Settings,
+  PanelLeftClose,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -82,13 +83,20 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 interface SidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
   theme?: 'default' | 'sample';
 }
 
 // Persist sidebar scroll position across route changes and component remounts
 let cachedSidebarScroll = 0;
 
-export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
+export function Sidebar({
+  mobileOpen = false,
+  onMobileClose,
+  collapsed = false,
+  onToggleCollapse,
+}: SidebarProps) {
   const location = useLocation();
   const pathname = location.pathname;
   const { user } = useAuth();
@@ -104,7 +112,9 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         const parsed = parseInt(stored, 10);
         if (!isNaN(parsed)) savedScroll = parsed;
       }
-    } catch {}
+    } catch {
+      // Ignore sessionStorage errors
+    }
 
     const applyScroll = () => {
       if (scrollContainerRef.current && savedScroll > 0) {
@@ -127,7 +137,9 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     cachedSidebarScroll = top;
     try {
       sessionStorage.setItem('aquanexus_sidebar_scroll', String(top));
-    } catch {}
+    } catch {
+      // Ignore sessionStorage errors
+    }
   };
 
   const handleLinkClick = () => {
@@ -136,7 +148,9 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
       cachedSidebarScroll = top;
       try {
         sessionStorage.setItem('aquanexus_sidebar_scroll', String(top));
-      } catch {}
+      } catch {
+        // Ignore sessionStorage errors
+      }
     }
     onMobileClose?.();
   };
@@ -151,108 +165,132 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
       )}
 
       <aside
+        aria-hidden={collapsed ? 'true' : undefined}
         className={cn(
-          'fixed top-0 bottom-0 left-0 z-40 flex flex-col w-64 border-r transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto bg-white text-black border-gray-200 shadow-none',
-          mobileOpen ? 'translate-x-0 shadow-erp-modal' : '-translate-x-full'
+          'fixed top-0 bottom-0 left-0 z-40 flex flex-col border-r transition-all duration-300 ease-in-out lg:static lg:z-auto bg-white text-black border-gray-200 shadow-none',
+          mobileOpen ? 'w-64 translate-x-0 shadow-erp-modal' : 'w-64 -translate-x-full',
+          'lg:translate-x-0',
+          collapsed
+            ? 'lg:w-0 lg:border-r-0 lg:overflow-hidden lg:opacity-0 lg:invisible lg:pointer-events-none'
+            : 'lg:w-64 lg:border-r lg:opacity-100 lg:visible'
         )}
       >
-        <div className="flex items-center justify-between h-16 px-5 border-b bg-white border-gray-200">
-          <Link to={user ? getDashboardRoute(user.role) : '/'} className="flex items-center gap-2.5 group">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg group-hover:scale-105 transition-transform bg-orange-50 text-orange-600 border border-orange-200">
-              <Droplets className="w-4 h-4 fill-orange-200 text-orange-600" />
-            </div>
-            <div>
-              <span className="text-sm font-bold tracking-tight block leading-tight text-black">
-                Aqua<span className="text-orange-600 font-extrabold">Nexus</span>
-              </span>
-              <span className="text-[9px] uppercase tracking-widest font-semibold block text-gray-500">
-                Plant Manager
-              </span>
-            </div>
-          </Link>
+        <div className="w-64 min-w-[16rem] flex flex-col h-full shrink-0">
+          <div className="flex items-center justify-between h-16 px-5 border-b bg-white border-gray-200 shrink-0">
+            <Link to={user ? getDashboardRoute(user.role) : '/'} className="flex items-center gap-2.5 group">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg group-hover:scale-105 transition-transform bg-orange-50 text-orange-600 border border-orange-200">
+                <Droplets className="w-4 h-4 fill-orange-200 text-orange-600" />
+              </div>
+              <div>
+                <span className="text-sm font-bold tracking-tight block leading-tight text-black">
+                  Aqua<span className="text-orange-600 font-extrabold">Nexus</span>
+                </span>
+                <span className="text-[9px] uppercase tracking-widest font-semibold block text-gray-500">
+                  Plant Manager
+                </span>
+              </div>
+            </Link>
 
-          {onMobileClose && (
-            <button
-              onClick={onMobileClose}
-              className="lg:hidden p-1.5 rounded-lg transition-colors text-gray-600 hover:text-black hover:bg-gray-100"
-              aria-label="Close navigation"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        <div
-          ref={scrollContainerRef}
-          onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-3 py-2 space-y-4"
-        >
-          {navSections.map((section, sIdx) => (
-            <div key={sIdx} className="space-y-0.5">
-              {section.sectionTitle && (
-                <h4 className="px-3 text-[10px] font-bold uppercase tracking-wider py-1 text-gray-500">
-                  {section.sectionTitle}
-                </h4>
+            <div className="flex items-center gap-1">
+              {onToggleCollapse && (
+                <button
+                  type="button"
+                  onClick={onToggleCollapse}
+                  className="hidden lg:flex items-center justify-center p-2 rounded-lg transition-colors text-gray-700 hover:bg-gray-100 hover:text-black focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+                  aria-label="Collapse sidebar"
+                  title="Collapse sidebar"
+                >
+                  <PanelLeftClose className="w-5 h-5" />
+                </button>
               )}
-              {section.items.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== '/admin/dashboard' &&
-                    item.href !== '/admin/store-manager-oversight/dashboard' &&
-                    item.href !== '/manager/dashboard' &&
-                    item.href !== '/store/dashboard' &&
-                    item.href !== '/distributor/dashboard' &&
-                    item.href !== '/accountant/dashboard' &&
-                    pathname.startsWith(item.href));
-                const icon = ICON_MAP[item.iconName] || <ChevronRight className="w-4 h-4" />;
 
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    onClick={handleLinkClick}
-                    className={cn(
-                      'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-150 group border',
-                      isActive
-                        ? 'bg-gray-100 text-black font-bold border-l-[3px] border-l-orange-500 border-t-transparent border-r-transparent border-b-transparent shadow-xs'
-                        : 'text-black border-transparent hover:bg-gray-100 hover:text-black'
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={cn(
-                          'transition-colors',
-                          isActive ? 'text-orange-600' : 'text-gray-600 group-hover:text-black'
-                        )}
-                      >
-                        {icon}
-                      </span>
-                      <span>{item.title}</span>
-                    </div>
-
-                    {item.badge && (
-                      <span
-                        className={cn(
-                          'px-1.5 py-0.5 text-[10px] font-bold rounded-md',
-                          isActive
-                            ? 'bg-orange-500 text-black font-bold'
-                            : 'bg-gray-100 text-black'
-                        )}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
+              {onMobileClose && (
+                <button
+                  type="button"
+                  onClick={onMobileClose}
+                  className="lg:hidden p-1.5 rounded-lg transition-colors text-gray-600 hover:text-black hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+                  aria-label="Close navigation"
+                  title="Close navigation"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          ))}
-        </div>
+          </div>
 
-        <div className="p-3 border-t text-center bg-white border-gray-200">
-          <p className="text-[11px] font-medium text-gray-500">
-            AquaNexus
-          </p>
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto px-3 py-2 space-y-4"
+          >
+            {navSections.map((section, sIdx) => (
+              <div key={sIdx} className="space-y-0.5">
+                {section.sectionTitle && (
+                  <h4 className="px-3 text-[10px] font-bold uppercase tracking-wider py-1 text-gray-500">
+                    {section.sectionTitle}
+                  </h4>
+                )}
+                {section.items.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== '/admin/dashboard' &&
+                      item.href !== '/admin/store-manager-oversight/dashboard' &&
+                      item.href !== '/manager/dashboard' &&
+                      item.href !== '/store/dashboard' &&
+                      item.href !== '/distributor/dashboard' &&
+                      item.href !== '/accountant/dashboard' &&
+                      pathname.startsWith(item.href));
+                  const icon = ICON_MAP[item.iconName] || <ChevronRight className="w-4 h-4" />;
+
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={handleLinkClick}
+                      tabIndex={collapsed ? -1 : undefined}
+                      className={cn(
+                        'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-150 group border',
+                        isActive
+                          ? 'bg-gray-100 text-black font-bold border-l-[3px] border-l-orange-500 border-t-transparent border-r-transparent border-b-transparent shadow-xs'
+                          : 'text-black border-transparent hover:bg-gray-100 hover:text-black'
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={cn(
+                            'transition-colors',
+                            isActive ? 'text-orange-600' : 'text-gray-600 group-hover:text-black'
+                          )}
+                        >
+                          {icon}
+                        </span>
+                        <span>{item.title}</span>
+                      </div>
+
+                      {item.badge && (
+                        <span
+                          className={cn(
+                            'px-1.5 py-0.5 text-[10px] font-bold rounded-md',
+                            isActive
+                              ? 'bg-orange-500 text-black font-bold'
+                              : 'bg-gray-100 text-black'
+                          )}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          <div className="p-3 border-t text-center bg-white border-gray-200 shrink-0">
+            <p className="text-[11px] font-medium text-gray-500">
+              AquaNexus
+            </p>
+          </div>
         </div>
       </aside>
     </>
