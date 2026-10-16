@@ -14,6 +14,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Pagination } from '../../components/ui/Pagination';
 import { employeeService } from '../../services/employeeService';
 import type { Employee } from '../../types';
+import { showToast } from '../../lib/api';
 
 export const EmployeeListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export const EmployeeListPage: React.FC = () => {
   const [status, setStatus] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchEmployees = useCallback(async () => {
     setIsLoading(true);
@@ -42,6 +44,41 @@ export const EmployeeListPage: React.FC = () => {
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
+
+  const handleToggleStatus = async (emp: Employee) => {
+    if (togglingId) return;
+    const newStatus = emp.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    setTogglingId(emp.id);
+
+    // Optimistic UI update
+    setEmployees((prev) =>
+      prev.map((item) => (item.id === emp.id ? { ...item, status: newStatus } : item))
+    );
+
+    try {
+      const res = await employeeService.updateEmployee(emp.id, { status: newStatus });
+      if (res.success) {
+        showToast(
+          `${emp.name} marked as ${newStatus === 'ACTIVE' ? 'Active' : 'Inactive'}`,
+          newStatus === 'ACTIVE' ? 'success' : 'warning'
+        );
+      } else {
+        // Revert on failure
+        setEmployees((prev) =>
+          prev.map((item) => (item.id === emp.id ? { ...item, status: emp.status } : item))
+        );
+        showToast(res.message || 'Failed to update employee status', 'error');
+      }
+    } catch (err: any) {
+      // Revert on failure
+      setEmployees((prev) =>
+        prev.map((item) => (item.id === emp.id ? { ...item, status: emp.status } : item))
+      );
+      showToast(err.message || 'Failed to update employee status', 'error');
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -82,12 +119,58 @@ export const EmployeeListPage: React.FC = () => {
       header: 'Status',
       accessorKey: 'status' as keyof Employee,
       cell: (e: Employee) => {
+        const isActive = e.status === 'ACTIVE';
+        const isToggling = togglingId === e.id;
         const variantMap: Record<string, 'success' | 'warning' | 'neutral'> = {
           ACTIVE: 'success',
           ON_LEAVE: 'warning',
           INACTIVE: 'neutral',
         };
-        return <Badge variant={variantMap[e.status] || 'neutral'}>{e.status.replace('_', ' ')}</Badge>;
+
+        return (
+          <div className="flex items-center gap-3">
+            {/* Slider Switch Button */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isActive}
+              aria-label={`Mark ${e.name} as ${isActive ? 'Inactive' : 'Active'}`}
+              disabled={isToggling}
+              onClick={(ev) => {
+                ev.stopPropagation();
+                handleToggleStatus(e);
+              }}
+              title={`Click to mark as ${isActive ? 'Inactive' : 'Active'}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 select-none ${
+                isActive ? 'bg-emerald-500' : 'bg-gray-300 hover:bg-gray-400'
+              } ${isToggling ? 'opacity-60 cursor-wait' : 'hover:opacity-90'}`}
+            >
+              <span className="sr-only">
+                {isActive ? 'Active status, click to deactivate' : 'Inactive status, click to activate'}
+              </span>
+              <span
+                className={`pointer-events-none inline-flex items-center justify-center h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${
+                  isActive ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              >
+                {isToggling ? (
+                  <span className="w-2.5 h-2.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full transition-colors duration-200 ${
+                      isActive ? 'bg-emerald-500' : 'bg-gray-400'
+                    }`}
+                  />
+                )}
+              </span>
+            </button>
+
+            {/* Status Badge */}
+            <Badge variant={variantMap[e.status] || 'neutral'}>
+              {e.status.replace('_', ' ')}
+            </Badge>
+          </div>
+        );
       },
     },
     {

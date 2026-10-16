@@ -497,7 +497,8 @@ const updateEmployee = async (req, res) => {
             ...(firstName && { firstName }),
             ...(lastName && { lastName }),
             ...(email && { email }),
-            ...(phone && { phone })
+            ...(phone && { phone }),
+            ...(status && { status: status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE' })
           }
         });
       } catch (userErr) {
