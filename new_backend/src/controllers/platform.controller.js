@@ -674,7 +674,20 @@ const getCurrentCompanySubscription = async (req, res) => {
       requiresUserDeletion: usage.requiresUserDeletion,
     };
 
-    return sendSuccess(res, { subscription: usage }, 'Company subscription details retrieved');
+    const allPlans = await prisma.subscriptionPlan.findMany({
+      where: { isActive: true },
+      orderBy: { price: 'asc' },
+    });
+    const formattedPlans = allPlans.map((p) => ({
+      ...p,
+      price: Number(p.price),
+    }));
+
+    return sendSuccess(
+      res,
+      { subscription: usage, availablePlans: formattedPlans },
+      'Company subscription details retrieved'
+    );
   } catch (error) {
     console.error('getCurrentCompanySubscription error:', error);
     return sendError(res, 'Failed to retrieve company subscription', 500);

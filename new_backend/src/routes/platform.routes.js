@@ -90,6 +90,7 @@ router.delete('/platform/organizations/:id', ...superAdminOnly, deleteOrganizati
 
 // Company Admin subscription, usage, remaining capacity, upgrade details
 router.get('/company/subscription', requireAuth, getCurrentCompanySubscription);
+router.get('/company/plans', requireAuth, getSubscriptionPlans);
 
 // Company profile view and edit
 router.get('/company/profile', requireAuth, getCompanyProfile);
