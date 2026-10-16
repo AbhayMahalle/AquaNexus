@@ -270,6 +270,14 @@ export function AppRoutes() {
 
         {/* Employee */}
         <Route path="/employee/dashboard" element={<EmployeeDashboardPage />} />
+
+        {/* Profile routes (accessible to all roles) */}
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/admin/profile" element={<ProfilePage />} />
+        <Route path="/manager/profile" element={<ProfilePage />} />
+        <Route path="/store/profile" element={<ProfilePage />} />
+        <Route path="/distributor/profile" element={<ProfilePage />} />
+        <Route path="/accountant/profile" element={<ProfilePage />} />
         <Route path="/employee/profile" element={<ProfilePage />} />
         <Route path="/employee/attendance" element={<AttendancePage />} />
         <Route path="/employee/leave" element={<LeaveListPage />} />

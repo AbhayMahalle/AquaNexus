@@ -82,7 +82,13 @@ export function Topbar({ onMobileToggle }: TopbarProps) {
             {
               label: 'Profile',
               icon: <UserIcon className="w-4 h-4" />,
-              onClick: () => { navigate('/profile'); },
+              onClick: () => {
+                if (user?.role === 'super_admin' || user?.isSuperAdmin) {
+                  navigate('/super-admin/profile');
+                } else {
+                  navigate('/profile');
+                }
+              },
             },
             { divider: true, label: '' },
             {

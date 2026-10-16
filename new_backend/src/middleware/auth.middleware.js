@@ -27,7 +27,11 @@ const getUserWithRetry = async (userId, maxRetries = 2) => {
             include: { distributor: true },
           },
           managerAssignments: true,
-          employee: true,
+          employee: {
+            include: {
+              department: true,
+            },
+          },
         },
       });
     } catch (err) {
