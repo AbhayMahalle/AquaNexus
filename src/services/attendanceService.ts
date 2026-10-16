@@ -25,6 +25,10 @@ export const attendanceService = {
     query.append('endDate', date);
     query.append('limit', '100');
 
+    if (params?.department && params.department !== 'ALL') {
+      query.append('department', params.department);
+    }
+
     const realResponse = await fetchApi<{ attendance: any[] }>(`/attendance?${query.toString()}`);
     if (realResponse.success && realResponse.data) {
       const rawList = realResponse.data.attendance || (Array.isArray(realResponse.data) ? realResponse.data : []);
@@ -35,7 +39,8 @@ export const attendanceService = {
         result = result.filter((a) => a.employeeName.toLowerCase().includes(q) || a.employeeId.toLowerCase().includes(q));
       }
       if (params?.department && params.department !== 'ALL') {
-        result = result.filter((a) => a.department.toLowerCase() === params.department!.toLowerCase());
+        const target = params.department.trim().toLowerCase();
+        result = result.filter((a) => (a.department || '').trim().toLowerCase() === target);
       }
 
       return {

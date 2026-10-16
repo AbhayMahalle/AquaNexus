@@ -23,11 +23,24 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [department, setDepartment] = useState('ALL');
+  const [departments, setDepartments] = useState<{ id: string; name: string; code: string }[]>([]);
   const [search, setSearch] = useState('');
   const [records, setRecords] = useState<Attendance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    employeeService.getDepartments().then((res) => {
+      if (mounted && res.success && res.data) {
+        setDepartments(res.data);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const loadAttendance = useCallback(async () => {
     setIsLoading(true);
@@ -57,9 +70,17 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
           remarks: ''
         };
       });
-      setRecords(mergedRecords);
+
+      const filteredRecords = department === 'ALL'
+        ? mergedRecords
+        : mergedRecords.filter(r => (r.department || '').trim().toLowerCase() === department.trim().toLowerCase());
+
+      setRecords(filteredRecords);
     } else if (attRes.success) {
-      setRecords(attRes.data);
+      const filtered = department === 'ALL'
+        ? attRes.data
+        : attRes.data.filter(r => (r.department || '').trim().toLowerCase() === department.trim().toLowerCase());
+      setRecords(filtered);
     }
     
     setIsLoading(false);
@@ -348,18 +369,22 @@ export const DailyAttendancePage: React.FC<DailyAttendancePageProps> = ({ allowe
                 onChange={(e) => setSelectedDate(e.target.value)}
               />
             </div>
-            <div className="w-48">
+            <div className="w-56">
               <Select
                 label="Department"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
                 options={[
                   { value: 'ALL', label: 'All Departments' },
-                  { value: 'Production', label: 'Production' },
-                  { value: 'Quality Assurance', label: 'Quality Assurance' },
-                  { value: 'Store', label: 'Store & Warehouse' },
-                  { value: 'Maintenance', label: 'Maintenance' },
-                  { value: 'Administration', label: 'Administration' },
+                  ...(departments.length > 0
+                    ? departments.map((d) => ({ value: d.name, label: d.name }))
+                    : [
+                        { value: 'General Management', label: 'General Management' },
+                        { value: 'Production', label: 'Production' },
+                        { value: 'Store & Inventory', label: 'Store & Inventory' },
+                        { value: 'Distribution', label: 'Distribution' },
+                        { value: 'Finance & Accounts', label: 'Finance & Accounts' },
+                      ])
                 ]}
               />
             </div>

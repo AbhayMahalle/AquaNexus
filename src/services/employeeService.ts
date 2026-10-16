@@ -53,7 +53,8 @@ export const employeeService = {
     const query = new URLSearchParams();
     if (params?.search) query.append('search', params.search);
     if (params?.status && params.status !== 'ALL') query.append('status', params.status);
-    query.append('limit', '50');
+    if (params?.department && params.department !== 'ALL') query.append('department', params.department);
+    query.append('limit', '100');
 
     const endpoint = `/employees${query.toString() ? `?${query.toString()}` : ''}`;
     const realResponse = await fetchApi<{ employees: any[]; pagination: any }>(endpoint);
@@ -63,7 +64,8 @@ export const employeeService = {
       let result = rawList.map(mapEmployee);
 
       if (params?.department && params.department !== 'ALL') {
-        result = result.filter((e) => e.department.toLowerCase() === params.department!.toLowerCase());
+        const target = params.department.trim().toLowerCase();
+        result = result.filter((e) => (e.department || '').trim().toLowerCase() === target);
       }
 
       return {

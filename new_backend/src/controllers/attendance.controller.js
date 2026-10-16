@@ -37,8 +37,14 @@ const getAttendance = async (req, res) => {
       where.status = status;
     }
 
-    if (departmentId) {
-      where.employee = { departmentId };
+    const deptQuery = req.query.departmentId || req.query.department;
+    if (deptQuery && deptQuery !== 'ALL') {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deptQuery);
+      if (isUuid) {
+        where.employee = { ...(where.employee || {}), departmentId: deptQuery };
+      } else {
+        where.employee = { ...(where.employee || {}), department: { name: { equals: deptQuery, mode: 'insensitive' } } };
+      }
     }
 
     if (startDate || endDate) {
@@ -47,7 +53,9 @@ const getAttendance = async (req, res) => {
         where.attendanceDate.gte = new Date(startDate);
       }
       if (endDate) {
-        where.attendanceDate.lte = new Date(endDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.attendanceDate.lte = end;
       }
     }
 

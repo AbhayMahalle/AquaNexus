@@ -35,8 +35,14 @@ const getEmployees = async (req, res) => {
       where.id = req.user.employee.id;
     }
 
-    if (departmentId) {
-      where.departmentId = departmentId;
+    const deptQuery = req.query.departmentId || req.query.department;
+    if (deptQuery && deptQuery !== 'ALL') {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deptQuery);
+      if (isUuid) {
+        where.departmentId = deptQuery;
+      } else {
+        where.department = { name: { equals: deptQuery, mode: 'insensitive' } };
+      }
     }
 
     if (status) {

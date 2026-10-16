@@ -27,10 +27,23 @@ export const EmployeeListPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [department, setDepartment] = useState('ALL');
+  const [departments, setDepartments] = useState<{ id: string; name: string; code: string }[]>([]);
   const [status, setStatus] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    employeeService.getDepartments().then((res) => {
+      if (mounted && res.success && res.data) {
+        setDepartments(res.data);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const fetchEmployees = useCallback(async () => {
     setIsLoading(true);
@@ -262,17 +275,21 @@ export const EmployeeListPage: React.FC = () => {
             />
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="w-44">
+            <div className="w-56">
               <Select
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
                 options={[
                   { value: 'ALL', label: 'All Departments' },
-                  { value: 'Production', label: 'Production' },
-                  { value: 'Quality Assurance', label: 'Quality Assurance' },
-                  { value: 'Store', label: 'Store & Warehouse' },
-                  { value: 'Maintenance', label: 'Maintenance' },
-                  { value: 'Administration', label: 'Administration' },
+                  ...(departments.length > 0
+                    ? departments.map((d) => ({ value: d.name, label: d.name }))
+                    : [
+                        { value: 'General Management', label: 'General Management' },
+                        { value: 'Production', label: 'Production' },
+                        { value: 'Store & Inventory', label: 'Store & Inventory' },
+                        { value: 'Distribution', label: 'Distribution' },
+                        { value: 'Finance & Accounts', label: 'Finance & Accounts' },
+                      ])
                 ]}
               />
             </div>
