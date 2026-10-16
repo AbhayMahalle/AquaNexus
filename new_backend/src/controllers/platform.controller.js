@@ -21,48 +21,73 @@ const getPlatformStats = async (req, res) => {
       activeCompanies,
       suspendedCompanies,
       totalUsers,
-      subscriptions,
+      allOrgsWithSubs,
+      allPayments,
       recentPayments,
+      allPlans,
     ] = await Promise.all([
       prisma.organization.count(),
       prisma.organization.count({ where: { status: 'ACTIVE' } }),
       prisma.organization.count({ where: { status: 'SUSPENDED' } }),
       prisma.user.count({ where: { isSuperAdmin: false } }),
-      prisma.companySubscription.findMany({
-        include: { plan: true },
+      prisma.organization.findMany({
+        where: { status: 'ACTIVE' },
+        include: {
+          subscriptions: {
+            where: { status: 'ACTIVE' },
+            include: { plan: true },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      }),
+      prisma.subscriptionPayment.aggregate({
+        where: { status: 'COMPLETED' },
+        _sum: { amount: true },
+        _count: true,
       }),
       prisma.subscriptionPayment.findMany({
         take: 10,
         orderBy: { paidAt: 'desc' },
         include: { organization: { select: { name: true, slug: true } } },
       }),
+      prisma.subscriptionPlan.findMany({
+        where: { isActive: true },
+        orderBy: { price: 'asc' },
+      }),
     ]);
 
-    // Aggregate subscription counts by plan code
-    const planBreakdown = {
-      BASIC: 0,
-      PRO: 0,
-      PRO_MAX: 0,
-      OTHER: 0,
-    };
+    // Dynamic Plan Breakdown for all active plans in DB
+    const planBreakdown = {};
+    allPlans.forEach((p) => {
+      planBreakdown[p.code] = 0;
+    });
 
-    let totalRevenue = 0;
-    subscriptions.forEach((sub) => {
-      const code = sub.plan?.code;
-      if (planBreakdown[code] !== undefined) {
-        planBreakdown[code]++;
-      } else {
-        planBreakdown.OTHER++;
+    let mrr = 0;
+    let activeSubscriptionsCount = 0;
+
+    allOrgsWithSubs.forEach((org) => {
+      const activeSub = org.subscriptions[0];
+      if (activeSub && activeSub.plan) {
+        activeSubscriptionsCount++;
+        const code = activeSub.plan.code;
+        planBreakdown[code] = (planBreakdown[code] || 0) + 1;
+
+        const price = Number(activeSub.customPrice ?? activeSub.plan.price ?? 0);
+        let monthly = price;
+        const cycle = (activeSub.billingCycle || 'MONTHLY').toUpperCase();
+        if (cycle === 'ANNUAL' || cycle === 'YEARLY') {
+          monthly = price / 12;
+        } else if (cycle === 'QUARTERLY') {
+          monthly = price / 3;
+        }
+        mrr += monthly;
       }
     });
 
-    const allPayments = await prisma.subscriptionPayment.aggregate({
-      where: { status: 'COMPLETED' },
-      _sum: { amount: true },
-      _count: true,
-    });
-
-    totalRevenue = Number(allPayments._sum.amount || 0);
+    const arr = mrr * 12;
+    const collectedRevenue = Number(allPayments._sum.amount || 0);
+    const totalRevenue = collectedRevenue > 0 ? collectedRevenue : mrr;
 
     return sendSuccess(
       res,
@@ -73,6 +98,9 @@ const getPlatformStats = async (req, res) => {
           suspendedCompanies,
           totalUsers,
           totalRevenue,
+          mrr,
+          arr,
+          activeSubscriptions: activeSubscriptionsCount,
         },
         companies: {
           total: totalCompanies,
@@ -83,11 +111,13 @@ const getPlatformStats = async (req, res) => {
           total: totalUsers,
         },
         subscriptions: {
-          total: subscriptions.length,
+          total: activeSubscriptionsCount,
           breakdown: planBreakdown,
         },
         financials: {
           totalRevenue,
+          mrr,
+          arr,
           totalTransactions: allPayments._count,
           currency: 'INR',
         },
@@ -100,6 +130,16 @@ const getPlatformStats = async (req, res) => {
           paymentType: p.paymentType,
           status: p.status,
           paidAt: p.paidAt,
+        })),
+        plans: allPlans.map((p) => ({
+          id: p.id,
+          code: p.code,
+          name: p.name,
+          description: p.description,
+          price: Number(p.price),
+          billingCycle: p.billingCycle,
+          maxUsers: p.maxUsers,
+          subscriberCount: planBreakdown[p.code] || 0,
         })),
       },
       'Platform statistics retrieved successfully',

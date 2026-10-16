@@ -23,6 +23,8 @@ import {
   Clock,
   Search,
   Filter,
+  RefreshCw,
+  Building2,
 } from 'lucide-react';
 
 export default function SubscriptionsManagement() {
@@ -333,6 +335,27 @@ export default function SubscriptionsManagement() {
     },
   ];
 
+  const kpis = React.useMemo(() => {
+    const total = subscriptions.length;
+    const active = subscriptions.filter((s) => s.status === 'ACTIVE').length;
+    const suspended = subscriptions.filter((s) => s.status === 'SUSPENDED').length;
+    const mrr = subscriptions.reduce((sum, s) => {
+      if (s.status !== 'ACTIVE') return sum;
+      const price = Number(s.plan?.price || 0);
+      const cycle = (s.plan?.billingCycle || 'MONTHLY').toUpperCase();
+      if (cycle === 'ANNUAL' || cycle === 'YEARLY') return sum + price / 12;
+      if (cycle === 'QUARTERLY') return sum + price / 3;
+      return sum + price;
+    }, 0);
+    const breakdown: Record<string, number> = {};
+    subscriptions.forEach((s) => {
+      if (s.status === 'ACTIVE' && s.plan?.code) {
+        breakdown[s.plan.code] = (breakdown[s.plan.code] || 0) + 1;
+      }
+    });
+    return { total, active, suspended, mrr, breakdown };
+  }, [subscriptions]);
+
   return (
     <AuthGuard allowedRoles={['super_admin']}>
       <DashboardLayout>
@@ -346,13 +369,85 @@ export default function SubscriptionsManagement() {
               icon: <Layers className="w-4 h-4" />,
               onClick: () => openAssignModal(),
             }}
+            secondaryActions={[
+              {
+                label: isLoading ? 'Recalculating...' : 'Refresh Data',
+                icon: <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-blue-600' : ''}`} />,
+                variant: 'outline',
+                onClick: fetchData,
+              },
+            ]}
           />
+
+          {/* Real-time Subscriptions Analytics KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-xs border-l-4 border-l-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Subscriptions</p>
+                  <h3 className="text-2xl font-extrabold text-black mt-1">{kpis.active}</h3>
+                  <p className="text-xs text-gray-500 mt-1">out of {kpis.total} registered tenants</p>
+                </div>
+                <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-xs border-l-4 border-l-green-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Monthly Recurring Value</p>
+                  <h3 className="text-2xl font-extrabold text-black mt-1">{formatCurrency(kpis.mrr)}</h3>
+                  <p className="text-xs text-green-700 font-semibold mt-1">ARR: {formatCurrency(kpis.mrr * 12)}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-green-50 text-green-600">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-xs border-l-4 border-l-purple-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Plan Distribution</p>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    {Object.entries(kpis.breakdown).length > 0 ? (
+                      Object.entries(kpis.breakdown).map(([code, count]) => (
+                        <span key={code} className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                          {code}: {count}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-gray-400">None active</span>
+                    )}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
+                  <Layers className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-xs border-l-4 border-l-orange-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Available Plan Tiers</p>
+                  <h3 className="text-2xl font-extrabold text-black mt-1">{plans.length}</h3>
+                  <p className="text-xs text-gray-500 mt-1">{plans.filter(p => p.isActive).length} active platform tiers</p>
+                </div>
+                <div className="p-3 rounded-xl bg-orange-50 text-orange-600">
+                  <Building2 className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+          </div>
 
           <Card className="mb-6">
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3">
               <CardTitle className="text-base font-bold flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-blue-600" />
-                <span>Active Customer Subscriptions ({filteredSubs.length})</span>
+                <span>Customer Subscriptions ({filteredSubs.length})</span>
               </CardTitle>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">

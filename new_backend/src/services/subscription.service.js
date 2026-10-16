@@ -566,6 +566,24 @@ async function assignCompanyPlan(
         },
       });
 
+      // Auto-record completed payment for new/upgraded plan if effectivePrice > 0
+      if (Number(effectivePrice) > 0 && status === 'ACTIVE') {
+        await tx.subscriptionPayment.create({
+          data: {
+            organizationId,
+            subscriptionId: subscription.id,
+            amount: Number(effectivePrice),
+            currency: 'INR',
+            paymentMethod: 'UPI',
+            paymentType: existing ? 'PLAN_CHANGE' : 'INITIAL_SUBSCRIPTION',
+            transactionRef: `SUB-${Date.now().toString().slice(-6)}-${plan.code}`,
+            notes: notes || `Subscription ${existing ? 'changed' : 'assigned'} to ${plan.name} (${plan.code})`,
+            status: 'COMPLETED',
+            recordedById: performedById || null,
+          },
+        });
+      }
+
       return subscription;
     },
     { timeout: 25000, maxWait: 15000 },

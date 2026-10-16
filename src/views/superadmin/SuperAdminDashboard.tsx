@@ -24,6 +24,7 @@ import {
   Settings,
   Activity,
   CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function SuperAdminDashboard() {
@@ -134,6 +135,12 @@ export default function SuperAdminDashboard() {
             }}
             secondaryActions={[
               {
+                label: isLoading ? 'Recalculating...' : 'Refresh Realtime Data',
+                icon: <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-orange-600' : ''}`} />,
+                variant: 'outline',
+                onClick: fetchData,
+              },
+              {
                 label: 'Plans',
                 icon: <Layers className="w-4 h-4" />,
                 variant: 'outline',
@@ -181,12 +188,15 @@ export default function SuperAdminDashboard() {
                   <h3 className="text-2xl font-extrabold text-black mt-1">
                     {stats?.subscriptions?.total ?? 0}
                   </h3>
-                  <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-500">
-                    <span className="font-semibold text-gray-700">Basic: {stats?.subscriptions?.breakdown?.BASIC ?? 0}</span>
-                    <span>•</span>
-                    <span className="font-semibold text-gray-700">Pro: {stats?.subscriptions?.breakdown?.PRO ?? 0}</span>
-                    <span>•</span>
-                    <span className="font-semibold text-gray-700">Max: {stats?.subscriptions?.breakdown?.PRO_MAX ?? 0}</span>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-gray-600">
+                    {Object.entries(stats?.subscriptions?.breakdown || {}).map(([code, count]: [string, any], idx) => (
+                      <React.Fragment key={code}>
+                        {idx > 0 && <span>•</span>}
+                        <span className="font-semibold text-gray-800">
+                          {code}: <span className="font-bold text-blue-600">{count}</span>
+                        </span>
+                      </React.Fragment>
+                    ))}
                   </div>
                 </div>
                 <div className="p-3 rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
@@ -205,8 +215,8 @@ export default function SuperAdminDashboard() {
                   <h3 className="text-2xl font-extrabold text-black mt-1">
                     {formatCurrency(stats?.financials?.totalRevenue ?? 0)}
                   </h3>
-                  <p className="text-xs text-gray-500 font-medium mt-1">
-                    {stats?.financials?.totalTransactions ?? 0} Transactions recorded
+                  <p className="text-xs text-gray-600 font-medium mt-1">
+                    MRR: <span className="font-bold text-black">{formatCurrency(stats?.financials?.mrr ?? 0)}</span> • {stats?.financials?.totalTransactions ?? 0} Transactions
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-green-50 text-green-600 border border-green-200">
@@ -260,36 +270,47 @@ export default function SuperAdminDashboard() {
 
             <div className="space-y-4">
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-3 flex flex-row items-center justify-between">
                   <CardTitle className="text-sm font-bold flex items-center gap-2">
                     <Layers className="w-4 h-4 text-blue-600" />
                     <span>Plan Entitlements Guide</span>
                   </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-blue-600 p-0 h-auto"
+                    onClick={() => navigate('/super-admin/plans')}
+                  >
+                    Edit Plans
+                  </Button>
                 </CardHeader>
                 <CardContent className="space-y-3 text-xs">
-                  <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
-                    <div className="flex items-center justify-between font-bold text-black">
-                      <span>Basic Plan</span>
-                      <span className="text-gray-600">₹999 / mo</span>
-                    </div>
-                    <p className="text-gray-500 mt-0.5">Strictly 1 authorized operational account.</p>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-green-50/50 border border-green-200">
-                    <div className="flex items-center justify-between font-bold text-green-900">
-                      <span>Pro Plan</span>
-                      <span className="text-green-700">₹2,999 / mo</span>
-                    </div>
-                    <p className="text-green-700 mt-0.5">Up to 5 authorized operational accounts.</p>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-orange-50/50 border border-orange-200">
-                    <div className="flex items-center justify-between font-bold text-orange-900">
-                      <span>Pro Max Plan</span>
-                      <span className="text-orange-700">Custom Pricing</span>
-                    </div>
-                    <p className="text-orange-700 mt-0.5">Tailored limits, duration, and enterprise features.</p>
-                  </div>
+                  {stats?.plans && stats.plans.length > 0 ? (
+                    stats.plans.map((p: any) => (
+                      <div
+                        key={p.id}
+                        className="p-3 rounded-lg bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all"
+                      >
+                        <div className="flex items-center justify-between font-bold text-black">
+                          <div className="flex items-center gap-1.5">
+                            <span>{p.name}</span>
+                            <span className="text-[10px] font-mono bg-gray-200 text-gray-700 px-1 rounded">{p.code}</span>
+                          </div>
+                          <span className="text-gray-900 font-extrabold">
+                            {formatCurrency(p.price)} <span className="text-[10px] font-normal text-gray-500">/{p.billingCycle.toLowerCase()}</span>
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-gray-500 mt-1.5">
+                          <span>Capacity: up to {p.maxUsers} accounts</span>
+                          <span className="font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[11px]">
+                            {p.subscriberCount} active {p.subscriberCount === 1 ? 'tenant' : 'tenants'}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-400 italic">No plans configured</div>
+                  )}
 
                   <Button
                     variant="outline"

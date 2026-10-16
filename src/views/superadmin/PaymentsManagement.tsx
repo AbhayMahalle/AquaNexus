@@ -21,6 +21,7 @@ import {
   Clock,
   Building2,
   Tag,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function PaymentsManagement() {
@@ -186,6 +187,15 @@ export default function PaymentsManagement() {
     },
   ];
 
+  const kpis = React.useMemo(() => {
+    const totalCollected = payments
+      .filter((p) => p.status === 'COMPLETED')
+      .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const count = payments.filter((p) => p.status === 'COMPLETED').length;
+    const avg = count > 0 ? totalCollected / count : 0;
+    return { totalCollected, count, avg };
+  }, [payments]);
+
   return (
     <AuthGuard allowedRoles={['super_admin']}>
       <DashboardLayout>
@@ -199,7 +209,57 @@ export default function PaymentsManagement() {
               icon: <Plus className="w-4 h-4" />,
               onClick: openRecordModal,
             }}
+            secondaryActions={[
+              {
+                label: isLoading ? 'Recalculating...' : 'Refresh Payments',
+                icon: <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-green-600' : ''}`} />,
+                variant: 'outline',
+                onClick: fetchData,
+              },
+            ]}
           />
+
+          {/* Real-time Payment Revenue Analytics KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-xs border-l-4 border-l-green-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Revenue Collected</p>
+                  <h3 className="text-2xl font-extrabold text-black mt-1">{formatCurrency(kpis.totalCollected)}</h3>
+                  <p className="text-xs text-green-700 font-semibold mt-1">Live payments in database</p>
+                </div>
+                <div className="p-3 rounded-xl bg-green-50 text-green-600">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-xs border-l-4 border-l-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Completed Transactions</p>
+                  <h3 className="text-2xl font-extrabold text-black mt-1">{kpis.count}</h3>
+                  <p className="text-xs text-gray-500 mt-1">out of {payments.length} total entries</p>
+                </div>
+                <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-xs border-l-4 border-l-purple-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Average Transaction</p>
+                  <h3 className="text-2xl font-extrabold text-black mt-1">{formatCurrency(kpis.avg)}</h3>
+                  <p className="text-xs text-gray-500 mt-1">per subscription payment</p>
+                </div>
+                <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
+                  <Tag className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+          </div>
 
           <Card className="mb-6">
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3">
