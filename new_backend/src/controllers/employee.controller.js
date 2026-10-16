@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/apiResponse');
+const { isValidPhone, isValidEmail, extractPhoneDigits } = require('../utils/validation');
 
 /**
  * Get all employees with pagination, search, and filtering
@@ -206,6 +207,16 @@ const createEmployee = async (req, res) => {
       return sendError(res, 'First name and last name are required', 400);
     }
 
+    if (email && !isValidEmail(email)) {
+      return sendError(res, 'Please provide a valid email address (e.g. name@domain.com)', 400);
+    }
+
+    if (phone && !isValidPhone(phone)) {
+      return sendError(res, 'Phone number must be exactly 10 digits', 400);
+    }
+
+    const cleanPhone = phone ? extractPhoneDigits(phone) : '9876543210';
+
     // Resolve department inside caller's organization
     let targetDept = null;
     if (departmentId) {
@@ -289,7 +300,7 @@ const createEmployee = async (req, res) => {
             passwordHash,
             firstName,
             lastName,
-            phone: phone || '9876543210',
+            phone: cleanPhone,
             status: 'ACTIVE',
             organizationId: req.organizationId,
             isSuperAdmin: false,
@@ -317,7 +328,7 @@ const createEmployee = async (req, res) => {
         firstName,
         lastName,
         email: finalEmail,
-        phone: phone || '9876543210',
+        phone: cleanPhone,
         departmentId: targetDept.id,
         designation,
         address: address ? address.trim() : null,
@@ -400,6 +411,22 @@ const updateEmployee = async (req, res) => {
       return sendError(res, 'Employee not found', 404);
     }
 
+    if (email !== undefined && email !== null && String(email).trim() !== '') {
+      if (!isValidEmail(email)) {
+        return sendError(res, 'Please provide a valid email address (e.g. name@domain.com)', 400);
+      }
+    }
+
+    if (phone !== undefined && phone !== null && String(phone).trim() !== '') {
+      if (!isValidPhone(phone)) {
+        return sendError(res, 'Phone number must be exactly 10 digits', 400);
+      }
+    }
+
+    const cleanPhone = (phone !== undefined && phone !== null && String(phone).trim() !== '')
+      ? extractPhoneDigits(phone)
+      : phone;
+
     let resolvedDepartmentId = undefined;
     if (departmentId) {
       const isDeptUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(departmentId);
@@ -472,7 +499,7 @@ const updateEmployee = async (req, res) => {
         ...(firstName && { firstName }),
         ...(lastName && { lastName }),
         ...(email !== undefined && { email }),
-        ...(phone !== undefined && { phone }),
+        ...(phone !== undefined && { phone: cleanPhone }),
         ...(resolvedDepartmentId && { departmentId: resolvedDepartmentId }),
         ...(designation && { designation }),
         ...(address !== undefined && { address: address ? address.trim() : null }),
@@ -497,7 +524,7 @@ const updateEmployee = async (req, res) => {
             ...(firstName && { firstName }),
             ...(lastName && { lastName }),
             ...(email && { email }),
-            ...(phone && { phone }),
+            ...(phone && { phone: cleanPhone }),
             ...(status && { status: status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE' })
           }
         });

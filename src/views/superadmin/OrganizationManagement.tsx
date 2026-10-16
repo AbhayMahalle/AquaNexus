@@ -14,6 +14,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { apiRequest, showToast } from '@/lib/api';
 import { setSelectedOrganization } from '@/lib/auth';
+import { validatePhone, validateEmail } from '@/lib/validation';
 import {
   Building2,
   Plus,
@@ -199,6 +200,7 @@ export default function OrganizationManagement() {
   // Provision Modal State
   const [isProvisionOpen, setIsProvisionOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [provisionErrors, setProvisionErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -326,8 +328,32 @@ export default function OrganizationManagement() {
 
   const handleProvisionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.slug || !formData.adminEmail || !formData.adminPassword) {
-      showToast('Please fill all required fields', 'error');
+    const errors: Record<string, string> = {};
+
+    if (!formData.name?.trim()) errors.name = 'Company name is required';
+    if (!formData.slug?.trim()) errors.slug = 'Organization slug is required';
+    if (!formData.adminFirstName?.trim()) errors.adminFirstName = 'Admin first name is required';
+
+    const adminEmailErr = validateEmail(formData.adminEmail, true);
+    if (adminEmailErr) errors.adminEmail = adminEmailErr;
+
+    const contactEmailErr = validateEmail(formData.contactEmail, false);
+    if (contactEmailErr) errors.contactEmail = contactEmailErr;
+
+    const contactPhoneErr = validatePhone(formData.contactPhone, false);
+    if (contactPhoneErr) errors.contactPhone = contactPhoneErr;
+
+    if (!formData.adminPassword || formData.adminPassword.length < 6) {
+      errors.adminPassword = 'Password must be at least 6 characters';
+    }
+
+    setProvisionErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      showToast(
+        errors.adminEmail || errors.contactPhone || errors.contactEmail || errors.name || 'Please correct errors before provisioning',
+        'error'
+      );
       return;
     }
 
@@ -872,6 +898,7 @@ export default function OrganizationManagement() {
                 placeholder="e.g. Apex Pure Waters Ltd"
                 value={formData.name}
                 onChange={(e) => handleNameChange(e.target.value)}
+                error={provisionErrors.name}
                 required
               />
               <Input
@@ -879,6 +906,7 @@ export default function OrganizationManagement() {
                 placeholder="e.g. apex-pure-waters"
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                error={provisionErrors.slug}
                 required
               />
             </div>
@@ -890,12 +918,15 @@ export default function OrganizationManagement() {
                 placeholder="contact@apexwater.com"
                 value={formData.contactEmail}
                 onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                error={provisionErrors.contactEmail}
               />
               <Input
                 label="Contact Phone"
                 placeholder="+91 98765 00000"
                 value={formData.contactPhone}
                 onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                error={provisionErrors.contactPhone}
+                helperText="10-digit mobile number"
               />
             </div>
 
@@ -991,6 +1022,7 @@ export default function OrganizationManagement() {
                 placeholder="e.g. Rajesh"
                 value={formData.adminFirstName}
                 onChange={(e) => setFormData({ ...formData, adminFirstName: e.target.value })}
+                error={provisionErrors.adminFirstName}
                 required
               />
               <Input
@@ -1014,6 +1046,7 @@ export default function OrganizationManagement() {
                 placeholder="admin@apexwater.com"
                 value={formData.adminEmail}
                 onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
+                error={provisionErrors.adminEmail}
                 required
               />
             </div>
@@ -1039,6 +1072,7 @@ export default function OrganizationManagement() {
                 placeholder="Enter a secure password (min 8 chars)"
                 value={formData.adminPassword}
                 onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
+                error={provisionErrors.adminPassword}
                 required
               />
             </div>

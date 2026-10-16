@@ -1,6 +1,7 @@
 const prisma = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/apiResponse');
 const auditService = require('../services/audit.service');
+const { isValidPhone, isValidEmail, extractPhoneDigits } = require('../utils/validation');
 
 const getSuppliers = async (req, res) => {
   try {
@@ -18,12 +19,23 @@ const getSuppliers = async (req, res) => {
 const createSupplier = async (req, res) => {
   try {
     const { supplierCode, name, email, phone, address, status } = req.body;
+
+    if (email && !isValidEmail(email)) {
+      return sendError(res, 'Please provide a valid email address', 400);
+    }
+
+    if (phone && !isValidPhone(phone)) {
+      return sendError(res, 'Phone number must be exactly 10 digits', 400);
+    }
+
+    const cleanPhone = phone ? extractPhoneDigits(phone) : null;
+
     const newSupplier = await prisma.supplier.create({
       data: {
         supplierCode,
         name,
-        email,
-        phone,
+        email: email ? email.trim() : null,
+        phone: cleanPhone,
         address,
         status: status || 'ACTIVE',
         organizationId: req.organizationId,
@@ -45,8 +57,20 @@ const createSupplier = async (req, res) => {
 const updateSupplier = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
     
+    if (updates.email && !isValidEmail(updates.email)) {
+      return sendError(res, 'Please provide a valid email address', 400);
+    }
+
+    if (updates.phone && !isValidPhone(updates.phone)) {
+      return sendError(res, 'Phone number must be exactly 10 digits', 400);
+    }
+
+    if (updates.phone) {
+      updates.phone = extractPhoneDigits(updates.phone);
+    }
+
     const oldSupplier = await prisma.supplier.findFirst({
       where: { id, organizationId: req.organizationId },
     });

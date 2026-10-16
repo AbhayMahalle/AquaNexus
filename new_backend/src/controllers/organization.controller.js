@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const prisma = require("../config/db");
 const { sendSuccess, sendError } = require("../utils/apiResponse");
 const { createAuditLog } = require("../services/audit.service");
+const { isValidPhone, isValidEmail, extractPhoneDigits } = require("../utils/validation");
 
 /**
  * List all customer organizations (Platform SuperAdmin only)
@@ -333,6 +334,24 @@ const provisionOrganization = async (req, res) => {
       );
     }
 
+    if (!isValidEmail(cleanEmail)) {
+      return sendError(res, "Please provide a valid initial Company Admin email address", 400);
+    }
+
+    if (contactEmail && !isValidEmail(contactEmail.trim())) {
+      return sendError(res, "Please provide a valid company contact email address", 400);
+    }
+
+    if (adminPhone && !isValidPhone(adminPhone)) {
+      return sendError(res, "Admin phone number must be exactly 10 digits", 400);
+    }
+
+    if (contactPhone && !isValidPhone(contactPhone)) {
+      return sendError(res, "Company contact phone number must be exactly 10 digits", 400);
+    }
+
+    const resolvedPhone = cleanPhone && isValidPhone(cleanPhone) ? extractPhoneDigits(cleanPhone) : null;
+
     // Check slug uniqueness case-insensitively
     const existingOrg = await prisma.organization.findFirst({
       where: { slug: { equals: cleanSlug, mode: "insensitive" } },
@@ -403,7 +422,7 @@ const provisionOrganization = async (req, res) => {
             slug: cleanSlug,
             status: "ACTIVE",
             contactEmail: contactEmail ? contactEmail.trim().toLowerCase() : cleanEmail,
-            contactPhone: cleanPhone,
+            contactPhone: resolvedPhone,
             address: address ? address.trim() : null,
             city: city ? city.trim() : null,
             state: state ? state.trim() : null,
@@ -451,7 +470,7 @@ const provisionOrganization = async (req, res) => {
             passwordHash,
             firstName: cleanFirstName,
             lastName: cleanLastName || "Admin",
-            phone: cleanPhone,
+            phone: resolvedPhone,
             status: "ACTIVE",
           isSuperAdmin: false,
           superAdminSlot: null,
@@ -587,6 +606,16 @@ const addOrganizationAdmin = async (req, res) => {
       return sendError(res, "Admin email, password, and first name are required", 400);
     }
 
+    if (!isValidEmail(email)) {
+      return sendError(res, "Please provide a valid admin email address", 400);
+    }
+
+    if (phone && !isValidPhone(phone)) {
+      return sendError(res, "Phone number must be exactly 10 digits", 400);
+    }
+
+    const cleanAdminPhone = phone ? extractPhoneDigits(phone) : null;
+
     const org = await prisma.organization.findUnique({
       where: { id },
     });
@@ -682,7 +711,7 @@ const addOrganizationAdmin = async (req, res) => {
         passwordHash,
         firstName,
         lastName: lastName || "",
-        phone: phone || null,
+        phone: cleanAdminPhone,
         status: "ACTIVE",
         isSuperAdmin: false,
         superAdminSlot: null,
@@ -840,10 +869,22 @@ const updateCompanyProfile = async (req, res) => {
       postalCode,
     } = req.body;
 
+    if (contactEmail !== undefined && contactEmail !== null && String(contactEmail).trim() !== '') {
+      if (!isValidEmail(contactEmail.trim())) {
+        return sendError(res, "Please provide a valid company contact email address", 400);
+      }
+    }
+
+    if (contactPhone !== undefined && contactPhone !== null && String(contactPhone).trim() !== '') {
+      if (!isValidPhone(contactPhone)) {
+        return sendError(res, "Company contact phone number must be exactly 10 digits", 400);
+      }
+    }
+
     const data = {};
     if (name) data.name = name.trim();
     if (contactEmail !== undefined) data.contactEmail = contactEmail ? contactEmail.trim().toLowerCase() : null;
-    if (contactPhone !== undefined) data.contactPhone = contactPhone ? contactPhone.trim() : null;
+    if (contactPhone !== undefined) data.contactPhone = contactPhone ? extractPhoneDigits(contactPhone) : null;
     if (address !== undefined) data.address = address ? address.trim() : null;
     if (city !== undefined) data.city = city ? city.trim() : null;
     if (state !== undefined) data.state = state ? state.trim() : null;

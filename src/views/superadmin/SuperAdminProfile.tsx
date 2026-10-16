@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { apiRequest, showToast } from '@/lib/api';
+import { validatePhone, validateEmail } from '@/lib/validation';
 import {
   ShieldCheck,
   User,
@@ -22,6 +23,7 @@ import {
 export default function SuperAdminProfile() {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
 
   // Profile Form state
   const [firstName, setFirstName] = useState('');
@@ -63,8 +65,26 @@ export default function SuperAdminProfile() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim() || !email.trim()) {
-      showToast('First name and email are required', 'error');
+    const errors: Record<string, string> = {};
+
+    if (!firstName.trim()) {
+      errors.firstName = 'First name is required';
+    }
+
+    const emailErr = validateEmail(email, true);
+    if (emailErr) {
+      errors.email = emailErr;
+    }
+
+    const phoneErr = validatePhone(phone, false);
+    if (phoneErr) {
+      errors.phone = phoneErr;
+    }
+
+    setProfileErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      showToast(errors.firstName || errors.email || errors.phone || 'Please fix errors', 'error');
       return;
     }
 
@@ -207,6 +227,7 @@ export default function SuperAdminProfile() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="superadmin@aquanexus.com"
                       leftIcon={<Mail className="w-4 h-4 text-gray-400" />}
+                      error={profileErrors.email}
                     />
 
                     <Input
@@ -216,6 +237,8 @@ export default function SuperAdminProfile() {
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91 98765 43210"
                       leftIcon={<Phone className="w-4 h-4 text-gray-400" />}
+                      error={profileErrors.phone}
+                      helperText="10-digit mobile number"
                     />
 
                     <div className="pt-2">

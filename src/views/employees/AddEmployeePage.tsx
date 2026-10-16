@@ -10,6 +10,7 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { employeeService } from '../../services/employeeService';
 import type { EmployeeStatus } from '../../types';
+import { validatePhone, validateEmail } from '@/lib/validation';
 
 export const AddEmployeePage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export const AddEmployeePage: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [departments, setDepartments] = useState<{ id: string; name: string; code: string }[]>([]);
 
   const [formData, setFormData] = useState({
@@ -64,14 +66,33 @@ export const AddEmployeePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors: Record<string, string> = {};
+
     if (!formData.name.trim()) {
-      setErrorMsg('Please enter the employee full name.');
-      return;
+      errors.name = 'Please enter the employee full name.';
     }
+
+    const phoneErr = validatePhone(formData.contactNumber, true);
+    if (phoneErr) {
+      errors.contactNumber = phoneErr;
+    }
+
+    const emailErr = validateEmail(formData.email, true);
+    if (emailErr) {
+      errors.email = emailErr;
+    }
+
     if (!formData.password || formData.password.length < 6) {
-      setErrorMsg('Login password is required and must be at least 6 characters.');
+      errors.password = 'Login password is required and must be at least 6 characters.';
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setErrorMsg(errors.name || errors.contactNumber || errors.email || errors.password || 'Please fix the errors below.');
       return;
     }
+
     setErrorMsg('');
     setIsSubmitting(true);
 
@@ -130,6 +151,7 @@ export const AddEmployeePage: React.FC = () => {
               placeholder="e.g. Rajesh Kumar"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              error={fieldErrors.name}
               required
             />
 
@@ -153,6 +175,8 @@ export const AddEmployeePage: React.FC = () => {
               placeholder="+91 98765 43210"
               value={formData.contactNumber}
               onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+              error={fieldErrors.contactNumber}
+              helperText="10-digit mobile number"
               required
             />
 
@@ -162,6 +186,7 @@ export const AddEmployeePage: React.FC = () => {
               placeholder="employee@waterplant.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              error={fieldErrors.email}
               required
             />
 
@@ -171,6 +196,7 @@ export const AddEmployeePage: React.FC = () => {
               placeholder="••••••••"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              error={fieldErrors.password}
               required
               helperText="Minimum 6 characters for portal access"
             />

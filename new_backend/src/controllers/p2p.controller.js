@@ -2,6 +2,7 @@ const prisma = require("../config/db");
 const { sendSuccess, sendError } = require("../utils/apiResponse");
 const notificationService = require("../services/notification.service");
 const { createAuditLog } = require("../services/audit.service");
+const { isValidPhone, extractPhoneDigits } = require("../utils/validation");
 
 /**
  * Broadcast notifications to users belonging to target roles in the organization
@@ -751,6 +752,12 @@ const createDeliveryChallan = async (req, res) => {
       return sendError(res, `Cannot create challan for PO in status ${order.status}`, 400);
     }
 
+    if (driverPhone && !isValidPhone(driverPhone)) {
+      return sendError(res, "Driver phone number must be exactly 10 digits", 400);
+    }
+
+    const cleanDriverPhone = driverPhone ? extractPhoneDigits(driverPhone) : null;
+
     const challanNumber = await generateP2PCode("CH", "deliveryChallan", "challanNumber", req.organizationId);
 
     const challanItems = (items || order.items).map((it) => ({
@@ -772,7 +779,7 @@ const createDeliveryChallan = async (req, res) => {
           dispatchDate: new Date(dispatchDate),
           vehicleNumber,
           driverName,
-          driverPhone,
+          driverPhone: cleanDriverPhone,
           transporterName,
           trackingNumber,
           status,

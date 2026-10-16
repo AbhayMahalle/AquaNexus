@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const prisma = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/apiResponse');
 const { createAuditLog } = require('../services/audit.service');
+const { isValidPhone, isValidEmail, extractPhoneDigits } = require('../utils/validation');
 const {
   getCompanySubscription,
   getCompanyUsageAndLimits,
@@ -192,10 +193,21 @@ const updateSuperAdminProfile = async (req, res) => {
     const data = {};
     if (firstName) data.firstName = firstName.trim();
     if (lastName) data.lastName = lastName.trim();
-    if (phone !== undefined) data.phone = phone ? phone.trim() : null;
+
+    if (phone !== undefined && phone !== null && String(phone).trim() !== '') {
+      if (!isValidPhone(phone)) {
+        return sendError(res, 'Phone number must be exactly 10 digits', 400);
+      }
+      data.phone = extractPhoneDigits(phone);
+    } else if (phone !== undefined) {
+      data.phone = null;
+    }
 
     if (email) {
       const cleanEmail = email.trim().toLowerCase();
+      if (!isValidEmail(cleanEmail)) {
+        return sendError(res, 'Please provide a valid email address', 400);
+      }
       if (cleanEmail !== req.user.email) {
         // Validate email uniqueness
         const existing = await prisma.user.findFirst({

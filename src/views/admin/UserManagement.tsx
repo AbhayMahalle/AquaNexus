@@ -15,6 +15,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types/auth';
 import { showToast, exportToCSV } from '@/lib/api';
+import { validatePhone, validateEmail } from '@/lib/validation';
 import { UserPlus, Search, Shield, Mail, Edit, Trash2, Eye, Download, X, Filter, AlertTriangle } from 'lucide-react';
 
 interface UserRecord {
@@ -272,12 +273,14 @@ export default function UserManagementPage() {
   const validateForm = (isNewUser = false): boolean => {
     const errors: Record<string, string> = {};
     if (!formData.name.trim()) errors.name = 'Full name is required';
-    if (!formData.email.trim()) errors.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Invalid email format';
+    const emailErr = validateEmail(formData.email, true);
+    if (emailErr) errors.email = emailErr;
     if (isNewUser) {
       if (!formData.password) errors.password = 'Initial password is required';
       else if (formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
     }
+    const phoneErr = validatePhone(formData.phone, false);
+    if (phoneErr) errors.phone = phoneErr;
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -540,7 +543,15 @@ export default function UserManagementPage() {
           helperText="Minimum 6 characters"
         />
       )}
-      <Input label="Phone Number" type="tel" placeholder="+91 98765 43210" value={formData.phone} onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))} />
+      <Input
+        label="Phone Number"
+        type="tel"
+        placeholder="+91 98765 43210"
+        value={formData.phone}
+        onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))}
+        error={formErrors.phone}
+        helperText="Enter 10-digit mobile number"
+      />
       <Select
         label="Assigned System Role"
         value={formData.role}

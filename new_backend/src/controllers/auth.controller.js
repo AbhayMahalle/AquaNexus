@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const prisma = require("../config/db");
 const { sendSuccess, sendError } = require("../utils/apiResponse");
 const { createAuditLog } = require("../services/audit.service");
+const { isValidPhone, extractPhoneDigits } = require("../utils/validation");
 
 const login = async (req, res) => {
   try {
@@ -216,12 +217,22 @@ const updateProfile = async (req, res) => {
       return sendError(res, "First name is required", 400);
     }
 
+    if (phone !== undefined && phone !== null && String(phone).trim() !== '') {
+      if (!isValidPhone(phone)) {
+        return sendError(res, "Phone number must be exactly 10 digits", 400);
+      }
+    }
+
+    const cleanPhone = (phone !== undefined && phone !== null && String(phone).trim() !== '')
+      ? extractPhoneDigits(phone)
+      : null;
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         firstName: firstName.trim(),
         lastName: (lastName || "").trim(),
-        phone: phone ? phone.trim() : null,
+        phone: cleanPhone,
       },
       include: {
         organization: true,
@@ -258,7 +269,7 @@ const updateProfile = async (req, res) => {
           data: {
             firstName: firstName.trim(),
             lastName: (lastName || "").trim(),
-            phone: phone ? phone.trim() : null,
+            phone: cleanPhone,
           },
         })
         .catch((err) => console.warn("Failed to sync employee record:", err.message));

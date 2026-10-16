@@ -26,6 +26,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest, showToast } from '@/lib/api';
 import { setCurrentUserSync, getCurrentUserSync } from '@/lib/auth';
+import { validatePhone } from '@/lib/validation';
 
 export function ProfilePage() {
   const { user: authUser } = useAuth();
@@ -33,6 +34,7 @@ export function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   // Profile fields
   const [formData, setFormData] = useState({
@@ -88,6 +90,14 @@ export function ProfilePage() {
       showToast('First name is required', 'error');
       return;
     }
+
+    const phoneErr = validatePhone(formData.phone, false);
+    if (phoneErr) {
+      setPhoneError(phoneErr);
+      showToast(phoneErr, 'error');
+      return;
+    }
+    setPhoneError(null);
 
     setSavingProfile(true);
     try {
@@ -309,8 +319,13 @@ export function ProfilePage() {
                   {isEditing ? (
                     <Input
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, phone: e.target.value });
+                        if (phoneError) setPhoneError(null);
+                      }}
                       placeholder="e.g. +91 9876543210"
+                      error={phoneError || undefined}
+                      helperText="Enter 10-digit mobile number"
                     />
                   ) : (
                     <div className="py-2 px-3 bg-gray-50 border rounded-md text-sm font-medium text-gray-900">

@@ -11,6 +11,7 @@ import { Select } from '../../components/ui/Select';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { employeeService } from '../../services/employeeService';
 import { showToast } from '@/lib/api';
+import { validatePhone, validateEmail } from '@/lib/validation';
 import type { Employee, EmployeeStatus } from '../../types';
 
 export const EditEmployeePage: React.FC = () => {
@@ -19,6 +20,7 @@ export const EditEmployeePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [departments, setDepartments] = useState<{ id: string; name: string; code: string }[]>([]);
 
   const [formData, setFormData] = useState<Partial<Employee>>({});
@@ -55,7 +57,30 @@ export const EditEmployeePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id || !formData.name) return;
+    if (!id) return;
+
+    const errors: Record<string, string> = {};
+    if (!formData.name?.trim()) {
+      errors.name = 'Full name is required';
+    }
+
+    const phoneErr = validatePhone(formData.contactNumber, true);
+    if (phoneErr) {
+      errors.contactNumber = phoneErr;
+    }
+
+    const emailErr = validateEmail(formData.email, true);
+    if (emailErr) {
+      errors.email = emailErr;
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setErrorMsg(errors.name || errors.contactNumber || errors.email || 'Please fix the errors below.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMsg('');
 
@@ -117,6 +142,7 @@ export const EditEmployeePage: React.FC = () => {
               label="Full Name"
               value={formData.name || ''}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              error={fieldErrors.name}
               required
             />
 
@@ -136,8 +162,11 @@ export const EditEmployeePage: React.FC = () => {
 
             <Input
               label="Contact Number"
+              placeholder="+91 98765 43210"
               value={formData.contactNumber || ''}
               onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+              error={fieldErrors.contactNumber}
+              helperText="10-digit mobile number"
               required
             />
 
@@ -146,6 +175,7 @@ export const EditEmployeePage: React.FC = () => {
               type="email"
               value={formData.email || ''}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              error={fieldErrors.email}
               required
             />
 

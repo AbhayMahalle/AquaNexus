@@ -6,6 +6,7 @@ import { Select } from '@/components/ui/Select';
 import { P2PStatusBadge, ThreeWayMatchBadge, PriorityBadge } from './P2PStatusBadge';
 import { P2PStepper } from './P2PStepper';
 import { apiClient } from '@/lib/api-client';
+import { validatePhone } from '@/lib/validation';
 import {
   Plus,
   Trash2,
@@ -787,12 +788,14 @@ export function VendorPOModal({ isOpen, onClose, order, onSuccess }: VendorPOMod
   const [challanNotes, setChallanNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [driverPhoneError, setDriverPhoneError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setMode('VIEW');
       setError('');
       setRejectReason('');
+      setDriverPhoneError(null);
     }
   }, [isOpen]);
 
@@ -840,6 +843,14 @@ export function VendorPOModal({ isOpen, onClose, order, onSuccess }: VendorPOMod
 
   const handleCreateChallan = async (e: React.FormEvent) => {
     e.preventDefault();
+    const phoneErr = validatePhone(driverPhone, false);
+    if (phoneErr) {
+      setDriverPhoneError(phoneErr);
+      setError(phoneErr);
+      return;
+    }
+    setDriverPhoneError(null);
+
     setIsSubmitting(true);
     setError('');
     try {
@@ -1039,7 +1050,12 @@ export function VendorPOModal({ isOpen, onClose, order, onSuccess }: VendorPOMod
               <Input
                 label="Driver Mobile Number"
                 value={driverPhone}
-                onChange={(e) => setDriverPhone(e.target.value)}
+                onChange={(e) => {
+                  setDriverPhone(e.target.value);
+                  if (driverPhoneError) setDriverPhoneError(null);
+                }}
+                error={driverPhoneError || undefined}
+                helperText="10-digit mobile number"
                 placeholder="+91 98220 12345"
               />
               <Input

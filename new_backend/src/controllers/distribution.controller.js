@@ -4,6 +4,7 @@ const {
   getAccessibleDistributorIds,
   isInternalRole,
 } = require("../utils/distributorAccess");
+const { isValidPhone, isValidEmail, extractPhoneDigits } = require("../utils/validation");
 
 const getSalesAreas = async (req, res) => {
   try {
@@ -102,6 +103,16 @@ const createDistributor = async (req, res) => {
       return sendError(res, "Distributor code and name are required", 400);
     }
 
+    if (email && !isValidEmail(email)) {
+      return sendError(res, "Please provide a valid email address", 400);
+    }
+
+    if (phone && !isValidPhone(phone)) {
+      return sendError(res, "Phone number must be exactly 10 digits", 400);
+    }
+
+    const cleanPhone = phone ? extractPhoneDigits(phone) : null;
+
     if (salesAreaId) {
       const salesArea = await prisma.salesArea.findFirst({
         where: { id: salesAreaId, organizationId: req.organizationId },
@@ -115,8 +126,8 @@ const createDistributor = async (req, res) => {
       data: {
         distributorCode,
         name,
-        email,
-        phone,
+        email: email ? email.trim() : null,
+        phone: cleanPhone,
         address,
         salesAreaId,
         creditLimit,
