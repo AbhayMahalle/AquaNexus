@@ -10,6 +10,15 @@ next-env.d.ts
 *.log
 AquaNexus-*/
 vite.config.ts.timestamp*
+# Environment files
 .env
-.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.env
+.env.*
+
+# Allow tracking of example env files
+!.env.example
+!**/.env.example

@@ -1,770 +1,341 @@
-# Aqua Nexus
+# AquaNexus — Water Plant Management & ERP System
 
-Aqua Nexus is a centralized Water Plant Management System designed to streamline operations across employee management, production, inventory, distribution, sales, and financial workflows.
-
-**Current Status:** Repository initialization and architectural planning phase. Implementation has NOT started. This repository represents the planned architecture, structure, and documentation foundation.
+AquaNexus is an enterprise-grade, centralized **Water Plant Management System (ERP)** and multi-tenant SaaS platform designed to streamline operations across water treatment, bottle production, inventory control, route distribution, sales orders, employee scheduling, and financial accounting.
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Problem Statement](#problem-statement)
-3. [Project Vision](#project-vision)
-4. [Core Business Workflow](#core-business-workflow)
-5. [System Architecture](#system-architecture)
-6. [User Roles](#user-roles)
-7. [Employee vs Application User](#employee-vs-application-user)
-8. [RBAC and Permission Model](#rbac-and-permission-model)
-9. [Manager Assigned Areas](#manager-assigned-areas)
-10. [Core Modules](#core-modules)
-11. [Inventory Lifecycle](#inventory-lifecycle)
-12. [Financial Workflow](#financial-workflow)
-13. [Repository Structure](#repository-structure)
-14. [Planned Technology Stack](#planned-technology-stack)
-15. [Security Principles](#security-principles)
-16. [Reporting and Analytics](#reporting-and-analytics)
-17. [Development Roadmap](#development-roadmap)
+- [Overview](#overview)
+- [Key Features & Modules](#key-features--modules)
+- [System Architecture](#system-architecture)
+- [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
+- [Subscription & Quota Model](#subscription--quota-model)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Environment Configuration](#environment-configuration)
+- [Local Development Setup](#local-development-setup)
+- [Default Demo Credentials](#default-demo-credentials)
+- [API Endpoints Overview](#api-endpoints-overview)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
 ## Overview
 
-Aqua Nexus provides an integrated platform for managing all operational aspects of a water treatment and distribution plant. The system connects employee lifecycle management with production scheduling, inventory control, distribution logistics, and financial operations.
+AquaNexus provides water treatment and packaging plants with an end-to-end operational platform. From raw water purification monitoring and packaging batch logs to fleet dispatch routing and ledger accounting, AquaNexus replaces disjointed spreadsheets and paper logs with a unified, real-time management dashboard.
 
-### Key Characteristics
-
-- **Centralized Application:** Single unified application serving multiple operational roles
-- **Module-Based Architecture:** Organized, scalable system with clear separation of concerns
-- **Role-Based Access Control:** Six application roles with granular permission management
-- **Employee-Centric Design:** Employees are operational records, not application users
-- **Real-time Inventory:** Track water production, storage, and distribution
-- **Financial Integration:** Payments, invoicing, and expense management integrated into workflows
+### Core Value Propositions
+- **Unified Operations:** Centralizes production, inventory, delivery routes, and bookkeeping in a single interface.
+- **Multi-Tenant SaaS Platform:** Super Admin platform controls tenant company provisioning, subscription tiers, and payment recording.
+- **Strict Quota Enforcement:** Subscription tiers govern business account creation while keeping plant floor employees unlimited.
+- **Real-Time Audit & Traceability:** Tracks inventory movements, batch quality testing, and dispatch workflows end-to-end.
 
 ---
 
-## Problem Statement
+## Key Features & Modules
 
-Water treatment and distribution plants face significant operational challenges:
+### 1. Platform Super Admin
+- **Company Management:** Provision new water plant organizations with custom slugs, contact details, and activation statuses.
+- **Subscription Plans:** Configure plan tiers (Basic, Plus, Pro, Pro Max) with prices, billing cycles, and authorized user caps.
+- **Payments & Billing:** Record bank transfers and payments, manage active subscriptions, and view platform MRR analytics.
+- **Organization Directory:** Inspect all system users and plant staff across tenant companies.
 
-- **Fragmented Systems:** Multiple disconnected tools for HR, production, inventory, and finance
-- **Data Silos:** Limited visibility across departments and operational areas
-- **Manual Processes:** Inefficient workflows requiring extensive manual intervention
-- **Compliance Gaps:** Difficulty tracking and reporting operational metrics
-- **Decision Delays:** Lack of real-time insights for operational management
+### 2. Tenant Admin Dashboard
+- **Operational KPIs:** Real-time visibility into daily water output (Liters), stock inventory, active staff, and revenue.
+- **Plan Status & All Plans Popup:** Live subscription entitlement card with interactive popup displaying all platform plans, pricing, and features fetched dynamically from the database.
+- **Strict Limit Warnings:** Automatic alerts and user deletion flows when a tenant exceeds their plan's account quota.
+- **System User Management:** Provision and manage role-based business accounts.
 
-Aqua Nexus addresses these challenges with an integrated, purpose-built management system.
+### 3. Production & Quality Control
+- **Batch Processing:** Log daily production batches, target output volumes, and water source meters.
+- **Lab Quality Testing:** Record water quality parameters including pH, TDS, Turbidity, Chlorine, and Hardness.
+- **Resource Tracking:** Monitor raw water consumption, filter usage, and preform bottle yields.
 
----
+### 4. Inventory & Store Management
+- **Multi-SKU Stock Control:** Manage 20L jars, 1L bottles, 500ml bottles, bottle caps, labels, and packaging materials.
+- **Stock Movement:** Log Goods Received Notes (GRN), Stock-In, Stock-Out, and damaged/broken jar deductions.
+- **Reorder Alerts:** Automatic low-stock warnings when inventory drops below safety thresholds.
 
-## Project Vision
+### 5. Sales, Dispatch & Route Logistics
+- **Order Management:** Create and process wholesale customer sales orders, invoices, and delivery notes.
+- **Route Distribution:** Assign delivery vehicles and drivers to delivery routes.
+- **Empty Bottle Returns:** Track empty 20L jar returns from distributors and clients to minimize bottle leakage.
 
-To build a world-class water plant management system that:
+### 6. Finance & Double-Entry Accounting
+- **Invoicing & Billing:** Generate GST-compliant invoices and record payments against customer accounts.
+- **Ledger & Expenses:** Track operating expenses (electricity, fuel, chemicals, maintenance) and customer receivables.
+- **Financial Analytics:** Overview of revenue, gross margins, outstanding dues, and cash flow.
 
-1. Unifies all operational functions into a single, intuitive platform
-2. Enables real-time visibility across production, inventory, and distribution
-3. Automates routine workflows and reduces manual overhead
-4. Provides managers with actionable insights for decision-making
-5. Ensures compliance, auditability, and financial accuracy
-6. Supports scalability as operational volume grows
-
----
-
-## Core Business Workflow
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   AQUA NEXUS CORE WORKFLOW                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Employee Management                                           │
-│  ├─ Register employees                                         │
-│  ├─ Assign roles and permissions                               │
-│  └─ Track attendance, leave, overtime                          │
-│          ↓                                                      │
-│  Production Management                                         │
-│  ├─ Schedule production runs                                   │
-│  ├─ Track raw materials consumption                            │
-│  └─ Monitor output and quality                                 │
-│          ↓                                                      │
-│  Inventory Management                                          │
-│  ├─ Receive and store finished goods                           │
-│  ├─ Track stock levels and movement                            │
-│  └─ Manage warehouse operations                                │
-│          ↓                                                      │
-│  Distribution & Sales                                          │
-│  ├─ Create sales orders                                        │
-│  ├─ Assign to distributors                                     │
-│  ├─ Track deliveries                                           │
-│  └─ Process returns                                            │
-│          ↓                                                      │
-│  Financial Operations                                          │
-│  ├─ Generate invoices                                          │
-│  ├─ Process payments                                           │
-│  ├─ Record expenses                                            │
-│  └─ Prepare financial reports                                  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+### 7. HR & Plant Staff Management
+- **Employee Directory:** Manage plant floor workers, machine operators, drivers, and quality technicians.
+- **Unlimited Staffing:** Plant employees never count against subscription business user limits.
+- **Shifts & Attendance:** Track worker shifts, attendance logs, overtime, and monthly payroll summaries.
 
 ---
 
 ## System Architecture
 
-### High-Level Architecture
-
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    CLIENT LAYER                          │
-│                                                          │
-│  Web Application (React)                                │
-│  ├─ User Interface Components                           │
-│  ├─ State Management                                    │
-│  ├─ API Client Services                                 │
-│  └─ Permission-Based UI Rendering                       │
-└────────────────┬─────────────────────────────────────────┘
-                 │
-                 │ HTTPS / REST API
-                 │
-┌────────────────▼─────────────────────────────────────────┐
-│                  API LAYER                               │
-│                                                          │
-│  Node.js / Express Backend                              │
-│  ├─ Authentication & JWT                                │
-│  ├─ RBAC Middleware                                     │
-│  ├─ Module-Based Controllers                            │
-│  ├─ Service Layer                                       │
-│  ├─ Business Logic                                      │
-│  └─ Data Validation                                     │
-└────────────────┬─────────────────────────────────────────┘
-                 │
-                 │ Database Queries
-                 │
-┌────────────────▼─────────────────────────────────────────┐
-│                DATA LAYER                                │
-│                                                          │
-│  PostgreSQL Database                                    │
-│  ├─ User Accounts (with roles)                          │
-│  ├─ Employee Records                                    │
-│  ├─ Operational Data                                    │
-│  ├─ Financial Records                                   │
-│  └─ Audit Logs                                          │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    CLIENT LAYER (SPA)                           │
+│  React 18 • TypeScript • Vite • Tailwind CSS • Lucide Icons     │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │ HTTPS / REST API
+┌───────────────────────────────▼─────────────────────────────────┐
+│                    API LAYER (Node.js)                          │
+│  Express 4 • JWT Auth Middleware • Tenant Scoping Middleware    │
+│  Role & Quota Guards • Audit Logging Service                   │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │ Prisma ORM
+┌───────────────────────────────▼─────────────────────────────────┐
+│                    DATA LAYER (PostgreSQL)                      │
+│  Multi-tenant Tables • Foreign Key Constraints • Indexes        │
+│  Organizations • Subscriptions • Users • Batches • Orders       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## User Roles
+## Role-Based Access Control (RBAC)
 
-Aqua Nexus supports six application roles:
+AquaNexus implements a strict, hierarchical role-based permission system:
 
-| Role              | Responsibilities                          | Key Permissions                                                                                 |
-| ----------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **SuperAdmin**    | Aqua Nexus platform operator              | Global access across customer organizations; platform and customer administration               |
-| **Admin**         | Customer/company administrator            | Full system access within their own company, user management, role assignment, company settings |
-| **Manager**       | Operational oversight and area management | Manage assigned areas, view reports, approve workflows, employee management                     |
-| **Store Manager** | Inventory and warehouse operations        | Inventory management, warehouse operations, stock tracking, order fulfillment                   |
-| **Accountant**    | Financial operations and reporting        | Payment processing, invoice management, expense recording, financial reports                    |
-| **Distributor**   | Sales and delivery operations             | Order management, delivery tracking, customer information, sales reporting                      |
-
-Each customer company is an independent organization managed by one or more company Admin accounts (no global single-Admin limit). There is exactly one platform-level SuperAdmin account for the AquaNexus platform with global governance, customer organization provisioning, activation/suspension controls, and audited cross-tenant ERP access via `X-Organization-Id`. Multi-tenant business data isolation is enforced end-to-end across database foreign keys, composite unique constraints, middleware, and controllers.
-
----
-
-## Employee vs Application User
-
-### Employee (Operational Record)
-
-Employees are operational records in the system:
-
-- Represent actual workers at the water plant
-- Have employment details: name, ID, designation, department, salary
-- Track attendance, leave, overtime, payroll history
-- Cannot access the application directly
-- Managed by application users
-
-### Application User (System Account)
-
-Application users are accounts that can access Aqua Nexus:
-
-- Have username, password, and authentication credentials
-- Assigned one of the 5 operational roles (Admin, Manager, Store Manager, Accountant, Distributor); SuperAdmin is a platform role
-- May or may not correspond to an employee record
-- Perform operations based on role-based permissions
-- Can manage employee records
-
-### Example Scenario
-
-```
-┌─────────────────────────────────────────────────────┐
-│  Application User: "rajesh.kumar"                   │
-│  Role: Manager                                      │
-│  Assigned Area: Production                          │
-│  ─────────────────────────────────────────────────  │
-│  Manages Employee Records:                          │
-│  • Suresh Patel (Production Operator)               │
-│  • Divya Singh (Quality Inspector)                  │
-│  • Amit Verma (Machine Operator)                    │
-│  ─────────────────────────────────────────────────  │
-│  Can:                                               │
-│  • View employee attendance and records             │
-│  • Approve leave requests                           │
-│  • Schedule production runs                         │
-│  • Track production metrics                         │
-└─────────────────────────────────────────────────────┘
-```
+| Role | Scope | Key Capabilities |
+| :--- | :--- | :--- |
+| **Super Admin** | Platform-Wide | Provision companies, configure plans, assign subscriptions, view all payments |
+| **Admin** | Tenant Company | Organization settings, user provisioning, production oversight, finance, subscription |
+| **Manager** | Tenant Company | Daily production scheduling, inventory movement approval, shift management |
+| **Store Manager** | Tenant Company | Goods receiving, stock-in/out, physical inventory audits, damaged item logs |
+| **Accountant** | Tenant Company | Invoices, customer payments, ledger journals, expense vouchers |
+| **Distributor** | Tenant / Client | Sales orders, delivery route status, bottle returns |
+| **Supplier** | Tenant / Vendor | Raw material delivery confirmations, supply order status |
+| **Employee** | Operational Record | Operational plant floor workers, drivers, machine technicians (unlimited) |
 
 ---
 
-## RBAC and Permission Model
+## Subscription & Quota Model
 
-### Role-Based Access Control (RBAC)
+All subscription tiers share the complete suite of system modules. Tiers differ strictly by **authorized business user accounts**:
 
-Each application role has a predefined set of permissions across system modules.
-
-### Permission Hierarchy
-
-```
-Role
- ├─ Module Permissions
- │   ├─ create
- │   ├─ read
- │   ├─ update
- │   └─ delete
- └─ Feature-Specific Permissions
-     ├─ approve_leave
-     ├─ process_payment
-     ├─ generate_report
-     └─ manage_inventory
-```
-
-### Example: Manager Role
-
-```
-Manager
-├─ Employees
-│   ├─ read: all
-│   ├─ update: assigned area employees only
-│   └─ approve: leave, overtime
-├─ Production
-│   ├─ read: assigned area
-│   ├─ create: production runs
-│   └─ update: status tracking
-├─ Inventory
-│   ├─ read: assigned area
-│   └─ view: stock levels
-├─ Payroll
-│   ├─ read: view reports
-│   └─ create: overtime entries
-└─ Reports
-    └─ read: assigned area reports
-```
+| Plan Tier | Price | Authorized Business Users | Plant Staff / Employees | Included Features |
+| :--- | :--- | :--- | :--- | :--- |
+| **Basic Plan** | ₹999 / mo | **1 User** (1 Admin) | **Unlimited** | All Platform Modules |
+| **Plus Plan** | ₹1,999 / mo | **2 Users** | **Unlimited** | All Platform Modules |
+| **Pro Plan** | ₹2,999 / mo | **5 Users** | **Unlimited** | All Platform Modules |
+| **Pro Max Plan** | ₹9,999 / mo | **50 Users** | **Unlimited** | All Platform Modules + P2P |
 
 ---
 
-## Manager Assigned Areas
+## Technology Stack
 
-Managers can be assigned to one or more operational areas, restricting their access:
+### Frontend
+- **Framework:** React 18 with TypeScript
+- **Bundler:** Vite
+- **Styling:** Tailwind CSS & Vanilla CSS
+- **Icons:** Lucide React
+- **Routing:** React Router DOM (v6)
+- **HTTP Client:** Fetch API client with automatic JWT bearer injection
 
-### Operational Areas
-
-| Area             | Responsibilities                                               |
-| ---------------- | -------------------------------------------------------------- |
-| **Production**   | Production scheduling, resource allocation, quality monitoring |
-| **Store**        | Inventory management, warehouse operations, stock control      |
-| **Distribution** | Delivery logistics, distributor management, route planning     |
-
-### Permission Scoping
-
-When a Manager is assigned to an area:
-
-- Can only view/manage data for that specific area
-- Restricted to area-specific employees, resources, and operations
-- Cannot access data from other operational areas
-- Reports are filtered to assigned area only
+### Backend
+- **Runtime:** Node.js (v18+)
+- **Framework:** Express.js
+- **ORM:** Prisma ORM
+- **Database:** PostgreSQL
+- **Security:** JSON Web Tokens (JWT), BcryptJS password hashing, CORS, Helmet
 
 ---
 
-## Core Modules
-
-Aqua Nexus is organized into 23 core modules:
-
-### Employee & HR Management
-
-| Module         | Purpose                                                   |
-| -------------- | --------------------------------------------------------- |
-| **auth**       | Authentication, login, JWT token management               |
-| **users**      | Application user management and role assignment           |
-| **employees**  | Employee master records, profiles, and employment details |
-| **attendance** | Attendance tracking and management                        |
-| **leave**      | Leave request, approval, and tracking                     |
-| **overtime**   | Overtime tracking and approval                            |
-| **payroll**    | Salary calculation and payroll processing                 |
-
-### Operations Management
-
-| Module           | Purpose                                              |
-| ---------------- | ---------------------------------------------------- |
-| **production**   | Production scheduling, tracking, and quality control |
-| **inventory**    | Stock management, warehouse operations               |
-| **distributors** | Distributor master records and management            |
-| **distribution** | Distribution planning and logistics                  |
-
-### Sales & Orders
-
-| Module      | Purpose                             |
-| ----------- | ----------------------------------- |
-| **orders**  | Sales order creation and management |
-| **sales**   | Sales tracking and reporting        |
-| **returns** | Return management and processing    |
-
-### Financial Management
-
-| Module       | Purpose                              |
-| ------------ | ------------------------------------ |
-| **invoices** | Invoice creation and management      |
-| **payments** | Payment processing and tracking      |
-| **expenses** | Expense recording and categorization |
-
-### Procurement & Supply Chain
-
-| Module        | Purpose                                   |
-| ------------- | ----------------------------------------- |
-| **suppliers** | Supplier master records                   |
-| **purchases** | Purchase order and procurement management |
-
-### Cross-Cutting Concerns
-
-| Module            | Purpose                               |
-| ----------------- | ------------------------------------- |
-| **reports**       | Analytics, dashboards, and reporting  |
-| **notifications** | Email, SMS, and system notifications  |
-| **audit**         | Audit logging and compliance tracking |
-
----
-
-## Inventory Lifecycle
-
-### Complete Inventory Journey
-
-```
-1. RAW MATERIALS INTAKE
-   ├─ Supplier receives order
-   ├─ Materials arrive at plant
-   └─ Quality inspection
-        ↓
-2. PRODUCTION
-   ├─ Schedule production run
-   ├─ Consume raw materials
-   ├─ Monitor production quality
-   └─ Generate finished goods
-        ↓
-3. STORAGE
-   ├─ Store finished goods in warehouse
-   ├─ Track stock levels
-   ├─ Monitor expiration/shelf-life
-   └─ Organize by location
-        ↓
-4. DISTRIBUTION PLANNING
-   ├─ Receive sales orders
-   ├─ Check inventory availability
-   ├─ Allocate stock
-   └─ Assign to distributors
-        ↓
-5. DELIVERY & SALES
-   ├─ Dispatch to customers
-   ├─ Track delivery status
-   ├─ Confirm receipt
-   └─ Process returns (if any)
-        ↓
-6. FINANCIAL SETTLEMENT
-   ├─ Generate invoice
-   ├─ Process payment
-   └─ Update financial records
-```
-
-### Inventory Tracking Points
-
-- **Raw Materials:** Purchase → Receipt → Storage → Production
-- **Finished Goods:** Production → Warehouse → Distribution → Customer
-- **Waste/Losses:** Track and categorize for cost analysis
-- **Expiry Management:** Monitor shelf-life and trigger alerts
-
----
-
-## Financial Workflow
-
-### End-to-End Financial Process
-
-```
-PURCHASE CYCLE
-├─ Create Purchase Order
-├─ Supplier Confirmation
-├─ Goods Receipt
-├─ Quality Inspection
-├─ Record in Inventory
-└─ Process Supplier Payment
-
-SALES CYCLE
-├─ Create Sales Order
-├─ Stock Allocation
-├─ Generate Invoice
-├─ Dispatch Goods
-├─ Confirm Delivery
-└─ Process Customer Payment
-
-EXPENSE CYCLE
-├─ Record Expense
-├─ Categorize (Operational, Administrative, etc.)
-├─ Attach Documentation
-├─ Approval Workflow
-└─ Update Financial Records
-
-PAYROLL CYCLE
-├─ Track Employee Hours
-├─ Calculate Overtime
-├─ Record Leave
-├─ Generate Payroll
-├─ Calculate Deductions
-└─ Process Employee Payment
-```
-
-### Financial Reports
-
-- **Profit & Loss Statement:** Revenue vs. Expenses
-- **Cash Flow Report:** Inflows and Outflows
-- **Balance Sheet:** Assets, Liabilities, Equity
-- **Inventory Valuation:** Stock value tracking
-- **Receivables Aging:** Outstanding customer payments
-- **Payables Aging:** Outstanding supplier payments
-
----
-
-## Repository Structure
+## Project Structure
 
 ```
 AquaNexus/
-├── README.md                          # Main project documentation
-├── ARCHITECTURE.md                    # Detailed architecture documentation
-├── CONTRIBUTING.md                    # Development contribution guidelines
-├── .gitignore                         # Git ignore rules
-├── .env.example                       # Environment variable template
+├── .env.example              # Frontend environment variables template
+├── index.html                # Vite entry HTML
+├── vite.config.ts            # Vite bundler configuration
+├── tailwind.config.ts        # Tailwind theme and design tokens
+├── package.json              # Frontend dependencies and scripts
 │
-├── docs/
-│   ├── README.md                      # Documentation index
-│   ├── requirements/
-│   │   └── README.md                  # Functional & non-functional requirements
-│   ├── architecture/
-│   │   └── README.md                  # Detailed architecture specifications
-│   ├── api/
-│   │   └── README.md                  # API design and endpoint documentation
-│   ├── database/
-│   │   └── README.md                  # Database schema and design
-│   ├── workflows/
-│   │   └── README.md                  # Business process workflows
-│   ├── roles/
-│   │   └── README.md                  # Role definitions and permissions
-│   └── decisions/
-│       └── README.md                  # Architecture Decision Records (ADRs)
+├── src/                      # Frontend Source Code
+│   ├── components/           # Reusable UI components (Button, Modal, Table, etc.)
+│   │   ├── auth/             # Auth guards & route protection
+│   │   ├── layout/           # DashboardLayout, Sidebar, Navbar, PageHeader
+│   │   └── ui/               # Design system primitives (Card, Badge, Input, Select)
+│   ├── views/                # Role-based views & pages
+│   │   ├── superadmin/       # Platform management, subscriptions, organizations
+│   │   ├── admin/            # Tenant dashboard, users, production, reports
+│   │   ├── manager/          # Manager operational views
+│   │   ├── store/            # Inventory, stock-in, stock-out, damaged goods
+│   │   ├── distributor/      # Distributor delivery & returns
+│   │   └── auth/             # Login & password reset pages
+│   ├── services/             # API services (apiClient, productionService, etc.)
+│   └── lib/                  # Utilities, formatters, validation helpers
 │
-├── frontend/
-│   └── src/
-│       ├── components/                # Reusable UI components
-│       ├── layouts/                   # Page layouts
-│       ├── pages/                     # Page components
-│       ├── features/                  # Feature-specific modules
-│       ├── hooks/                     # Custom React hooks
-│       ├── services/                  # API client services
-│       ├── store/                     # State management
-│       ├── types/                     # TypeScript type definitions
-│       ├── utils/                     # Utility functions
-│       └── config/                    # Configuration files
-│
-├── backend/
-│   ├── prisma/
-│   │   └── schema.prisma              # Database schema (to be created)
-│   │
-│   └── src/
-│       ├── modules/                   # 23 core business modules
-│       │   ├── auth/
-│       │   ├── users/
-│       │   ├── employees/
-│       │   ├── attendance/
-│       │   ├── leave/
-│       │   ├── overtime/
-│       │   ├── payroll/
-│       │   ├── production/
-│       │   ├── inventory/
-│       │   ├── distributors/
-│       │   ├── distribution/
-│       │   ├── orders/
-│       │   ├── sales/
-│       │   ├── returns/
-│       │   ├── invoices/
-│       │   ├── payments/
-│       │   ├── suppliers/
-│       │   ├── purchases/
-│       │   ├── expenses/
-│       │   ├── reports/
-│       │   ├── notifications/
-│       │   └── audit/
-│       │
-│       ├── controllers/               # Request handlers
-│       ├── services/                  # Business logic
-│       ├── repositories/              # Data access layer
-│       ├── routes/                    # API route definitions
-│       ├── middleware/                # Express middleware
-│       ├── validators/                # Request validation
-│       ├── types/                     # TypeScript type definitions
-│       ├── utils/                     # Utility functions
-│       └── config/                    # Configuration management
-│
-└── shared/
-    ├── types/                         # Shared TypeScript types
-    ├── schemas/                       # Validation schemas
-    └── constants/                     # Shared constants
+└── new_backend/              # Backend Source Code
+    ├── .env.example          # Backend environment variables template
+    ├── package.json          # Backend dependencies and scripts
+    ├── prisma/
+    │   └── schema.prisma     # Prisma database schema definition
+    └── src/
+        ├── config/           # Database connection & environment loaders
+        ├── controllers/      # Route controllers (platform, auth, production, inventory)
+        ├── middleware/       # Auth guards, tenant scoping, role verification
+        ├── routes/           # Express REST API routes
+        ├── services/         # Business logic (subscriptions, audit logs, calculations)
+        └── index.js          # Express app entrypoint (Port 5000)
 ```
 
 ---
 
-## Planned Technology Stack
+## Environment Configuration
 
-### Frontend
+AquaNexus requires environment variables for both the frontend and backend. Templates are provided via `.env.example` files.
 
-| Technology            | Purpose                             |
-| --------------------- | ----------------------------------- |
-| **React**             | UI library and component framework  |
-| **TypeScript**        | Static type checking for JavaScript |
-| **Redux/Context API** | State management                    |
-| **React Router**      | Client-side routing                 |
-| **Axios**             | HTTP client                         |
-| **Tailwind CSS**      | Utility-first CSS framework         |
-| **React Hook Form**   | Form state management               |
-| **Zod/Yup**           | Data validation                     |
+### 1. Backend Environment (`new_backend/.env`)
 
-### Backend
+Copy `new_backend/.env.example` to `new_backend/.env`:
 
-| Technology          | Purpose                    |
-| ------------------- | -------------------------- |
-| **Node.js**         | JavaScript runtime         |
-| **Express.js**      | Web framework              |
-| **TypeScript**      | Static type checking       |
-| **Prisma**          | ORM and database toolkit   |
-| **JWT**             | Token-based authentication |
-| **Joi/Zod**         | Request validation         |
-| **Winston**         | Logging                    |
-| **Swagger/OpenAPI** | API documentation          |
+```bash
+cd new_backend
+cp .env.example .env
+```
 
-### Database
+| Variable | Description | Example |
+| :--- | :--- | :--- |
+| `PORT` | Backend server port | `5000` |
+| `NODE_ENV` | Runtime environment (`development` / `production`) | `development` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:password@localhost:5432/aquanexus?schema=public` |
+| `JWT_SECRET` | Secret key used to sign and verify JWT tokens | `aquanexus_super_secret_jwt_key_2026` |
 
-| Technology     | Purpose                                 |
-| -------------- | --------------------------------------- |
-| **PostgreSQL** | Relational database                     |
-| **pgAdmin**    | Database administration tool (optional) |
+### 2. Frontend Environment (`.env`)
 
-### DevOps & Deployment (Future)
+Copy `.env.example` to `.env` in the project root:
 
-| Technology         | Purpose                          |
-| ------------------ | -------------------------------- |
-| **Docker**         | Containerization                 |
-| **Docker Compose** | Local development environment    |
-| **GitHub Actions** | CI/CD automation                 |
-| **AWS/GCP/Azure**  | Cloud deployment (to be decided) |
+```bash
+cp .env.example .env
+```
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `VITE_API_URL` | Backend REST API base URL | `http://localhost:5000/api` |
 
 ---
 
-## Security Principles
+## Local Development Setup
 
-### Authentication & Authorization
+### Prerequisites
+- **Node.js:** v18.0.0 or higher
+- **npm:** v9.0.0 or higher
+- **PostgreSQL Database:** Running locally or via a cloud provider (e.g., Supabase)
 
-1. **JWT-Based Authentication**
-   - Secure token generation and validation
-   - Token expiration and refresh mechanisms
-   - Secure password hashing (bcrypt)
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/AbhayMahalle/AquaNexus.git
+cd AquaNexus
+```
 
-2. **Role-Based Access Control**
-   - Fine-grained permission management
-   - API-level authorization checks
-   - Frontend UI rendering based on permissions
+### Step 2: Configure & Start Backend
+```bash
+cd new_backend
 
-3. **Assigned Area Scoping**
-   - Manager access restricted to assigned areas
-   - Query-level filtering for multi-tenant isolation
-   - Audit logging of cross-area access attempts
+# 1. Install dependencies
+npm install
 
-### Data Security
+# 2. Setup environment variables
+cp .env.example .env
+# Edit .env with your PostgreSQL DATABASE_URL and JWT_SECRET
 
-1. **Encryption**
-   - HTTPS for all API communications
-   - Sensitive data encrypted at rest (PII, financial data)
-   - Secure credential storage
+# 3. Synchronize database schema
+npx prisma db push
 
-2. **Input Validation**
-   - Server-side validation for all inputs
-   - Protection against SQL injection
-   - XSS protection
+# 4. (Optional) Open Prisma Studio to inspect database records
+npx prisma studio
 
-3. **Audit & Compliance**
-   - Comprehensive audit logging
-   - User action tracking with timestamps
-   - Change tracking for sensitive operations
-   - Compliance with data protection regulations
+# 5. Start the backend development server
+npm start
+# Backend will run on http://localhost:5000
+```
 
-### API Security
+### Step 3: Configure & Start Frontend
+Open a new terminal in the project root:
 
-1. **Rate Limiting**
-   - Prevent brute-force attacks
-   - API quota management
+```bash
+# 1. Install frontend dependencies
+npm install
 
-2. **CORS Configuration**
-   - Restrict cross-origin requests
-   - Whitelist trusted domains
+# 2. Setup environment variables
+cp .env.example .env
 
-3. **Error Handling**
-   - No sensitive information in error messages
-   - Standardized error responses
+# 3. Start the Vite development server
+npm run dev
+# Frontend will run on http://localhost:3000
+```
 
----
-
-## Reporting and Analytics
-
-### Pre-built Reports
-
-#### Operational Reports
-
-- Production Summary (units produced, efficiency, downtime)
-- Inventory Status (stock levels, turnover rate, aged inventory)
-- Distribution Performance (deliveries, on-time rate, routes)
-
-#### Financial Reports
-
-- Profit & Loss Statement
-- Cash Flow Analysis
-- Balance Sheet Summary
-- Cost Analysis by Category
-- Revenue by Customer/Region
-
-#### HR Reports
-
-- Attendance Summary
-- Leave Balance Status
-- Overtime Tracking
-- Payroll Summary
-- Employee Roster
-
-### Analytics Features (Future)
-
-- Real-time dashboards
-- Predictive analytics for inventory planning
-- Trend analysis
-- Custom report builder
-- Export to Excel/PDF
+### Step 4: Access the Application
+Open your browser and navigate to:
+```
+http://localhost:3000
+```
 
 ---
 
-## Development Roadmap
+## Default Demo Credentials
 
-### Phase 1: Foundation (Weeks 1-4)
+For testing and local development, default role accounts are pre-configured:
 
-- [ ] Database schema design and creation
-- [ ] Backend API structure setup
-- [ ] Frontend project initialization
-- [ ] Authentication & JWT implementation
-- [ ] RBAC framework implementation
-
-### Phase 2: Core Features (Weeks 5-12)
-
-- [ ] Employee and User management modules
-- [ ] Attendance and Leave tracking
-- [ ] Basic Inventory management
-- [ ] Production module
-- [ ] Sales and Orders module
-- [ ] API endpoints for core modules
-
-### Phase 3: Advanced Features (Weeks 13-16)
-
-- [ ] Financial modules (Invoices, Payments, Expenses)
-- [ ] Payroll processing
-- [ ] Reporting and Analytics
-- [ ] Notifications system
-- [ ] Audit logging
-
-### Phase 4: Optimization & Deployment (Weeks 17-20)
-
-- [ ] Performance optimization
-- [ ] Security hardening
-- [ ] Testing and QA
-- [ ] Documentation completion
-- [ ] Deployment setup
-- [ ] Production release
-
-### Post-Launch (Future)
-
-- Mobile application
-- Advanced analytics and ML
-- Integration with third-party systems
-- Scalability improvements
+| Role | Email / Username | Default Password | Dashboard URL |
+| :--- | :--- | :--- | :--- |
+| **Super Admin** | `superadmin@aquanexus.com` | `Abhay@123` | `/super-admin` |
+| **Tenant Admin** | `apexadmin@gmail.com` | `Abhay@123` | `/admin` |
+| **Manager** | `abhaymanager@gmail.com` | `Abhay@123` | `/manager` |
+| **Store Manager** | `ramstore@gmail.com` | `Abhay@123` | `/store` |
+| **Accountant** | `yashaccountant@gmail.com` | `Abhay@123` | `/accountant` |
+| **Distributor** | `niranjandistributor@gmail.com` | `Abhay@123` | `/distributor` |
+| **Supplier** | `herambsupplier@gmail.com` | `Abhay@123` | `/supplier` |
 
 ---
 
-## Implementation Status
+## API Endpoints Overview
 
-### Current State
+All endpoints are prefixed with `/api`.
 
-This repository has been initialized with:
+### Authentication
+- `POST /api/auth/login` — Authenticate user and issue JWT token
+- `GET /api/auth/me` — Retrieve current authenticated profile and permissions
 
-- Professional repository structure
-- Comprehensive documentation framework
-- Architectural planning documentation
-- Technology stack definition
-- Development guidelines and conventions
+### Platform Super Admin
+- `GET /api/platform/stats` — Overall platform statistics and MRR
+- `GET /api/platform/companies` — List all onboarded organizations
+- `POST /api/platform/companies` — Provision a new tenant organization
+- `GET /api/platform/plans` — List and manage subscription tiers
+- `POST /api/platform/subscriptions/assign` — Assign or change tenant plan tier
+- `GET /api/platform/payments` — Retrieve recorded subscription payments
 
-### NOT Included
-
-- No application code (frontend or backend)
-- No database implementation
-- No API endpoints
-- No build configurations
-- No dependencies installed
-- No authentication logic
-- No business logic implementation
-
-### Next Steps
-
-1. **Setup Phase**: Configure development environment, install dependencies, setup build tools
-2. **Database Phase**: Design and implement database schema using Prisma
-3. **Backend Phase**: Implement API structure, authentication, and module endpoints
-4. **Frontend Phase**: Build UI components, pages, and application shell
-5. **Integration Phase**: Connect frontend and backend
-6. **Testing Phase**: Implement unit, integration, and E2E tests
-7. **Deployment Phase**: Setup CI/CD, prepare for production
+### Company Admin & Tenant
+- `GET /api/company/subscription` — Current subscription, usage, and database plan catalog
+- `GET /api/company/plans` — View all active database subscription plans
+- `GET /api/production` — List production batches
+- `POST /api/production` — Log new production run
+- `GET /api/inventory` — Current inventory levels across SKUs
+- `GET /api/orders` — Customer orders and dispatches
+- `GET /api/employees` — Tenant employee master list
 
 ---
 
-## Getting Started (Future)
+## Contributing
 
-Once development begins, refer to [CONTRIBUTING.md](CONTRIBUTING.md) for:
-
-- Development environment setup
-- Branching strategy
-- Commit conventions
-- Pull request process
-- Code style guidelines
-
-For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md).
-
-For detailed documentation, see [docs/](docs/) directory.
-
----
-
-## Contact & Support
-
-For questions or support regarding this project, contact the project lead or check project documentation in the `docs/` directory.
+1. Fork the repository and create a feature branch (`git checkout -b feature/your-feature-name`).
+2. Verify code quality:
+   ```bash
+   npx tsc --noEmit
+   npm run lint
+   ```
+3. Commit changes using conventional commit messages (`git commit -m 'feat: add feature'`).
+4. Push to your branch and open a Pull Request.
 
 ---
 
 ## License
 
-(To be defined)
-
----
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
